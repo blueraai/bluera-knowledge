@@ -60,4 +60,24 @@ describe('LanceStore', () => {
     const found = results.find((r) => r.id === 'doc-to-delete');
     expect(found).toBeUndefined();
   });
+
+  it('performs full-text search', async () => {
+    const doc = {
+      id: createDocumentId('fts-doc'),
+      content: 'The quick brown fox jumps over the lazy dog',
+      vector: new Array(384).fill(0.1),
+      metadata: {
+        type: 'file' as const,
+        storeId,
+        indexedAt: new Date(),
+      },
+    };
+
+    await store.addDocuments(storeId, [doc]);
+    await store.createFtsIndex(storeId);
+
+    const results = await store.fullTextSearch(storeId, 'quick brown', 10);
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0]?.content).toContain('quick');
+  });
 });

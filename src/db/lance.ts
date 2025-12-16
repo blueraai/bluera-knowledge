@@ -100,6 +100,38 @@ export class LanceStore {
       }));
   }
 
+  async createFtsIndex(storeId: StoreId): Promise<void> {
+    const table = await this.getTable(storeId);
+    await table.createIndex('content', {
+      config: lancedb.Index.fts(),
+    });
+  }
+
+  async fullTextSearch(
+    storeId: StoreId,
+    query: string,
+    limit: number
+  ): Promise<Array<{ id: DocumentId; content: string; score: number; metadata: DocumentMetadata }>> {
+    const table = await this.getTable(storeId);
+
+    try {
+      const results = await table
+        .search(query, 'fts')
+        .limit(limit)
+        .toArray() as Array<{ id: string; content: string; metadata: string; score: number }>;
+
+      return results.map((r) => ({
+        id: createDocumentId(r.id),
+        content: r.content,
+        score: r.score ?? 1,
+        metadata: JSON.parse(r.metadata) as DocumentMetadata,
+      }));
+    } catch {
+      // FTS index may not exist, return empty
+      return [];
+    }
+  }
+
   async deleteStore(storeId: StoreId): Promise<void> {
     const tableName = this.getTableName(storeId);
     if (this.connection !== null) {
