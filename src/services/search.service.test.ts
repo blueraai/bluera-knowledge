@@ -76,4 +76,21 @@ describe('SearchService', () => {
     expect(results.results[0]?.score).toBeGreaterThan(0);
     expect(results.results[0]?.content).toContain('Python');
   });
+
+  it('performs hybrid search combining vector and FTS', async () => {
+    // First create FTS index
+    await lanceStore.createFtsIndex(storeId);
+
+    const results = await searchService.search({
+      query: 'JavaScript programming',
+      stores: [storeId],
+      mode: 'hybrid',
+      limit: 10,
+    });
+
+    expect(results.mode).toBe('hybrid');
+    expect(results.results.length).toBeGreaterThan(0);
+    // Hybrid should have RRF scores that differ from pure vector scores
+    expect(results.results[0]?.score).toBeGreaterThan(0);
+  });
 });
