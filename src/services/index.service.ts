@@ -8,11 +8,17 @@ import type { Document } from '../types/document.js';
 import { createDocumentId } from '../types/brands.js';
 import type { Result } from '../types/result.js';
 import { ok, err } from '../types/result.js';
+import { ChunkingService } from './chunking.service.js';
 
 interface IndexResult {
   documentsIndexed: number;
   chunksCreated: number;
   timeMs: number;
+}
+
+interface IndexOptions {
+  chunkSize?: number;
+  chunkOverlap?: number;
 }
 
 const TEXT_EXTENSIONS = new Set([
@@ -24,10 +30,19 @@ const TEXT_EXTENSIONS = new Set([
 export class IndexService {
   private readonly lanceStore: LanceStore;
   private readonly embeddingEngine: EmbeddingEngine;
+  private readonly chunker: ChunkingService;
 
-  constructor(lanceStore: LanceStore, embeddingEngine: EmbeddingEngine) {
+  constructor(
+    lanceStore: LanceStore,
+    embeddingEngine: EmbeddingEngine,
+    options: IndexOptions = {}
+  ) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
+    this.chunker = new ChunkingService({
+      chunkSize: options.chunkSize ?? 512,
+      chunkOverlap: options.chunkOverlap ?? 50,
+    });
   }
 
   async indexStore(store: Store): Promise<Result<IndexResult>> {
@@ -48,26 +63,36 @@ export class IndexService {
     const startTime = Date.now();
     const files = await this.scanDirectory(store.path);
     const documents: Document[] = [];
+    let filesProcessed = 0;
 
     for (const filePath of files) {
       const content = await readFile(filePath, 'utf-8');
-      const vector = await this.embeddingEngine.embed(content);
       const fileHash = createHash('md5').update(content).digest('hex');
+      const chunks = this.chunker.chunk(content);
 
-      const doc: Document = {
-        id: createDocumentId(`${store.id}-${fileHash}`),
-        content,
-        vector,
-        metadata: {
-          type: 'file',
-          storeId: store.id,
-          path: filePath,
-          indexedAt: new Date(),
-          fileHash,
-        },
-      };
+      for (const chunk of chunks) {
+        const vector = await this.embeddingEngine.embed(chunk.content);
+        const chunkId = chunks.length > 1
+          ? `${store.id}-${fileHash}-${chunk.chunkIndex}`
+          : `${store.id}-${fileHash}`;
 
-      documents.push(doc);
+        const doc: Document = {
+          id: createDocumentId(chunkId),
+          content: chunk.content,
+          vector,
+          metadata: {
+            type: chunks.length > 1 ? 'chunk' : 'file',
+            storeId: store.id,
+            path: filePath,
+            indexedAt: new Date(),
+            fileHash,
+            chunkIndex: chunk.chunkIndex,
+            totalChunks: chunk.totalChunks,
+          },
+        };
+        documents.push(doc);
+      }
+      filesProcessed++;
     }
 
     if (documents.length > 0) {
@@ -75,8 +100,8 @@ export class IndexService {
     }
 
     return ok({
-      documentsIndexed: documents.length,
-      chunksCreated: documents.length, // Simplified - no chunking yet
+      documentsIndexed: filesProcessed,
+      chunksCreated: documents.length,
       timeMs: Date.now() - startTime,
     });
   }

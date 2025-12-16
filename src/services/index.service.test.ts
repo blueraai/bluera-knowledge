@@ -55,4 +55,26 @@ describe('IndexService', () => {
       expect(result.data.documentsIndexed).toBeGreaterThan(0);
     }
   });
+
+  it('chunks large files', async () => {
+    // Create a large test file
+    const largeContent = 'This is test content. '.repeat(100); // ~2200 chars
+    await writeFile(join(testFilesDir, 'large.txt'), largeContent);
+
+    const store: FileStore = {
+      type: 'file',
+      id: storeId,
+      name: 'Test Store',
+      path: testFilesDir,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await indexService.indexStore(store);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.chunksCreated).toBeGreaterThan(result.data.documentsIndexed);
+    }
+  });
 });
