@@ -17,10 +17,38 @@
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": ["knowledge", "semantic-search", "vector-database", "cli"],
+  "keywords": [
+    "knowledge",
+    "semantic-search",
+    "vector-database",
+    "cli"
+  ],
   "author": "Bluera",
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.0.2",
+    "eslint": "^9.39.2",
+    "node-gyp": "^12.1.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0",
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.7",
+    "@huggingface/transformers": "^3.8.1",
+    "@lancedb/lancedb": "^0.23.0",
+    "chalk": "^5.6.2",
+    "chokidar": "^5.0.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.2",
+    "hono": "^4.11.1",
+    "node-addon-api": "^8.5.0",
+    "ora": "^9.0.0",
+    "zod": "^4.2.1"
   }
 }
