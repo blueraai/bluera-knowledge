@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import ora, { type Ora } from 'ora';
 import { createServices } from '../../services/index.js';
 import type { GlobalOptions } from '../program.js';
 
@@ -18,22 +19,43 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
         process.exit(3);
       }
 
-      console.log(`\nIndexing store: ${store.name}...\n`);
+      // Use spinner in interactive mode, simple output otherwise
+      const isInteractive = process.stdout.isTTY;
+      let spinner: Ora | undefined;
+
+      if (isInteractive) {
+        spinner = ora(`Indexing store: ${store.name}`).start();
+      } else {
+        console.log(`Indexing store: ${store.name}`);
+      }
 
       await services.lance.initialize(store.id);
 
-      const result = await services.index.indexStore(store);
+      const result = await services.index.indexStore(store, (event) => {
+        if (event.type === 'progress') {
+          if (spinner) {
+            spinner.text = `Indexing: ${event.current}/${event.total} files - ${event.message}`;
+          }
+        }
+      });
 
       if (result.success) {
+        const message = `Indexed ${result.data.documentsIndexed} documents, ${result.data.chunksCreated} chunks in ${result.data.timeMs}ms`;
+        if (spinner) {
+          spinner.succeed(message);
+        } else {
+          console.log(message);
+        }
         if (globalOpts.format === 'json') {
           console.log(JSON.stringify(result.data, null, 2));
-        } else {
-          console.log(`Indexed ${result.data.documentsIndexed} documents`);
-          console.log(`Created ${result.data.chunksCreated} chunks`);
-          console.log(`Time: ${result.data.timeMs}ms\n`);
         }
       } else {
-        console.error(`Error: ${result.error.message}`);
+        const message = `Error: ${result.error.message}`;
+        if (spinner) {
+          spinner.fail(message);
+        } else {
+          console.error(message);
+        }
         process.exit(4);
       }
     });
