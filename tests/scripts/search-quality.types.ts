@@ -129,3 +129,42 @@ export type QualityResultLine =
   | { type: 'run_start'; timestamp: string; runId: string; config: QualityConfig }
   | { type: 'query_evaluation'; data: QueryEvaluation }
   | { type: 'run_summary'; data: RunSummary };
+
+// HIL (Human-in-the-Loop) types
+export type HilJudgment = 'good' | 'okay' | 'poor' | 'terrible';
+
+export const HIL_JUDGMENT_SCORES: Record<HilJudgment, number> = {
+  good: 1.0,
+  okay: 0.7,
+  poor: 0.4,
+  terrible: 0.1,
+};
+
+export interface HilQueryData {
+  reviewed: boolean;
+  judgment?: HilJudgment;
+  humanScore?: number;
+  note?: string;
+  flagged?: boolean;
+  reviewedAt?: string;
+}
+
+export interface HilReviewSummary {
+  reviewedAt: string;
+  queriesReviewed: number;
+  queriesSkipped: number;
+  queriesFlagged: number;
+  humanAverageScore: number;
+  aiVsHumanDelta: number;
+  synthesis: string;
+  actionItems: string[];
+}
+
+// Extended types with HIL support
+export interface QueryEvaluationWithHil extends QueryEvaluation {
+  hil?: HilQueryData;
+}
+
+export interface RunSummaryWithHil extends RunSummary {
+  hilReview?: HilReviewSummary;
+}
