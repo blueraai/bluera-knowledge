@@ -58,3 +58,9 @@ export {
   type ServerConfig,
   DEFAULT_CONFIG,
 } from './config.js';
+
+// Progress types
+export {
+  type ProgressEvent,
+  type ProgressCallback,
+} from './progress.js';

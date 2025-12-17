@@ -10,6 +10,7 @@ export { StoreService } from './store.service.js';
 export { SearchService } from './search.service.js';
 export { IndexService } from './index.service.js';
 export { WatchService } from './watch.service.js';
+export { ChunkingService } from './chunking.service.js';
 
 export interface ServiceContainer {
   config: ConfigService;
