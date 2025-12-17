@@ -3,11 +3,11 @@
   "corpus": "1.0.0",
   "querySet": "core@1.0.0",
   "scores": {
-    "relevance": 0.33,
-    "ranking": 0.26,
-    "coverage": 0.3,
-    "snippetQuality": 0.18,
-    "overall": 0.26
+    "relevance": 0.39,
+    "ranking": 0.5,
+    "coverage": 0.33,
+    "snippetQuality": 0.33,
+    "overall": 0.37
   },
   "thresholds": {
     "regression": 0.05,
