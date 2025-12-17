@@ -1,0 +1,16 @@
+{
+  "updatedAt": "2025-12-17",
+  "corpus": "1.0.0",
+  "querySet": "core@1.0.0",
+  "scores": {
+    "relevance": 0.33,
+    "ranking": 0.26,
+    "coverage": 0.3,
+    "snippetQuality": 0.18,
+    "overall": 0.26
+  },
+  "thresholds": {
+    "regression": 0.05,
+    "improvement": 0.03
+  }
+}
