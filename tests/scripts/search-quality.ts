@@ -161,10 +161,13 @@ function loadBaseline(): Baseline | null {
 }
 
 function saveBaseline(scores: Scores, config: QualityConfig): void {
+  const querySetVersion = config.querySet === 'all'
+    ? loadAllQuerySets().version
+    : loadQuerySet(config.querySet).version;
   const baseline: Baseline = {
     updatedAt: new Date().toISOString().split('T')[0],
     corpus: config.corpusVersion,
-    querySet: `${config.querySet}@${loadQuerySet(config.querySet).version}`,
+    querySet: `${config.querySet}@${querySetVersion}`,
     scores,
     thresholds: {
       regression: 0.05,
