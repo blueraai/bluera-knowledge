@@ -56,8 +56,8 @@ export class SearchService {
       allResults = await this.hybridSearch(query.query, stores, fetchLimit, query.threshold);
     }
 
-    // Deduplicate by source file - keep highest-scoring chunk per source
-    const dedupedResults = this.deduplicateBySource(allResults);
+    // Deduplicate by source file - keep best chunk per source (considers query relevance)
+    const dedupedResults = this.deduplicateBySource(allResults, query.query);
 
     // Generate query-aware snippets for each result
     const resultsWithSnippets = dedupedResults.slice(0, limit).map(r => ({
@@ -77,23 +77,42 @@ export class SearchService {
 
   /**
    * Deduplicate results by source file path.
-   * Keeps the highest-scoring chunk for each unique source.
+   * Keeps the best chunk for each unique source, considering both score and query relevance.
    */
-  private deduplicateBySource(results: SearchResult[]): SearchResult[] {
+  private deduplicateBySource(results: SearchResult[], query: string): SearchResult[] {
     const bySource = new Map<string, SearchResult>();
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
 
     for (const result of results) {
       // Use file path as the source key, fallback to document ID
       const sourceKey = result.metadata.path ?? result.metadata.url ?? result.id;
 
       const existing = bySource.get(sourceKey);
-      if (!existing || result.score > existing.score) {
+      if (!existing) {
         bySource.set(sourceKey, result);
+      } else {
+        // Compare: prefer chunk with more query terms in content
+        const existingTermCount = this.countQueryTerms(existing.content, queryTerms);
+        const newTermCount = this.countQueryTerms(result.content, queryTerms);
+
+        // Prefer chunk with more query terms, or higher score if same
+        if (newTermCount > existingTermCount ||
+            (newTermCount === existingTermCount && result.score > existing.score)) {
+          bySource.set(sourceKey, result);
+        }
       }
     }
 
     // Return results sorted by score
     return Array.from(bySource.values()).sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Count how many query terms appear in the content.
+   */
+  private countQueryTerms(content: string, queryTerms: string[]): number {
+    const lowerContent = content.toLowerCase();
+    return queryTerms.filter(term => lowerContent.includes(term)).length;
   }
 
   private async vectorSearch(
@@ -262,9 +281,9 @@ export class SearchService {
         );
 
         if (resultMatchesFramework) {
-          return 1.4; // Strong boost for matching framework
+          return 1.5; // Strong boost for matching framework
         } else {
-          return 0.7; // Penalty for non-matching when framework is specified
+          return 0.5; // Strong penalty for non-matching when framework is specified
         }
       }
     }
