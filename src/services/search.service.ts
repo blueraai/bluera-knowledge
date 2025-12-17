@@ -2,6 +2,7 @@ import type { LanceStore } from '../db/lance.js';
 import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { SearchQuery, SearchResponse, SearchResult } from '../types/search.js';
 import type { StoreId } from '../types/brands.js';
+import { extractSnippet } from './snippet.service.js';
 
 interface RRFConfig {
   k: number;
@@ -17,7 +18,8 @@ export class SearchService {
   constructor(
     lanceStore: LanceStore,
     embeddingEngine: EmbeddingEngine,
-    rrfConfig: RRFConfig = { k: 60, vectorWeight: 0.7, ftsWeight: 0.3 }
+    // Lower k value (20 vs 60) produces more differentiated scores for top results
+    rrfConfig: RRFConfig = { k: 20, vectorWeight: 0.6, ftsWeight: 0.4 }
   ) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
@@ -32,23 +34,56 @@ export class SearchService {
 
     let allResults: SearchResult[] = [];
 
+    // Fetch more results than needed to allow for deduplication
+    const fetchLimit = limit * 3;
+
     if (mode === 'vector') {
-      allResults = await this.vectorSearch(query.query, stores, limit, query.threshold);
+      allResults = await this.vectorSearch(query.query, stores, fetchLimit, query.threshold);
     } else if (mode === 'fts') {
-      allResults = await this.ftsSearch(query.query, stores, limit);
+      allResults = await this.ftsSearch(query.query, stores, fetchLimit);
     } else {
       // Hybrid: combine vector and FTS with RRF
-      allResults = await this.hybridSearch(query.query, stores, limit, query.threshold);
+      allResults = await this.hybridSearch(query.query, stores, fetchLimit, query.threshold);
     }
+
+    // Deduplicate by source file - keep highest-scoring chunk per source
+    const dedupedResults = this.deduplicateBySource(allResults);
+
+    // Generate query-aware snippets for each result
+    const resultsWithSnippets = dedupedResults.slice(0, limit).map(r => ({
+      ...r,
+      highlight: extractSnippet(r.content, query.query, { maxLength: 200 }),
+    }));
 
     return {
       query: query.query,
       mode,
       stores,
-      results: allResults,
-      totalResults: allResults.length,
+      results: resultsWithSnippets,
+      totalResults: resultsWithSnippets.length,
       timeMs: Date.now() - startTime,
     };
+  }
+
+  /**
+   * Deduplicate results by source file path.
+   * Keeps the highest-scoring chunk for each unique source.
+   */
+  private deduplicateBySource(results: SearchResult[]): SearchResult[] {
+    const bySource = new Map<string, SearchResult>();
+
+    for (const result of results) {
+      // Use file path as the source key, fallback to document ID
+      const sourceKey = result.metadata.path ?? result.metadata.url ?? result.id;
+
+      const existing = bySource.get(sourceKey);
+      if (!existing || result.score > existing.score) {
+        bySource.set(sourceKey, result);
+      }
+    }
+
+    // Return results sorted by score
+    return Array.from(bySource.values()).sort((a, b) => b.score - a.score);
   }
 
   private async vectorSearch(
@@ -140,11 +175,24 @@ export class SearchService {
       });
     }
 
-    // Sort by RRF score and return
-    return rrfScores
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
-      .map(r => ({ ...r.result, score: r.score }));
+    // Sort by RRF score
+    const sorted = rrfScores.sort((a, b) => b.score - a.score).slice(0, limit);
+
+    // Normalize scores to 0-1 range for better interpretability
+    if (sorted.length > 0) {
+      const maxScore = sorted[0]!.score;
+      const minScore = sorted[sorted.length - 1]!.score;
+      const range = maxScore - minScore;
+
+      if (range > 0) {
+        return sorted.map(r => ({
+          ...r.result,
+          score: (r.score - minScore) / range, // Normalized to 0-1
+        }));
+      }
+    }
+
+    return sorted.map(r => ({ ...r.result, score: r.score }));
   }
 
   async searchAllStores(

@@ -75,8 +75,9 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
             const r = results.results[i]!;
             const path = r.metadata.path ?? r.metadata.url ?? 'unknown';
             console.log(`${i + 1}. [${r.score.toFixed(2)}] ${path}`);
-            const preview = r.content.slice(0, 150).replace(/\n/g, ' ');
-            console.log(`   ${preview}${r.content.length > 150 ? '...' : ''}\n`);
+            // Use query-aware highlight if available, otherwise fall back to content preview
+            const preview = r.highlight ?? r.content.slice(0, 150).replace(/\n/g, ' ') + (r.content.length > 150 ? '...' : '');
+            console.log(`   ${preview}\n`);
           }
         }
       }
