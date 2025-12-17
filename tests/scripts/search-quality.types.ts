@@ -8,7 +8,6 @@ export interface QualityConfig {
   searchLimit: number;
   searchMode: 'hybrid' | 'semantic' | 'keyword';
   stores: string[] | null;
-  maxRetries: number;
   timeoutMs: number;
   querySet: 'core' | 'explore' | string;
   corpusVersion: string;
