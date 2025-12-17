@@ -99,6 +99,23 @@ const BASELINE_PATH = join(__dirname, '..', 'quality-results', 'baseline.json');
 // Claude CLI path - can be overridden via CLAUDE_CLI env var
 const CLAUDE_CLI = process.env.CLAUDE_CLI || `${process.env.HOME}/.claude/local/claude`;
 
+/**
+ * Validate that the environment is properly configured before running tests.
+ * Throws immediately if Claude CLI is not available or not working.
+ */
+function validateEnvironment(): void {
+  if (!existsSync(CLAUDE_CLI)) {
+    throw new Error(`Claude CLI not found at ${CLAUDE_CLI}. Set CLAUDE_CLI env var to the correct path.`);
+  }
+
+  // Verify it's executable by running --version
+  try {
+    runCommand(`${CLAUDE_CLI} --version`, { cwd: ROOT_DIR, timeout: 10000 });
+  } catch (error) {
+    throw new Error(`Claude CLI at ${CLAUDE_CLI} is not working: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 function loadConfig(): QualityConfig {
   const configPath = join(__dirname, '..', 'quality-config.json');
   const defaultConfig: QualityConfig = {
@@ -106,8 +123,7 @@ function loadConfig(): QualityConfig {
     searchLimit: 10,
     searchMode: 'hybrid',
     stores: null,
-    maxRetries: 3,
-    timeoutMs: 60000,
+    timeoutMs: 120000,
     querySet: 'core',
     corpusVersion: '1.0.0',
   };
@@ -222,42 +238,37 @@ function runSearch(query: string, config: QualityConfig): { results: SearchResul
     args.push('--stores', config.stores.join(','));
   }
 
-  try {
-    const rawOutput = runCommand(args.join(' '), {
-      cwd: ROOT_DIR,
-      timeout: config.timeoutMs,
-    });
+  const rawOutput = runCommand(args.join(' '), {
+    cwd: ROOT_DIR,
+    timeout: config.timeoutMs,
+  });
 
-    // Parse the output format: "1. [-0.23] /path/to/file.ts\n   content..."
-    const results: SearchResult[] = [];
-    const lines = rawOutput.split('\n');
-    let currentResult: Partial<SearchResult> | null = null;
+  // Parse the output format: "1. [-0.23] /path/to/file.ts\n   content..."
+  const results: SearchResult[] = [];
+  const lines = rawOutput.split('\n');
+  let currentResult: Partial<SearchResult> | null = null;
 
-    for (const line of lines) {
-      const headerMatch = line.match(/^(\d+)\.\s+\[(-?[0-9.]+)\]\s+(.+)$/);
-      if (headerMatch) {
-        if (currentResult && currentResult.content !== undefined) {
-          results.push(currentResult as SearchResult);
-        }
-        currentResult = {
-          rank: parseInt(headerMatch[1], 10),
-          score: parseFloat(headerMatch[2]),
-          source: headerMatch[3].trim(),
-          content: '',
-        };
-      } else if (currentResult && line.startsWith('   ')) {
-        currentResult.content += (currentResult.content ? '\n' : '') + line.trim();
+  for (const line of lines) {
+    const headerMatch = line.match(/^(\d+)\.\s+\[(-?[0-9.]+)\]\s+(.+)$/);
+    if (headerMatch) {
+      if (currentResult && currentResult.content !== undefined) {
+        results.push(currentResult as SearchResult);
       }
+      currentResult = {
+        rank: parseInt(headerMatch[1], 10),
+        score: parseFloat(headerMatch[2]),
+        source: headerMatch[3].trim(),
+        content: '',
+      };
+    } else if (currentResult && line.startsWith('   ')) {
+      currentResult.content += (currentResult.content ? '\n' : '') + line.trim();
     }
-    if (currentResult && currentResult.content !== undefined) {
-      results.push(currentResult as SearchResult);
-    }
-
-    return { results, timeMs: Date.now() - startTime };
-  } catch (error) {
-    console.error(`Search failed for query "${query}":`, error);
-    return { results: [], timeMs: Date.now() - startTime };
   }
+  if (currentResult && currentResult.content !== undefined) {
+    results.push(currentResult as SearchResult);
+  }
+
+  return { results, timeMs: Date.now() - startTime };
 }
 
 function evaluateResults(
@@ -308,34 +319,15 @@ Be critical and specific. Your feedback will be used to improve the search syste
     '--json-schema', shellEscape(normalizedSchema),
   ];
 
-  try {
-    const result = runCommand(args.join(' '), {
-      cwd: ROOT_DIR,
-      timeout: config.timeoutMs,
-    });
+  const result = runCommand(args.join(' '), {
+    cwd: ROOT_DIR,
+    timeout: config.timeoutMs,
+  });
 
-    return {
-      evaluation: parseClaudeOutput<EvaluationResult>(result),
-      timeMs: Date.now() - startTime,
-    };
-  } catch (error) {
-    console.error(`Evaluation failed for query "${query}":`, error);
-    // Return a failure result
-    return {
-      evaluation: {
-        scores: { relevance: 0, ranking: 0, coverage: 0, snippetQuality: 0, overall: 0 },
-        analysis: {
-          relevance: 'Evaluation failed',
-          ranking: 'Evaluation failed',
-          coverage: 'Evaluation failed',
-          snippetQuality: 'Evaluation failed',
-        },
-        suggestions: ['Evaluation failed - check logs'],
-        resultAssessments: [],
-      },
-      timeMs: Date.now() - startTime,
-    };
-  }
+  return {
+    evaluation: parseClaudeOutput<EvaluationResult>(result),
+    timeMs: Date.now() - startTime,
+  };
 }
 
 function generateRunId(): string {
@@ -386,6 +378,9 @@ function extractTopSuggestions(evaluations: QueryEvaluation[]): string[] {
 }
 
 async function main() {
+  // Validate environment before doing anything else
+  validateEnvironment();
+
   const startTime = Date.now();
   const config = loadConfig();
   const runId = generateRunId();
