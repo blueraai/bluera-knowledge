@@ -27,9 +27,72 @@ function runCommand(command: string, options: { cwd: string; timeout: number; ma
   };
   return execSync(command, execOptions);
 }
+
+// Parse Claude CLI JSON output - extracts structured_output when using --json-schema
+function parseClaudeOutput<T>(output: string): T {
+  if (!output || output.trim() === '') {
+    throw new Error('Claude CLI returned empty output');
+  }
+
+  let wrapper;
+  try {
+    wrapper = JSON.parse(output) as {
+      result: string;
+      is_error: boolean;
+      structured_output?: T;
+    };
+  } catch (e) {
+    console.error('Failed to parse Claude CLI wrapper. Raw output (first 500 chars):', output.slice(0, 500));
+    throw e;
+  }
+
+  if (wrapper.is_error) {
+    throw new Error(`Claude CLI error: ${wrapper.result}`);
+  }
+
+  // When using --json-schema, the structured output is in a separate field
+  if (wrapper.structured_output !== undefined) {
+    return wrapper.structured_output;
+  }
+
+  // Fallback: try to parse from result field
+  let result = wrapper.result;
+
+  // Try to extract JSON from markdown code blocks first
+  const codeBlockMatch = result.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    result = codeBlockMatch[1].trim();
+  } else {
+    // Try to find a JSON object or array anywhere in the text
+    const jsonObjectMatch = result.match(/(\{[\s\S]*\})/);
+    const jsonArrayMatch = result.match(/(\[[\s\S]*\])/);
+
+    if (jsonObjectMatch) {
+      result = jsonObjectMatch[1];
+    } else if (jsonArrayMatch) {
+      result = jsonArrayMatch[1];
+    }
+  }
+
+  try {
+    return JSON.parse(result) as T;
+  } catch (e) {
+    console.error('Failed to parse result as JSON. Result (first 1000 chars):', result.slice(0, 1000));
+    throw e;
+  }
+}
+
+// Escape a string for use as a single-quoted shell argument
+function shellEscape(str: string): string {
+  // Wrap in single quotes, escape any single quotes inside
+  return `'${str.replace(/'/g, "'\"'\"'")}'`;
+}
 const ROOT_DIR = join(__dirname, '..', '..');
 const RESULTS_DIR = join(__dirname, '..', 'quality-results');
 const SCHEMAS_DIR = join(__dirname, 'schemas');
+
+// Claude CLI path - can be overridden via CLAUDE_CLI env var
+const CLAUDE_CLI = process.env.CLAUDE_CLI || `${process.env.HOME}/.claude/local/claude`;
 
 function loadConfig(): QualityConfig {
   const configPath = join(__dirname, '..', 'quality-config.json');
@@ -71,12 +134,13 @@ Generate queries that:
 
 Return your queries in the specified JSON format.`;
 
-  const schemaArg = JSON.stringify(JSON.parse(schema));
+  // Normalize schema (remove whitespace)
+  const normalizedSchema = JSON.stringify(JSON.parse(schema));
   const args = [
-    'claude',
-    '-p', JSON.stringify(prompt),
+    CLAUDE_CLI,
+    '-p', shellEscape(prompt),
     '--output-format', 'json',
-    '--json-schema', JSON.stringify(schemaArg),
+    '--json-schema', shellEscape(normalizedSchema),
     '--allowedTools', 'Glob,Read',
   ];
 
@@ -86,7 +150,7 @@ Return your queries in the specified JSON format.`;
       timeout: config.timeoutMs * 2, // Extra time for exploration
     });
 
-    const parsed = JSON.parse(result) as QueryGenerationResult;
+    const parsed = parseClaudeOutput<QueryGenerationResult>(result);
     console.log(`✓ Generated ${parsed.queries.length} queries\n`);
     return parsed;
   } catch (error) {
@@ -194,12 +258,12 @@ Provide:
 
 Be critical and specific. Your feedback will be used to improve the search system.`;
 
-  const schemaArg = JSON.stringify(JSON.parse(schema));
+  const normalizedSchema = JSON.stringify(JSON.parse(schema));
   const args = [
-    'claude',
-    '-p', JSON.stringify(prompt),
+    CLAUDE_CLI,
+    '-p', shellEscape(prompt),
     '--output-format', 'json',
-    '--json-schema', JSON.stringify(schemaArg),
+    '--json-schema', shellEscape(normalizedSchema),
   ];
 
   try {
@@ -209,7 +273,7 @@ Be critical and specific. Your feedback will be used to improve the search syste
     });
 
     return {
-      evaluation: JSON.parse(result) as EvaluationResult,
+      evaluation: parseClaudeOutput<EvaluationResult>(result),
       timeMs: Date.now() - startTime,
     };
   } catch (error) {
