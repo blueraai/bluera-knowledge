@@ -4,6 +4,7 @@ import { execSync, type ExecSyncOptionsWithStringEncoding } from 'node:child_pro
 import { readFileSync, appendFileSync, mkdirSync, existsSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { listQuerySets, loadAllQuerySets } from './quality-shared.js';
 import type {
   QualityConfig,
   QueryGenerationResult,
@@ -455,8 +456,14 @@ async function main() {
     writeFileSync(generatedPath, JSON.stringify(generatedSet, null, 2));
     console.log(`   Saved to: ${generatedPath}\n`);
   } else {
-    const querySet = loadQuerySet(querySetName);
-    console.log(`📋 Loaded ${querySet.queries.length} queries from ${querySetName}.json\n`);
+    let querySet: QuerySet;
+    if (querySetName === 'all') {
+      querySet = loadAllQuerySets();
+      console.log(`📋 Loaded ${querySet.queries.length} queries from all curated sets\n`);
+    } else {
+      querySet = loadQuerySet(querySetName);
+      console.log(`📋 Loaded ${querySet.queries.length} queries from ${querySetName}.json\n`);
+    }
     queries = querySet.queries.map(q => ({ query: q.query, intent: q.intent }));
   }
 
