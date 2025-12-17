@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "queries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string" },
+          "intent": { "type": "string" },
+          "expectedContentTypes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["query", "intent"]
+      }
+    }
+  },
+  "required": ["queries"]
+}

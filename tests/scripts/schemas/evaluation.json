@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "scores": {
+      "type": "object",
+      "properties": {
+        "relevance": { "type": "number", "minimum": 0, "maximum": 1 },
+        "ranking": { "type": "number", "minimum": 0, "maximum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "snippetQuality": { "type": "number", "minimum": 0, "maximum": 1 },
+        "overall": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "required": ["relevance", "ranking", "coverage", "snippetQuality", "overall"]
+    },
+    "analysis": {
+      "type": "object",
+      "properties": {
+        "relevance": { "type": "string" },
+        "ranking": { "type": "string" },
+        "coverage": { "type": "string" },
+        "snippetQuality": { "type": "string" }
+      },
+      "required": ["relevance", "ranking", "coverage", "snippetQuality"]
+    },
+    "suggestions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "resultAssessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rank": { "type": "integer" },
+          "source": { "type": "string" },
+          "relevant": { "type": "boolean" },
+          "note": { "type": "string" }
+        },
+        "required": ["rank", "source", "relevant"]
+      }
+    }
+  },
+  "required": ["scores", "analysis", "suggestions", "resultAssessments"]
+}
