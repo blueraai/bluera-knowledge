@@ -14,7 +14,10 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:corpus:index": "npx tsx tests/scripts/corpus-index.ts",
     "test:search-quality": "npx tsx tests/scripts/search-quality.ts",
+    "test:search-quality:explore": "npx tsx tests/scripts/search-quality.ts --explore",
+    "test:search-quality:baseline": "npx tsx tests/scripts/search-quality.ts --update-baseline",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
