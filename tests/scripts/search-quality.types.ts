@@ -10,6 +10,45 @@ export interface QualityConfig {
   stores: string[] | null;
   maxRetries: number;
   timeoutMs: number;
+  querySet: 'core' | 'explore' | string;
+  corpusVersion: string;
+}
+
+// Query set types
+export interface CoreQuery {
+  id: string;
+  query: string;
+  intent: string;
+  category: 'code-pattern' | 'concept' | 'api-reference' | 'troubleshooting' | 'comparison';
+  expectedSources?: string[];
+}
+
+export interface QuerySet {
+  version: string;
+  description: string;
+  queries: CoreQuery[];
+  source?: 'curated' | 'ai-generated';
+  generatedAt?: string;
+}
+
+// Baseline types
+export interface BaselineScores {
+  relevance: number;
+  ranking: number;
+  coverage: number;
+  snippetQuality: number;
+  overall: number;
+}
+
+export interface Baseline {
+  updatedAt: string;
+  corpus: string;
+  querySet: string;
+  scores: BaselineScores;
+  thresholds: {
+    regression: number;
+    improvement: number;
+  };
 }
 
 // Query generation types
