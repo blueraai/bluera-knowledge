@@ -1,0 +1,224 @@
+# Human-in-the-Loop Quality Testing
+
+## Overview
+
+Add optional human-in-the-loop (HIL) capabilities to the search quality testing system. Enables human visibility, judgment, and feedback alongside AI evaluation.
+
+## Commands
+
+```
+test:quality [--quiet|--silent] [--set <name|all>]  Run tests (verbose by default)
+test:quality:queries --list                          List query sets
+test:quality:queries --review --set <name|all>       Edit existing queries
+test:quality:generate [--set <seed>]                 Generate new queries with HIL
+test:quality:review --list                           List test runs
+test:quality:review <run-id>                         Review run results with HIL
+```
+
+### Global `--set` Convention
+
+Applies to all commands accepting `--set`:
+- `--set core` - specific set
+- `--set all` - combine all curated sets
+- `--set generated/*` - all generated sets
+- Omit flag → defaults to `core`
+
+---
+
+## 1. Query Management
+
+### List Query Sets
+
+`npm run test:quality:queries -- --list`
+
+```
+Available query sets:
+  core         15 queries  (curated, v1.0.0)
+  hono-focus    8 queries  (curated, v1.0.0)
+  generated/2025-12-17  12 queries  (ai-generated)
+```
+
+### Generate New Queries
+
+`npm run test:quality:generate`
+
+1. AI proposes 10-15 queries as batch
+2. Display structured list with categories and intents
+3. Prompt: `Actions: [a]ccept all, [e]dit list, [r]egenerate, [q]uit`
+4. Edit mode: `drop 3,7,12`, `edit 5`, `add`
+5. AI fills gaps if needed
+6. Saves to `tests/fixtures/queries/<name>.json`
+
+Optional `--set <existing>` seeds from existing set.
+
+### Review Existing Queries
+
+`npm run test:quality:queries -- --review --set core`
+
+Loads existing query set into same HIL edit loop. When reviewing `--set all`, shows combined list with source labels. Saves back to original files.
+
+---
+
+## 2. Test Run Output
+
+### Default (Verbose)
+
+`npm run test:quality`
+
+```
+[1/15] "zod schema validation"
+  → 1. [0.82] /fixtures/zod/validation.md
+       "Zod provides a parse() method that validates and returns typed data..."
+  → 2. [0.71] /fixtures/zod/schemas.md
+       "Define schemas using z.object(), z.string(), z.number()..."
+  ...
+  ✓ AI: relevance=0.80 ranking=0.85 coverage=0.70 snippet=0.68 overall=0.76
+
+[2/15] "express middleware error handling"
+  ...
+```
+
+### Quiet Mode
+
+`npm run test:quality -- --quiet`
+
+```
+[1/15] "zod schema validation" - overall: 0.76
+[2/15] "express middleware error handling" - overall: 0.55
+```
+
+### Silent Mode (CI)
+
+`npm run test:quality -- --silent`
+
+```
+📈 Average overall score: 0.43
+✅ No regressions detected
+```
+
+---
+
+## 3. Post-Run Review
+
+### List Runs
+
+`npm run test:quality:review -- --list`
+
+```
+Recent test runs:
+  2025-12-17T22-32-30  core      15 queries  overall=0.43  (no HIL review)
+  2025-12-17T18-15-22  core      15 queries  overall=0.37  (reviewed)
+  2025-12-16T14-20-11  hono-focus 8 queries  overall=0.31  (no HIL review)
+```
+
+### Review Session
+
+`npm run test:quality:review -- 2025-12-17T22-32-30`
+
+```
+Reviewing run: 2025-12-17T22-32-30 (15 queries, overall=0.43)
+
+[1/15] "zod schema validation"
+  AI overall: 0.76
+
+  Results returned:
+  → 1. [0.82] /fixtures/zod/validation.md
+       "Zod provides a parse() method that validates..."
+  → 2. [0.71] /fixtures/zod/schemas.md
+       "Define schemas using z.object()..."
+  ...
+
+  How did the search do?
+  [g]ood  [o]kay  [p]oor  [t]errible  [n]ote only  [enter] skip
+```
+
+### Human Judgment Scale
+
+| Judgment | Score | Meaning |
+|----------|-------|---------|
+| good | 1.0 | Results nail it - exactly what I'd want |
+| okay | 0.7 | Decent results, room for improvement |
+| poor | 0.4 | Missing key results or bad ranking |
+| terrible | 0.1 | Completely wrong or useless |
+
+---
+
+## 4. HIL Data Storage
+
+All HIL data stored inline in existing JSONL results file.
+
+### Per-Query HIL Data
+
+```json
+{
+  "type": "query_evaluation",
+  "data": {
+    "query": { "query": "zod schema validation", "intent": "..." },
+    "evaluation": { "scores": { "overall": 0.76 } },
+    "hil": {
+      "reviewed": true,
+      "judgment": "okay",
+      "humanScore": 0.7,
+      "note": "Good top result, but missing error_handling.md",
+      "reviewedAt": "2025-12-17T23:45:00Z"
+    }
+  }
+}
+```
+
+### Run Summary HIL Section
+
+```json
+{
+  "type": "run_summary",
+  "data": {
+    "averageScores": { "overall": 0.43 },
+    "hilReview": {
+      "reviewedAt": "2025-12-17T23:50:00Z",
+      "queriesReviewed": 12,
+      "queriesSkipped": 3,
+      "queriesFlagged": 1,
+      "humanAverageScore": 0.51,
+      "aiVsHumanDelta": -0.08,
+      "synthesis": "AI consistently underscores coverage. Snippet quality ratings align well.",
+      "actionItems": [
+        "Improve coverage for validation-related queries",
+        "Refine 'hono vs express' query or remove"
+      ]
+    }
+  }
+}
+```
+
+Synthesis and action items generated by AI based on human feedback.
+
+---
+
+## 5. Implementation
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `tests/scripts/quality-queries.ts` | Query generation & editing HIL loop |
+| `tests/scripts/quality-review.ts` | Post-run review HIL loop |
+| `tests/scripts/quality-shared.ts` | Shared utilities (list sets, prompt helpers, scoring) |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `tests/scripts/search-quality.ts` | Default verbose output, add `--quiet`/`--silent`, `--set all` |
+| `tests/scripts/search-quality.types.ts` | Add `HilReview`, `HilQueryData` types |
+| `package.json` | Add new npm scripts |
+
+### New npm Scripts
+
+```json
+{
+  "test:quality": "npx tsx tests/scripts/search-quality.ts",
+  "test:quality:generate": "npx tsx tests/scripts/quality-queries.ts --generate",
+  "test:quality:queries": "npx tsx tests/scripts/quality-queries.ts",
+  "test:quality:review": "npx tsx tests/scripts/quality-review.ts"
+}
+```
