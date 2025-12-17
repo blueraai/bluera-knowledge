@@ -60,5 +60,34 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       }
     });
 
+  index
+    .command('watch <store>')
+    .description('Watch for changes and auto-reindex')
+    .option('--debounce <ms>', 'Debounce interval in ms', '1000')
+    .action(async (storeIdOrName: string, options: { debounce?: string }) => {
+      const globalOpts = getOptions();
+      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+
+      const store = await services.store.getByIdOrName(storeIdOrName);
+      if (store === undefined || (store.type !== 'file' && store.type !== 'repo')) {
+        console.error(`File/repo store not found: ${storeIdOrName}`);
+        process.exit(3);
+      }
+
+      const { WatchService } = await import('../../services/watch.service.js');
+      const watchService = new WatchService(services.index, services.lance);
+
+      console.log(`Watching ${store.name} for changes...`);
+      await watchService.watch(store, parseInt(options.debounce ?? '1000', 10), () => {
+        console.log(`Re-indexed ${store.name}`);
+      });
+
+      // Keep process alive
+      process.on('SIGINT', async () => {
+        await watchService.unwatchAll();
+        process.exit(0);
+      });
+    });
+
   return index;
 }
