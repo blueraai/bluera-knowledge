@@ -8,3 +8,4 @@ coverage/
 .vscode/
 *.local.md
 .claude/settings.local.json
+tests/quality-results/*.jsonl
