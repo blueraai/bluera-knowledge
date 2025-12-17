@@ -389,6 +389,10 @@ async function main() {
   const args = process.argv.slice(2);
   const isExplore = args.includes('--explore');
   const updateBaseline = args.includes('--update-baseline');
+
+  // Output verbosity
+  const quietMode = args.includes('--quiet');
+  const silentMode = args.includes('--silent');
   const setArg = args.find(a => a.startsWith('--set='));
   const querySetName = setArg ? setArg.split('=')[1] : (isExplore ? 'explore' : config.querySet);
 
@@ -494,7 +498,25 @@ async function main() {
     // Write immediately (append)
     appendFileSync(outputPath, JSON.stringify({ type: 'query_evaluation', data: record }) + '\n');
 
-    console.log(`  ${progress} "${q.query.slice(0, 40)}${q.query.length > 40 ? '...' : ''}" - overall: ${evaluation.scores.overall.toFixed(2)}`);
+    if (!silentMode) {
+      if (quietMode) {
+        // Quiet mode: summary only
+        console.log(`  ${progress} "${q.query.slice(0, 40)}${q.query.length > 40 ? '...' : ''}" - overall: ${evaluation.scores.overall.toFixed(2)}`);
+      } else {
+        // Default verbose mode: full results
+        console.log(`\n${progress} "${q.query}"`);
+        for (const r of results.slice(0, 5)) {
+          console.log(`  → ${r.rank}. [${r.score.toFixed(2)}] ${r.source}`);
+          const snippet = r.content.slice(0, 100).replace(/\n/g, ' ');
+          console.log(`       "${snippet}${r.content.length > 100 ? '...' : ''}"`);
+        }
+        if (results.length > 5) {
+          console.log(`  ... and ${results.length - 5} more results`);
+        }
+        const s = evaluation.scores;
+        console.log(`  ✓ AI: relevance=${s.relevance.toFixed(2)} ranking=${s.ranking.toFixed(2)} coverage=${s.coverage.toFixed(2)} snippet=${s.snippetQuality.toFixed(2)} overall=${s.overall.toFixed(2)}`);
+      }
+    }
   }
 
   // Generate and write summary
