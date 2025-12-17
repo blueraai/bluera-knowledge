@@ -1,2 +1,1 @@
-// Server module
-export {};
+export { createApp } from './app.js';
