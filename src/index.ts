@@ -5,6 +5,7 @@ import { createStoreCommand } from './cli/commands/store.js';
 import { createSearchCommand } from './cli/commands/search.js';
 import { createIndexCommand } from './cli/commands/index-cmd.js';
 import { createServeCommand } from './cli/commands/serve.js';
+import { createCrawlCommand } from './cli/commands/crawl.js';
 
 const program = createProgram();
 
@@ -12,5 +13,6 @@ program.addCommand(createStoreCommand(() => getGlobalOptions(program)));
 program.addCommand(createSearchCommand(() => getGlobalOptions(program)));
 program.addCommand(createIndexCommand(() => getGlobalOptions(program)));
 program.addCommand(createServeCommand(() => getGlobalOptions(program)));
+program.addCommand(createCrawlCommand(() => getGlobalOptions(program)));
 
 program.parse();
