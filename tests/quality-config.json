@@ -1,0 +1,8 @@
+{
+  "queryCount": 15,
+  "searchLimit": 10,
+  "searchMode": "hybrid",
+  "stores": null,
+  "maxRetries": 3,
+  "timeoutMs": 60000
+}
