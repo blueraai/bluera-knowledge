@@ -2,3 +2,4 @@ export { createProgram, getGlobalOptions, type GlobalOptions } from './program.j
 export { createStoreCommand } from './commands/store.js';
 export { createSearchCommand } from './commands/search.js';
 export { createIndexCommand } from './commands/index-cmd.js';
+export { createServeCommand } from './commands/serve.js';
