@@ -152,7 +152,15 @@ Return as JSON: { "synthesis": "...", "actionItems": ["...", "..."] }`;
   });
 
   const synthResult = JSON.parse(result);
-  const synthesis = synthResult.structured_output ?? JSON.parse(synthResult.result);
+  const content = synthResult.result || '';
+
+  // Extract JSON from the response
+  const jsonMatch = content.match(/\{[\s\S]*"synthesis"[\s\S]*"actionItems"[\s\S]*\}/);
+  if (!jsonMatch && !synthResult.structured_output) {
+    throw new Error(`Claude CLI did not return valid JSON. Response: ${content.slice(0, 200)}`);
+  }
+
+  const synthesis = synthResult.structured_output ?? JSON.parse(jsonMatch![0]);
 
   // Build HIL review summary
   const hilReview: HilReviewSummary = {
