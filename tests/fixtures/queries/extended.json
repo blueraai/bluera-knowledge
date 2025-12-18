@@ -1,0 +1,427 @@
+{
+  "version": "1.0.0",
+  "description": "Extended query set for robust quality testing - 50+ diverse queries across frameworks",
+  "source": "curated",
+  "queries": [
+    {
+      "id": "vue-001",
+      "query": "I have a counter variable that needs to update the UI when it changes. How do I make it reactive in Vue 3?",
+      "intent": "Implement reactive state in Vue",
+      "taskContext": "Building a click counter component",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-002",
+      "query": "I need to show a filtered count based on an array of items. What's the Vue way to derive a value that updates automatically?",
+      "intent": "Use computed properties for derived state",
+      "taskContext": "Building a todo list with filter counts",
+      "category": "pattern"
+    },
+    {
+      "id": "vue-003",
+      "query": "How do I make sure a Vue component only accepts valid data? I want to validate that a 'user' prop has name and email fields.",
+      "intent": "Validate component props in Vue",
+      "taskContext": "Creating a reusable UserCard component",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-004",
+      "query": "What's the difference between ref() and reactive() in Vue 3? When should I use each?",
+      "intent": "Understand Vue reactivity primitives",
+      "taskContext": "Choosing state management approach",
+      "category": "understanding"
+    },
+    {
+      "id": "vue-005",
+      "query": "I need to run some code when a reactive value changes. How do I watch for changes in Vue 3?",
+      "intent": "Use watch or watchEffect in Vue",
+      "taskContext": "Syncing state with localStorage",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-006",
+      "query": "My child component needs to send data back to its parent. How do I emit custom events in Vue?",
+      "intent": "Emit events from child to parent",
+      "taskContext": "Building a form input component",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-007",
+      "query": "I need to fetch data when my Vue component mounts. What's the right lifecycle hook to use?",
+      "intent": "Use onMounted for initialization",
+      "taskContext": "Loading data on component mount",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-008",
+      "query": "How do I pass data from a grandparent component to deeply nested children without prop drilling in Vue?",
+      "intent": "Use provide/inject for dependency injection",
+      "taskContext": "Sharing theme context across components",
+      "category": "pattern"
+    },
+    {
+      "id": "vue-009",
+      "query": "My v-for list isn't updating when I modify an array item. What am I doing wrong?",
+      "intent": "Understand Vue reactivity caveats",
+      "taskContext": "Debugging list rendering issues",
+      "category": "debugging"
+    },
+    {
+      "id": "vue-010",
+      "query": "I want to create a reusable composable that shares state across components. How do I structure this in Vue 3?",
+      "intent": "Create composable functions",
+      "taskContext": "Building a useAuth composable",
+      "category": "pattern"
+    },
+    {
+      "id": "vue-011",
+      "query": "How do I conditionally add a CSS class to an element based on component state in Vue?",
+      "intent": "Use dynamic class bindings",
+      "taskContext": "Styling active/inactive states",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-012",
+      "query": "I need to access the DOM element directly in my Vue component. How do I use template refs?",
+      "intent": "Use template refs for DOM access",
+      "taskContext": "Integrating a third-party library",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-013",
+      "query": "My computed property has a setter. How do I make it writable?",
+      "intent": "Create writable computed properties",
+      "taskContext": "Building a two-way binding abstraction",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-014",
+      "query": "How do I clean up event listeners and timers when a Vue component unmounts?",
+      "intent": "Use onUnmounted for cleanup",
+      "taskContext": "Preventing memory leaks",
+      "category": "implementation"
+    },
+    {
+      "id": "vue-015",
+      "query": "What's the best way to organize a large Vue 3 component using the Composition API?",
+      "intent": "Structure complex components",
+      "taskContext": "Refactoring a growing component",
+      "category": "pattern"
+    },
+    {
+      "id": "express-001",
+      "query": "My Express app crashes when a route throws an error. How do I set up error handling middleware that catches all errors?",
+      "intent": "Implement centralized error handling in Express",
+      "taskContext": "Adding production error handling to an API",
+      "category": "implementation"
+    },
+    {
+      "id": "express-002",
+      "query": "How do I get the userId from a URL like /users/123 in my Express route handler?",
+      "intent": "Extract route parameters in Express",
+      "taskContext": "Building a user profile endpoint",
+      "category": "implementation"
+    },
+    {
+      "id": "express-003",
+      "query": "My Express app is getting big. How do I split routes into separate files and import them into the main app?",
+      "intent": "Organize routes with express.Router()",
+      "taskContext": "Refactoring a growing Express application",
+      "category": "pattern"
+    },
+    {
+      "id": "express-004",
+      "query": "My async database call throws an error in an Express route but the error middleware never catches it. What am I doing wrong?",
+      "intent": "Handle async errors in Express routes",
+      "taskContext": "Debugging unhandled promise rejections",
+      "category": "debugging"
+    },
+    {
+      "id": "express-005",
+      "query": "How do I parse JSON body data from POST requests in Express?",
+      "intent": "Use body parsing middleware",
+      "taskContext": "Building a REST API endpoint",
+      "category": "implementation"
+    },
+    {
+      "id": "express-006",
+      "query": "I need to check if a user is logged in before allowing access to certain routes. How do I create auth middleware?",
+      "intent": "Create authentication middleware",
+      "taskContext": "Protecting admin routes",
+      "category": "implementation"
+    },
+    {
+      "id": "express-007",
+      "query": "How do I serve static files like CSS and images from an Express app?",
+      "intent": "Use express.static middleware",
+      "taskContext": "Serving frontend assets",
+      "category": "implementation"
+    },
+    {
+      "id": "express-008",
+      "query": "I want to add logging to every request in my Express app. Where do I put the middleware?",
+      "intent": "Understand middleware execution order",
+      "taskContext": "Adding request logging",
+      "category": "implementation"
+    },
+    {
+      "id": "express-009",
+      "query": "My middleware runs for routes it shouldn't. How does Express middleware ordering work?",
+      "intent": "Understand middleware scope and order",
+      "taskContext": "Debugging middleware behavior",
+      "category": "debugging"
+    },
+    {
+      "id": "express-010",
+      "query": "How do I set cookies in an Express response?",
+      "intent": "Use res.cookie() method",
+      "taskContext": "Implementing session cookies",
+      "category": "implementation"
+    },
+    {
+      "id": "express-011",
+      "query": "What's the difference between app.use() and app.get() in Express?",
+      "intent": "Understand route vs middleware registration",
+      "taskContext": "Learning Express fundamentals",
+      "category": "understanding"
+    },
+    {
+      "id": "express-012",
+      "query": "How do I redirect a user to a different URL in Express?",
+      "intent": "Use res.redirect() method",
+      "taskContext": "Implementing login redirects",
+      "category": "implementation"
+    },
+    {
+      "id": "express-013",
+      "query": "I need to access query string parameters from a URL like /search?q=hello. How do I get them in Express?",
+      "intent": "Access req.query for query parameters",
+      "taskContext": "Building a search endpoint",
+      "category": "implementation"
+    },
+    {
+      "id": "express-014",
+      "query": "How do I set up CORS in Express to allow requests from a different domain?",
+      "intent": "Configure CORS middleware",
+      "taskContext": "Enabling frontend to call API",
+      "category": "implementation"
+    },
+    {
+      "id": "express-015",
+      "query": "My Express route returns 404 even though I defined it. How do I debug route matching?",
+      "intent": "Debug route registration issues",
+      "taskContext": "Troubleshooting missing routes",
+      "category": "debugging"
+    },
+    {
+      "id": "hono-001",
+      "query": "I need a route that matches /api/files/* where * can be any path including slashes. How do I set up a wildcard route in Hono?",
+      "intent": "Use wildcard routes in Hono",
+      "taskContext": "Building a file server endpoint",
+      "category": "implementation"
+    },
+    {
+      "id": "hono-002",
+      "query": "I'm building a high-traffic API and considering Hono vs Express. What are the performance differences?",
+      "intent": "Compare Hono and Express performance",
+      "taskContext": "Choosing a framework for a new project",
+      "category": "decision"
+    },
+    {
+      "id": "hono-003",
+      "query": "How do I access the request body as JSON in a Hono route handler?",
+      "intent": "Parse JSON body in Hono",
+      "taskContext": "Building a POST endpoint",
+      "category": "implementation"
+    },
+    {
+      "id": "hono-004",
+      "query": "I need to add authentication to all routes starting with /api. How do I create middleware in Hono?",
+      "intent": "Create Hono middleware",
+      "taskContext": "Protecting API routes",
+      "category": "implementation"
+    },
+    {
+      "id": "hono-005",
+      "query": "How do I set response headers in Hono?",
+      "intent": "Use c.header() or headers option",
+      "taskContext": "Setting cache control headers",
+      "category": "implementation"
+    },
+    {
+      "id": "hono-006",
+      "query": "What's the c object in Hono route handlers? What methods does it have?",
+      "intent": "Understand Hono Context object",
+      "taskContext": "Learning Hono basics",
+      "category": "understanding"
+    },
+    {
+      "id": "hono-007",
+      "query": "How do I return different status codes in Hono like 201 Created or 404 Not Found?",
+      "intent": "Set HTTP status codes in Hono",
+      "taskContext": "Building REST API responses",
+      "category": "implementation"
+    },
+    {
+      "id": "hono-008",
+      "query": "My Hono middleware isn't running for some routes. How does Hono middleware scope work?",
+      "intent": "Understand Hono middleware execution",
+      "taskContext": "Debugging middleware issues",
+      "category": "debugging"
+    },
+    {
+      "id": "hono-009",
+      "query": "How do I group related routes together in Hono?",
+      "intent": "Use Hono route groups",
+      "taskContext": "Organizing API routes",
+      "category": "pattern"
+    },
+    {
+      "id": "hono-010",
+      "query": "How do I validate request body data in Hono before processing it?",
+      "intent": "Use Hono validators",
+      "taskContext": "Validating user input",
+      "category": "implementation"
+    },
+    {
+      "id": "jwt-001",
+      "query": "I have a JWT token from the client. How do I verify it's valid and extract the user data from it?",
+      "intent": "Verify and decode JWT tokens",
+      "taskContext": "Implementing authentication middleware",
+      "category": "implementation"
+    },
+    {
+      "id": "jwt-002",
+      "query": "What's the difference between decoding a JWT and verifying it? When should I use each?",
+      "intent": "Understand JWT decode vs verify",
+      "taskContext": "Deciding on auth implementation approach",
+      "category": "understanding"
+    },
+    {
+      "id": "jwt-003",
+      "query": "How do I create and sign a JWT token with a payload and secret?",
+      "intent": "Generate JWT tokens",
+      "taskContext": "Building login endpoint",
+      "category": "implementation"
+    },
+    {
+      "id": "jwt-004",
+      "query": "My JWT is expiring too quickly. How do I set a longer expiration time?",
+      "intent": "Configure JWT expiration",
+      "taskContext": "Adjusting token lifetime",
+      "category": "implementation"
+    },
+    {
+      "id": "ts-001",
+      "query": "I want my generic function to only accept objects that have an 'id' property. How do I constrain the type parameter?",
+      "intent": "Use generic constraints in TypeScript",
+      "taskContext": "Building a generic entity repository",
+      "category": "implementation"
+    },
+    {
+      "id": "ts-002",
+      "query": "I need to make all properties of a type optional. Is there a built-in way to do this in TypeScript?",
+      "intent": "Use mapped types like Partial<T>",
+      "taskContext": "Creating a patch/update function type",
+      "category": "implementation"
+    },
+    {
+      "id": "ts-003",
+      "query": "How do I create a type that extracts the return type of a function in TypeScript?",
+      "intent": "Use ReturnType utility type",
+      "taskContext": "Typing function results",
+      "category": "implementation"
+    },
+    {
+      "id": "ts-004",
+      "query": "I want to type a function that can accept either a string or a number. How do I use union types?",
+      "intent": "Use union types in TypeScript",
+      "taskContext": "Creating flexible function signatures",
+      "category": "implementation"
+    },
+    {
+      "id": "ts-005",
+      "query": "TypeScript says a value might be undefined but I know it exists. How do I tell TypeScript it's definitely there?",
+      "intent": "Use non-null assertion or type guards",
+      "taskContext": "Working with optional values",
+      "category": "debugging"
+    },
+    {
+      "id": "react-001",
+      "query": "My useEffect sets up a WebSocket connection. How do I properly clean it up when the component unmounts?",
+      "intent": "Use cleanup functions in useEffect",
+      "taskContext": "Preventing memory leaks with WebSocket",
+      "category": "implementation"
+    },
+    {
+      "id": "react-002",
+      "query": "My useEffect runs on every render even though I only want it to run when 'userId' changes. What's wrong?",
+      "intent": "Understand dependency arrays in React hooks",
+      "taskContext": "Debugging excessive API calls",
+      "category": "debugging"
+    },
+    {
+      "id": "react-003",
+      "query": "What's the difference between useState and useRef in React?",
+      "intent": "Understand state vs ref in React",
+      "taskContext": "Choosing state management approach",
+      "category": "understanding"
+    },
+    {
+      "id": "react-004",
+      "query": "I need to share state between multiple components. Should I use Context or prop drilling?",
+      "intent": "Choose state sharing strategy",
+      "taskContext": "Architecting component state",
+      "category": "decision"
+    },
+    {
+      "id": "node-001",
+      "query": "I'm piping streams together with pipeline(). How do I properly handle errors if one of the streams fails?",
+      "intent": "Handle errors in Node.js stream pipelines",
+      "taskContext": "Building a file processing pipeline",
+      "category": "implementation"
+    },
+    {
+      "id": "node-002",
+      "query": "My producer is generating data faster than my consumer can process it. How does Node.js handle this backpressure situation?",
+      "intent": "Understand backpressure in Node.js streams",
+      "taskContext": "Debugging slow stream processing",
+      "category": "understanding"
+    },
+    {
+      "id": "node-003",
+      "query": "How do I read a file as a stream in Node.js instead of loading it all into memory?",
+      "intent": "Use createReadStream for large files",
+      "taskContext": "Processing large files efficiently",
+      "category": "implementation"
+    },
+    {
+      "id": "node-004",
+      "query": "What's the difference between Buffer and Stream in Node.js?",
+      "intent": "Understand Node.js data handling",
+      "taskContext": "Learning Node.js fundamentals",
+      "category": "understanding"
+    },
+    {
+      "id": "general-001",
+      "query": "What's the best way to handle form validation on both client and server?",
+      "intent": "Design validation strategy",
+      "taskContext": "Building a robust form system",
+      "category": "decision"
+    },
+    {
+      "id": "general-002",
+      "query": "How do I implement rate limiting for an API endpoint?",
+      "intent": "Add rate limiting middleware",
+      "taskContext": "Preventing API abuse",
+      "category": "implementation"
+    },
+    {
+      "id": "general-003",
+      "query": "My API is getting slow. What are common performance optimizations for REST APIs?",
+      "intent": "Optimize API performance",
+      "taskContext": "Improving response times",
+      "category": "pattern"
+    }
+  ]
+}
