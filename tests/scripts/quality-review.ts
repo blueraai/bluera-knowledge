@@ -77,9 +77,10 @@ async function reviewRun(runId: string): Promise<void> {
     console.log(`\n  Results returned:`);
 
     for (const r of eval_.searchResults.slice(0, 5)) {
-      console.log(`  → ${r.source}`);
-      const snippet = r.snippet.slice(0, 80).replace(/\n/g, ' ');
-      console.log(`       "${snippet}${r.snippet.length > 80 ? '...' : ''}"`);
+      const shortPath = r.source.replace(/.*\/tests\/fixtures\/corpus\//, '');
+      console.log(`  → ${shortPath}`);
+      const snippet = r.snippet.slice(0, 200).replace(/\n/g, ' ');
+      console.log(`       "${snippet}${r.snippet.length > 200 ? '...' : ''}"`);
     }
 
     console.log(`\n  How did the search do?`);
