@@ -30,13 +30,13 @@ export const DEFAULT_REPOS: readonly DefaultRepo[] = [
   },
   {
     url: 'git@github.com:anthropics/claude-agent-sdk-python.git',
-    name: 'agent-sdk-python',
+    name: 'claude-agent-sdk-python',
     description: 'Claude Agent SDK for Python',
     tags: ['claude', 'sdk', 'python', 'agents'],
   },
   {
     url: 'git@github.com:anthropics/skills.git',
-    name: 'skills',
+    name: 'claude-skills',
     description: 'Claude skills and capabilities',
     tags: ['claude', 'skills'],
   },
@@ -54,13 +54,13 @@ export const DEFAULT_REPOS: readonly DefaultRepo[] = [
   },
   {
     url: 'git@github.com:anthropics/claude-agent-sdk-typescript.git',
-    name: 'agent-sdk-typescript',
+    name: 'claude-agent-sdk-typescript',
     description: 'Claude Agent SDK for TypeScript',
     tags: ['claude', 'sdk', 'typescript', 'agents'],
   },
   {
     url: 'git@github.com:anthropics/claude-agent-sdk-demos.git',
-    name: 'agent-sdk-demos',
+    name: 'claude-agent-sdk-demos',
     description: 'Claude Agent SDK demo applications',
     tags: ['claude', 'sdk', 'demos', 'examples'],
   },
