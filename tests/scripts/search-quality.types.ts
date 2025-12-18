@@ -18,7 +18,8 @@ export interface CoreQuery {
   id: string;
   query: string;
   intent: string;
-  category: 'code-pattern' | 'concept' | 'api-reference' | 'troubleshooting' | 'comparison';
+  taskContext?: string; // What the agent is trying to accomplish
+  category: 'implementation' | 'debugging' | 'understanding' | 'decision' | 'pattern';
   expectedSources?: string[];
 }
 
@@ -54,6 +55,7 @@ export interface Baseline {
 export interface GeneratedQuery {
   query: string;
   intent: string;
+  taskContext?: string;
   expectedContentTypes?: string[];
 }
 
