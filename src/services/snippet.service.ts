@@ -1,6 +1,6 @@
 /**
  * Query-aware snippet extraction service.
- * Extracts contextual snippets centered around query term matches.
+ * Uses proximity-based extraction for consistent results.
  */
 
 export interface SnippetOptions {
@@ -17,7 +17,7 @@ const DEFAULT_OPTIONS: Required<SnippetOptions> = {
 
 /**
  * Extract a query-aware snippet from content.
- * Finds the best matching region and returns a contextual snippet.
+ * Uses proximity-based extraction to find the area with the most query term matches.
  */
 export function extractSnippet(
   content: string,
@@ -25,11 +25,6 @@ export function extractSnippet(
   options: SnippetOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const normalizedContent = content.replace(/\s+/g, ' ').trim();
-
-  if (normalizedContent.length <= opts.maxLength) {
-    return normalizedContent;
-  }
 
   // Tokenize query into terms (lowercase for matching)
   const queryTerms = query
@@ -37,20 +32,23 @@ export function extractSnippet(
     .split(/\s+/)
     .filter(t => t.length > 2); // Skip very short words
 
+  // Normalize content for extraction
+  const normalizedContent = content.replace(/\s+/g, ' ').trim();
+
+  if (normalizedContent.length <= opts.maxLength) {
+    return normalizedContent;
+  }
+
   if (queryTerms.length === 0) {
-    // No meaningful terms, return start of content
     return truncateWithEllipsis(normalizedContent, opts.maxLength);
   }
 
-  // Find the best position - where the most query terms appear nearby
   const bestPosition = findBestMatchPosition(normalizedContent, queryTerms);
 
   if (bestPosition === -1) {
-    // No matches found, return start of content
     return truncateWithEllipsis(normalizedContent, opts.maxLength);
   }
 
-  // Extract context around the best position
   return extractContextWindow(normalizedContent, bestPosition, opts);
 }
 
