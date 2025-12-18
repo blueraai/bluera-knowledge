@@ -1541,23 +1541,15 @@ Return as JSON array.`;
     throw error;
   }
 
-  let parsed: { structured_output?: CoreQuery[]; result?: string };
+  let queries: CoreQuery[];
   try {
-    parsed = JSON.parse(result);
+    const parsed = parseClaudeOutput(result) as CoreQuery[];
+    queries = parsed;
   } catch (error: unknown) {
     const parseError = error as { message?: string };
-    console.error('Error: Failed to parse Claude CLI response as JSON');
-    console.error(`Response was: ${result.substring(0, 200)}...`);
-    throw new Error(`Invalid JSON response from Claude CLI: ${parseError.message || String(error)}`);
-  }
-
-  let queries: CoreQuery[];
-  if (parsed.structured_output) {
-    queries = parsed.structured_output;
-  } else if (parsed.result) {
-    queries = JSON.parse(parsed.result);
-  } else {
-    throw new Error('Response missing both structured_output and result fields');
+    console.error('Error: Failed to parse Claude CLI response');
+    console.error(`Response was: ${result.substring(0, 500)}...`);
+    throw new Error(`Invalid response from Claude CLI: ${parseError.message || String(error)}`);
   }
 
   queries = queries.map((q, i) => ({
