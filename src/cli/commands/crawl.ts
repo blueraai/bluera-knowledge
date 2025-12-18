@@ -9,16 +9,16 @@ import type { Document } from '../../types/document.js';
 
 export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
   return new Command('crawl')
-    .description('Crawl a URL and add to store')
+    .description('Fetch web pages via Python crawler, convert to text, index into store')
     .argument('<url>', 'URL to crawl')
-    .requiredOption('-s, --store <store>', 'Target store ID/name')
-    .action(async (url: string, options: { store: string }) => {
+    .argument('<store>', 'Target web store to add crawled content to')
+    .action(async (url: string, storeIdOrName: string) => {
       const globalOpts = getOptions();
       const services = await createServices(globalOpts.config, globalOpts.dataDir);
 
-      const store = await services.store.getByIdOrName(options.store);
+      const store = await services.store.getByIdOrName(storeIdOrName);
       if (!store || store.type !== 'web') {
-        console.error('Web store not found:', options.store);
+        console.error('Web store not found:', storeIdOrName);
         process.exit(3);
       }
 

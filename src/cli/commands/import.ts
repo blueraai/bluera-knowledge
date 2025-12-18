@@ -8,10 +8,10 @@ import type { Document } from '../../types/document.js';
 
 export function createImportCommand(getOptions: () => GlobalOptions): Command {
   return new Command('import')
-    .description('Import store from file')
+    .description('Load exported JSON, re-embed documents, create new store')
     .argument('<path>', 'Import file path')
-    .requiredOption('-n, --name <name>', 'New store name')
-    .action(async (path: string, options: { name: string }) => {
+    .argument('<name>', 'Name for the new store')
+    .action(async (path: string, storeName: string) => {
       const globalOpts = getOptions();
       const services = await createServices(globalOpts.config, globalOpts.dataDir);
 
@@ -47,7 +47,7 @@ export function createImportCommand(getOptions: () => GlobalOptions): Command {
       // Create new store with imported data (using store type/path/url from export)
       spinner.text = 'Creating store...';
       const result = await services.store.create({
-        name: options.name,
+        name: storeName,
         type: data.store.type,
         path: data.store.path,
         url: data.store.url,
@@ -98,7 +98,7 @@ export function createImportCommand(getOptions: () => GlobalOptions): Command {
           await services.lance.addDocuments(store.id, documents);
         }
 
-        spinner.succeed(`Imported ${data.documents.length} documents as "${options.name}"`);
+        spinner.succeed(`Imported ${data.documents.length} documents as "${storeName}"`);
       } catch (error) {
         spinner.fail('Failed to import documents');
         if (error instanceof Error) {
