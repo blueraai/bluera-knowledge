@@ -1,108 +1,125 @@
 {
-  "version": "2.0.0",
-  "description": "Stable regression benchmark queries for search quality testing",
+  "version": "3.0.0",
+  "description": "Agentic coding task queries - representative of how Claude Code would query knowledge bases",
   "queries": [
     {
       "id": "vue-001",
-      "query": "vue reactive ref",
-      "intent": "Find documentation on Vue's ref() function for reactive state",
-      "category": "api-reference"
+      "query": "I have a counter variable that needs to update the UI when it changes. How do I make it reactive in Vue 3?",
+      "intent": "Implement reactive state in Vue",
+      "taskContext": "Building a click counter component",
+      "category": "implementation"
     },
     {
       "id": "vue-002",
-      "query": "vue computed properties",
-      "intent": "Find how to use computed() for derived reactive state in Vue",
-      "category": "code-pattern"
+      "query": "I need to show a filtered count based on an array of items. What's the Vue way to derive a value that updates automatically?",
+      "intent": "Use computed properties for derived state",
+      "taskContext": "Building a todo list with filter counts",
+      "category": "pattern"
     },
     {
       "id": "vue-003",
-      "query": "vue component props validation",
-      "intent": "Find how to define and validate props in Vue components",
-      "category": "api-reference"
+      "query": "How do I make sure a Vue component only accepts valid data? I want to validate that a 'user' prop has name and email fields.",
+      "intent": "Validate component props in Vue",
+      "taskContext": "Creating a reusable UserCard component",
+      "category": "implementation"
     },
     {
       "id": "express-001",
-      "query": "express middleware error handling",
-      "intent": "Find patterns for error handling middleware in Express applications",
-      "category": "code-pattern"
+      "query": "My Express app crashes when a route throws an error. How do I set up error handling middleware that catches all errors?",
+      "intent": "Implement centralized error handling in Express",
+      "taskContext": "Adding production error handling to an API",
+      "category": "implementation"
     },
     {
       "id": "express-002",
-      "query": "express route parameters",
-      "intent": "Find documentation on how to define and use route parameters in Express",
-      "category": "api-reference"
+      "query": "How do I get the userId from a URL like /users/123 in my Express route handler?",
+      "intent": "Extract route parameters in Express",
+      "taskContext": "Building a user profile endpoint",
+      "category": "implementation"
     },
     {
       "id": "express-003",
-      "query": "express router modular routes",
-      "intent": "Find how to use express.Router() for modular route handling",
-      "category": "code-pattern"
+      "query": "My Express app is getting big. How do I split routes into separate files and import them into the main app?",
+      "intent": "Organize routes with express.Router()",
+      "taskContext": "Refactoring a growing Express application",
+      "category": "pattern"
     },
     {
       "id": "express-004",
-      "query": "express async error handling",
-      "intent": "Find how to properly handle async/await errors in Express routes",
-      "category": "troubleshooting"
+      "query": "My async database call throws an error in an Express route but the error middleware never catches it. What am I doing wrong?",
+      "intent": "Handle async errors in Express routes",
+      "taskContext": "Debugging unhandled promise rejections",
+      "category": "debugging"
     },
     {
       "id": "jwt-001",
-      "query": "jwt token verification",
-      "intent": "Find how to verify JWT tokens for authentication",
-      "category": "code-pattern"
+      "query": "I have a JWT token from the client. How do I verify it's valid and extract the user data from it?",
+      "intent": "Verify and decode JWT tokens",
+      "taskContext": "Implementing authentication middleware",
+      "category": "implementation"
     },
     {
       "id": "jwt-002",
-      "query": "jwt decode vs verify difference",
-      "intent": "Understand the difference between decoding and verifying JWT tokens",
-      "category": "comparison"
+      "query": "What's the difference between decoding a JWT and verifying it? When should I use each?",
+      "intent": "Understand JWT decode vs verify",
+      "taskContext": "Deciding on auth implementation approach",
+      "category": "understanding"
     },
     {
       "id": "ts-001",
-      "query": "typescript generic constraints",
-      "intent": "Find how to use constraints with TypeScript generics",
-      "category": "concept"
+      "query": "I want my generic function to only accept objects that have an 'id' property. How do I constrain the type parameter?",
+      "intent": "Use generic constraints in TypeScript",
+      "taskContext": "Building a generic entity repository",
+      "category": "implementation"
     },
     {
       "id": "ts-002",
-      "query": "typescript mapped types",
-      "intent": "Find documentation and examples of mapped types in TypeScript",
-      "category": "api-reference"
+      "query": "I need to make all properties of a type optional. Is there a built-in way to do this in TypeScript?",
+      "intent": "Use mapped types like Partial<T>",
+      "taskContext": "Creating a patch/update function type",
+      "category": "implementation"
     },
     {
       "id": "react-001",
-      "query": "react useEffect cleanup function",
-      "intent": "Find how to properly use cleanup functions in useEffect hook",
-      "category": "code-pattern"
+      "query": "My useEffect sets up a WebSocket connection. How do I properly clean it up when the component unmounts?",
+      "intent": "Use cleanup functions in useEffect",
+      "taskContext": "Preventing memory leaks with WebSocket",
+      "category": "implementation"
     },
     {
       "id": "react-002",
-      "query": "react hooks dependency array",
-      "intent": "Understand how dependency arrays work in React hooks",
-      "category": "concept"
+      "query": "My useEffect runs on every render even though I only want it to run when 'userId' changes. What's wrong?",
+      "intent": "Understand dependency arrays in React hooks",
+      "taskContext": "Debugging excessive API calls",
+      "category": "debugging"
     },
     {
       "id": "hono-001",
-      "query": "hono routing wildcard",
-      "intent": "Find how to use wildcard routes in Hono web framework",
-      "category": "api-reference"
+      "query": "I need a route that matches /api/files/* where * can be any path including slashes. How do I set up a wildcard route in Hono?",
+      "intent": "Use wildcard routes in Hono",
+      "taskContext": "Building a file server endpoint",
+      "category": "implementation"
     },
     {
       "id": "hono-002",
-      "query": "hono vs express performance",
-      "intent": "Compare performance characteristics between Hono and Express frameworks",
-      "category": "comparison"
+      "query": "I'm building a high-traffic API and considering Hono vs Express. What are the performance differences?",
+      "intent": "Compare Hono and Express performance",
+      "taskContext": "Choosing a framework for a new project",
+      "category": "decision"
     },
     {
       "id": "node-001",
-      "query": "node streams pipeline error handling",
-      "intent": "Find how to handle errors in Node.js stream pipelines",
-      "category": "troubleshooting"
+      "query": "I'm piping streams together with pipeline(). How do I properly handle errors if one of the streams fails?",
+      "intent": "Handle errors in Node.js stream pipelines",
+      "taskContext": "Building a file processing pipeline",
+      "category": "implementation"
     },
     {
       "id": "node-002",
-      "query": "node readable stream backpressure",
-      "intent": "Understand how backpressure works in Node.js readable streams",
-      "category": "concept"
+      "query": "My producer is generating data faster than my consumer can process it. How does Node.js handle this backpressure situation?",
+      "intent": "Understand backpressure in Node.js streams",
+      "taskContext": "Debugging slow stream processing",
+      "category": "understanding"
     }
   ]
 }

@@ -291,29 +291,33 @@ function evaluateResults(
     contentPreview: r.content.slice(0, 500) + (r.content.length > 500 ? '...' : ''),
   }));
 
-  const prompt = `Evaluate these search results for quality.
+  const prompt = `You are evaluating search results for an AI coding assistant. The assistant queried a knowledge base to help complete a coding task.
 
-**Query:** "${query}"
-**Intent:** ${intent}
+**Coding Task Query:** "${query}"
+**What the agent is trying to do:** ${intent}
 
-**Search Results (${results.length} returned):**
+**Search Results Returned (${results.length}):**
 ${JSON.stringify(resultsForPrompt, null, 2)}
 
-Evaluate on these dimensions (0.0 to 1.0 scale):
+Evaluate whether these results would help an agent COMPLETE THE CODING TASK (0.0 to 1.0 scale):
 
-1. **Relevance**: Do the results actually relate to the query intent?
-2. **Ranking**: Are the most relevant results at the top?
-3. **Coverage**: Did the search find the expected content? (Consider what SHOULD match)
-4. **Snippet Quality**: Are the content previews useful and showing relevant sections?
-5. **Overall**: Weighted assessment of search quality
+1. **Relevance**: Would these results help solve the problem? (Not just "related to the topic" but actually actionable)
+2. **Ranking**: Is the MOST ACTIONABLE result ranked first? Does the top result show HOW to solve the problem?
+3. **Coverage**: Does the agent have all the information needed to complete the task? Any critical pieces missing?
+4. **Snippet Quality**: Do the previews show code examples or clear instructions? (Not just topic mentions)
+5. **Overall**: If you were the agent, could you complete the task with these results?
+
+Key distinction:
+- HIGH score = "These results show me exactly how to solve this"
+- LOW score = "These results mention the topic but don't help me actually do it"
 
 Provide:
 - Numeric scores for each dimension
-- Detailed analysis explaining each score
-- Specific, actionable suggestions for improving the search system
-- Assessment of each result (relevant or not, with notes)
+- Analysis focused on task completion potential
+- Suggestions for improving search to return more actionable results
+- Assessment of each result: would it help complete the task? (with notes)
 
-Be critical and specific. Your feedback will be used to improve the search system.`;
+Be critical. A result that just mentions "Vue reactivity" is not helpful if it doesn't show HOW to use ref().`;
 
   const normalizedSchema = JSON.stringify(JSON.parse(schema));
   const args = [
