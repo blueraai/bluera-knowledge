@@ -4,15 +4,167 @@ import type { SearchQuery, SearchResponse, SearchResult } from '../types/search.
 import type { StoreId } from '../types/brands.js';
 import { extractSnippet } from './snippet.service.js';
 
+/**
+ * Query intent classification for context-aware ranking.
+ * Phase 1: Different intents prioritize different content types.
+ */
+export type QueryIntent = 'how-to' | 'implementation' | 'conceptual' | 'comparison' | 'debugging';
+
+/**
+ * Intent-based file type multipliers - CONSERVATIVE version.
+ * Applied on top of base file-type boosts.
+ * Lessons learned: Too-aggressive penalties hurt when corpus lacks ideal content.
+ * These values provide gentle guidance rather than dramatic reranking.
+ */
+const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
+  'how-to': {
+    'documentation-primary': 1.15,  // Modest boost for docs
+    'documentation': 1.1,
+    'example': 1.2,                 // Examples are ideal for "how to"
+    'source': 0.9,                  // Slight penalty - source might still have good content
+    'source-internal': 0.85,        // Moderate penalty - internal code less useful
+    'test': 0.9,
+    'config': 0.8,
+    'other': 0.95,
+  },
+  'implementation': {
+    'documentation-primary': 0.95,
+    'documentation': 1.0,
+    'example': 1.0,
+    'source': 1.1,                  // Slight boost for source code
+    'source-internal': 1.05,        // Internal code can be relevant
+    'test': 1.0,
+    'config': 0.95,
+    'other': 1.0,
+  },
+  'conceptual': {
+    'documentation-primary': 1.1,
+    'documentation': 1.05,
+    'example': 1.0,
+    'source': 0.95,
+    'source-internal': 0.9,
+    'test': 0.9,
+    'config': 0.85,
+    'other': 0.95,
+  },
+  'comparison': {
+    'documentation-primary': 1.15,
+    'documentation': 1.1,
+    'example': 1.05,
+    'source': 0.9,
+    'source-internal': 0.85,
+    'test': 0.9,
+    'config': 0.85,
+    'other': 0.95,
+  },
+  'debugging': {
+    'documentation-primary': 1.0,
+    'documentation': 1.0,
+    'example': 1.05,
+    'source': 1.0,                  // Source code helps with debugging
+    'source-internal': 0.95,
+    'test': 1.05,                   // Tests can show expected behavior
+    'config': 0.9,
+    'other': 1.0,
+  },
+};
+
 // Known frameworks/technologies for context-aware boosting
 const FRAMEWORK_PATTERNS: Array<{ pattern: RegExp; terms: string[] }> = [
   { pattern: /\bexpress\b/i, terms: ['express', 'expressjs', 'express.js'] },
   { pattern: /\bhono\b/i, terms: ['hono'] },
   { pattern: /\bzod\b/i, terms: ['zod'] },
   { pattern: /\breact\b/i, terms: ['react', 'reactjs', 'react.js'] },
+  { pattern: /\bvue\b/i, terms: ['vue', 'vuejs', 'vue.js', 'vue3'] },
   { pattern: /\bnode\b/i, terms: ['node', 'nodejs', 'node.js'] },
   { pattern: /\btypescript\b/i, terms: ['typescript', 'ts'] },
+  { pattern: /\bjwt\b/i, terms: ['jwt', 'jsonwebtoken', 'json-web-token'] },
 ];
+
+/**
+ * Classify the intent of a search query.
+ * This helps adjust ranking based on what kind of answer the user wants.
+ */
+function classifyQueryIntent(query: string): QueryIntent {
+  const q = query.toLowerCase();
+
+  // How-to patterns: user wants to learn how to use/do something
+  const howToPatterns = [
+    /how (do|can|should|would) (i|you|we)/i,
+    /how to\b/i,
+    /what('s| is) the (best |right |correct )?(way|approach) to/i,
+    /i (need|want|have) to/i,
+    /show me how/i,
+    /\bwhat's the syntax\b/i,
+    /\bhow do i (use|create|make|set up|configure|implement|add|get)\b/i,
+    /\bi'm (trying|building|creating|making)\b/i,
+  ];
+
+  // Implementation patterns: user wants to understand internals
+  const implementationPatterns = [
+    /how (does|is) .* (implemented|work internally)/i,
+    /\binternal(ly)?\b/i,
+    /\bsource code\b/i,
+    /\bunder the hood\b/i,
+    /\bimplementation (of|details?)\b/i,
+  ];
+
+  // Comparison patterns: user is deciding between options
+  const comparisonPatterns = [
+    /\b(vs\.?|versus)\b/i,
+    /\bdifference(s)? between\b/i,
+    /\bcompare\b/i,
+    /\bshould (i|we) use .* or\b/i,
+    /\bwhat's the difference\b/i,
+    /\bwhich (one|is better)\b/i,
+    /\bwhen (should|to) use\b/i,
+  ];
+
+  // Debugging patterns: user is troubleshooting a problem
+  const debuggingPatterns = [
+    /\b(error|bug|issue|problem|crash|fail|broken|wrong)\b/i,
+    /\bdoesn't (work|compile|run)\b/i,
+    /\bisn't (working|updating|rendering)\b/i,
+    /\bwhy (is|does|doesn't|isn't)\b/i,
+    /\bwhat('s| is) (wrong|happening|going on)\b/i,
+    /\bwhat am i doing wrong\b/i,
+    /\bnot (working|updating|showing)\b/i,
+    /\bhow do i (fix|debug|solve|resolve)\b/i,
+  ];
+
+  // Conceptual patterns: user wants to understand a concept
+  const conceptualPatterns = [
+    /\bwhat (is|are)\b/i,
+    /\bexplain\b/i,
+    /\bwhat does .* (mean|do)\b/i,
+    /\bhow does .* work\b/i,
+    /\bwhat('s| is) the (purpose|point|idea)\b/i,
+  ];
+
+  // Check patterns in order of specificity
+  if (implementationPatterns.some(p => p.test(q))) {
+    return 'implementation';
+  }
+
+  if (debuggingPatterns.some(p => p.test(q))) {
+    return 'debugging';
+  }
+
+  if (comparisonPatterns.some(p => p.test(q))) {
+    return 'comparison';
+  }
+
+  if (howToPatterns.some(p => p.test(q))) {
+    return 'how-to';
+  }
+
+  if (conceptualPatterns.some(p => p.test(q))) {
+    return 'conceptual';
+  }
+
+  // Default to how-to as most queries are seeking practical usage
+  return 'how-to';
+}
 
 interface RRFConfig {
   k: number;
@@ -163,6 +315,9 @@ export class SearchService {
     limit: number,
     threshold?: number
   ): Promise<SearchResult[]> {
+    // Phase 1: Classify query intent for context-aware ranking
+    const intent = classifyQueryIntent(query);
+
     // Get both result sets
     const [vectorResults, ftsResults] = await Promise.all([
       this.vectorSearch(query, stores, limit * 2, threshold),
@@ -197,8 +352,11 @@ export class SearchService {
       const vectorRRF = vectorRank !== Infinity ? vectorWeight / (k + vectorRank) : 0;
       const ftsRRF = ftsRank !== Infinity ? ftsWeight / (k + ftsRank) : 0;
 
-      // Apply file-type boost
-      const fileTypeBoost = this.getFileTypeBoost(result.metadata.fileType as string | undefined);
+      // Apply file-type boost (base + intent-adjusted)
+      const fileTypeBoost = this.getFileTypeBoost(
+        result.metadata.fileType as string | undefined,
+        intent
+      );
 
       // Apply framework context boost
       const frameworkBoost = this.getFrameworkContextBoost(query, result);
@@ -241,26 +399,45 @@ export class SearchService {
   }
 
   /**
-   * Get a score multiplier based on file type.
-   * Documentation files get a boost to surface them higher.
+   * Get a score multiplier based on file type and query intent.
+   * Documentation files get a strong boost to surface them higher.
+   * Phase 4: Strengthened boosts for better documentation ranking.
+   * Phase 1: Intent-based adjustments for context-aware ranking.
    */
-  private getFileTypeBoost(fileType: string | undefined): number {
+  private getFileTypeBoost(fileType: string | undefined, intent: QueryIntent): number {
+    // Base file-type boosts
+    let baseBoost: number;
     switch (fileType) {
       case 'documentation-primary':
-        return 1.3;  // README, CHANGELOG get strong boost
+        baseBoost = 1.8;  // README, guides get very strong boost
+        break;
       case 'documentation':
-        return 1.2;  // Other docs get moderate boost
+        baseBoost = 1.5;  // docs/, tutorials/ get strong boost
+        break;
       case 'example':
-        return 1.15; // Examples are valuable
-      case 'test':
-        return 0.95; // Tests slightly lower
+        baseBoost = 1.4;  // examples/, demos/ are highly valuable
+        break;
       case 'source':
-        return 1.0;  // Source code baseline
+        baseBoost = 1.0;  // Source code baseline
+        break;
+      case 'source-internal':
+        baseBoost = 0.6;  // Internal implementation files
+        break;
+      case 'test':
+        baseBoost = 0.7;  // Tests significantly lower
+        break;
       case 'config':
-        return 0.9;  // Config files usually less relevant
+        baseBoost = 0.5;  // Config files rarely answer questions
+        break;
       default:
-        return 1.0;
+        baseBoost = 1.0;
     }
+
+    // Apply intent-based multiplier
+    const intentBoosts = INTENT_FILE_BOOSTS[intent];
+    const intentMultiplier = intentBoosts[fileType ?? 'other'] ?? 1.0;
+
+    return baseBoost * intentMultiplier;
   }
 
   /**

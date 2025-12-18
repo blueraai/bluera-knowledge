@@ -166,6 +166,7 @@ export class IndexService {
   /**
    * Classify file type for ranking purposes.
    * Documentation files rank higher than source code for documentation queries.
+   * Phase 4: Enhanced to detect internal implementation files.
    */
   private classifyFileType(ext: string, fileName: string, filePath: string): string {
     // Documentation files
@@ -196,11 +197,47 @@ export class IndexService {
       return 'config';
     }
 
-    // Source code
+    // Source code - distinguish between internal and public-facing
     if (['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java'].includes(ext)) {
+      // Internal implementation files (monorepo packages, lib internals)
+      // These patterns indicate internal/core implementation code
+      if (this.isInternalImplementation(filePath, fileName)) {
+        return 'source-internal';
+      }
       return 'source';
     }
 
     return 'other';
+  }
+
+  /**
+   * Detect if a source file is internal implementation code.
+   * Internal code should rank lower than public-facing APIs and docs.
+   */
+  private isInternalImplementation(filePath: string, fileName: string): boolean {
+    const pathLower = filePath.toLowerCase();
+    const fileNameLower = fileName.toLowerCase();
+
+    // Monorepo internal packages (like Vue's packages/*/src/)
+    if (/\/packages\/[^/]+\/src\//.test(pathLower)) {
+      // Exception: index files often export public APIs
+      if (fileNameLower === 'index.ts' || fileNameLower === 'index.js') {
+        return false;
+      }
+      return true;
+    }
+
+    // Internal/core directories
+    if (/\/(internal|lib\/core|core\/src|_internal|private)\//.test(pathLower)) {
+      return true;
+    }
+
+    // Compiler/transform internals (often not what users want)
+    if (/\/(compiler|transforms?|parse|codegen)\//.test(pathLower) &&
+        !fileNameLower.includes('readme') && !fileNameLower.includes('index')) {
+      return true;
+    }
+
+    return false;
   }
 }
