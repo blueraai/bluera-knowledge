@@ -13,16 +13,16 @@ const DEFAULT_REPOS_DIR = join(homedir(), '.bluera', 'repos');
 
 export function createSetupCommand(getOptions: () => GlobalOptions): Command {
   const setup = new Command('setup')
-    .description('Set up default knowledge stores from Anthropic repositories');
+    .description('Quick-start with pre-configured Claude/Anthropic documentation repos');
 
   setup
     .command('repos')
-    .description('Clone and index default Anthropic repositories')
-    .option('--repos-dir <path>', 'Directory to clone repos into', DEFAULT_REPOS_DIR)
-    .option('--skip-clone', 'Skip cloning, only create stores and index')
-    .option('--skip-index', 'Skip indexing after cloning')
-    .option('--only <names>', 'Only setup specific repos (comma-separated)')
-    .option('--list', 'List available default repos without setting up')
+    .description('Clone repos to ~/.bluera/repos/, create stores, index all content')
+    .option('--repos-dir <path>', 'Clone destination (default: ~/.bluera/repos/)', DEFAULT_REPOS_DIR)
+    .option('--skip-clone', 'Don\'t clone; assume repos already exist locally')
+    .option('--skip-index', 'Clone and create stores but don\'t index yet')
+    .option('--only <names>', 'Only process matching repos (comma-separated, partial match)')
+    .option('--list', 'Print available repos without cloning/indexing')
     .action(async (options: {
       reposDir: string;
       skipClone?: boolean;
@@ -139,20 +139,6 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
       }
 
       console.log('\nSetup complete! Use "bluera-knowledge search <query>" to search.\n');
-    });
-
-  setup
-    .command('list')
-    .description('List available default repos')
-    .action(() => {
-      console.log('\nDefault repositories:\n');
-      for (const repo of DEFAULT_REPOS) {
-        console.log(`  ${repo.name}`);
-        console.log(`    URL: ${repo.url}`);
-        console.log(`    Description: ${repo.description}`);
-        console.log(`    Tags: ${repo.tags.join(', ')}`);
-        console.log('');
-      }
     });
 
   return setup;

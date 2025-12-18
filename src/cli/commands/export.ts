@@ -5,10 +5,10 @@ import type { GlobalOptions } from '../program.js';
 
 export function createExportCommand(getOptions: () => GlobalOptions): Command {
   return new Command('export')
-    .description('Export store to file')
+    .description('Dump store documents + metadata to JSON file for backup/transfer')
     .argument('<store>', 'Store ID or name')
-    .requiredOption('-o, --output <path>', 'Output file path')
-    .action(async (storeIdOrName: string, options: { output: string }) => {
+    .argument('<output>', 'Output file path')
+    .action(async (storeIdOrName: string, outputPath: string) => {
       const globalOpts = getOptions();
       const services = await createServices(globalOpts.config, globalOpts.dataDir);
 
@@ -31,7 +31,7 @@ export function createExportCommand(getOptions: () => GlobalOptions): Command {
         exportedAt: new Date().toISOString(),
       };
 
-      await writeFile(options.output, JSON.stringify(exportData, null, 2));
-      console.log(`Exported ${docs.length} documents to ${options.output}`);
+      await writeFile(outputPath, JSON.stringify(exportData, null, 2));
+      console.log(`Exported ${docs.length} documents to ${outputPath}`);
     });
 }
