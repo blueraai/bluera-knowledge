@@ -33,7 +33,7 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
       const globalOpts = getOptions();
 
       // List mode: just show available repos
-      if (options.list) {
+      if (options.list === true) {
         console.log('\nDefault repositories:\n');
         for (const repo of DEFAULT_REPOS) {
           console.log(`  ${repo.name}`);
@@ -49,7 +49,7 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
 
       // Filter repos if --only specified
       let repos: readonly DefaultRepo[] = DEFAULT_REPOS;
-      if (options.only) {
+      if (options.only !== undefined && options.only !== '') {
         const onlyNames = options.only.split(',').map(n => n.trim().toLowerCase());
         repos = DEFAULT_REPOS.filter(r =>
           onlyNames.some(n => r.name.toLowerCase().includes(n))
@@ -61,7 +61,7 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
         }
       }
 
-      console.log(`\nSetting up ${repos.length} repositories...\n`);
+      console.log(`\nSetting up ${String(repos.length)} repositories...\n`);
 
       // Ensure repos directory exists
       await mkdir(options.reposDir, { recursive: true });
@@ -72,7 +72,7 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
 
         try {
           // Step 1: Clone if needed
-          if (!options.skipClone) {
+          if (options.skipClone !== true) {
             if (existsSync(repoPath)) {
               spinner.text = `${repo.name}: Already cloned, pulling latest...`;
               try {
@@ -111,20 +111,20 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
           }
 
           // Step 3: Index if needed
-          if (!options.skipIndex) {
+          if (options.skipIndex !== true) {
             spinner.text = `${repo.name}: Indexing...`;
             const store = await services.store.getByIdOrName(storeId);
             if (store) {
               await services.lance.initialize(store.id);
               const indexResult = await services.index.indexStore(store, (event) => {
                 if (event.type === 'progress') {
-                  spinner.text = `${repo.name}: Indexing ${event.current}/${event.total} files`;
+                  spinner.text = `${repo.name}: Indexing ${String(event.current)}/${String(event.total)} files`;
                 }
               });
 
               if (indexResult.success) {
                 spinner.succeed(
-                  `${repo.name}: ${indexResult.data.documentsIndexed} docs, ${indexResult.data.chunksCreated} chunks`
+                  `${repo.name}: ${String(indexResult.data.documentsIndexed)} docs, ${String(indexResult.data.chunksCreated)} chunks`
                 );
               } else {
                 throw new Error(indexResult.error instanceof Error ? indexResult.error.message : String(indexResult.error));

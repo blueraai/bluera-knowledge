@@ -75,7 +75,11 @@ function findBestMatchPosition(content: string, queryTerms: string[]): number {
 
   // Score each position by how many other terms are nearby (within 200 chars)
   const PROXIMITY_WINDOW = 200;
-  let bestPosition = termPositions[0]!.position;
+  const firstTerm = termPositions[0];
+  if (firstTerm === undefined) {
+    return -1;
+  }
+  let bestPosition = firstTerm.position;
   let bestScore = 0;
 
   for (const { position } of termPositions) {

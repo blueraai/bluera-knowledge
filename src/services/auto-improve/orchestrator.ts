@@ -54,16 +54,16 @@ export interface OrchestratorConfig {
  * 6. Evaluate and continue/rollback
  */
 export class AutoImproveOrchestrator {
-  private projectRoot: string;
-  private checkpointService: CheckpointService;
-  private changeApplier: ChangeApplier;
-  private qualityRunner: QualityRunner;
-  private agentRunner: AgentRunner;
+  private readonly projectRoot: string;
+  private readonly checkpointService: CheckpointService;
+  private readonly changeApplier: ChangeApplier;
+  private readonly qualityRunner: QualityRunner;
+  private readonly agentRunner: AgentRunner;
 
   constructor(config: OrchestratorConfig) {
     this.projectRoot = config.projectRoot;
     this.checkpointService = new CheckpointService(config.checkpointDir);
-    this.changeApplier = new ChangeApplier(config.projectRoot);
+    this.changeApplier = new ChangeApplier();
     this.qualityRunner = config.qualityRunner;
     this.agentRunner = config.agentRunner;
   }
@@ -102,7 +102,7 @@ export class AutoImproveOrchestrator {
           finalScores: currentScores,
           totalImprovement: currentScores.overall - initialScore,
           changesApplied: totalChangesApplied,
-          message: `target score ${options.targetScore} reached (${currentScores.overall.toFixed(3)})`,
+          message: `target score ${String(options.targetScore)} reached (${currentScores.overall.toFixed(3)})`,
         };
       }
 
@@ -126,7 +126,7 @@ export class AutoImproveOrchestrator {
       finalScores: currentScores,
       totalImprovement: currentScores.overall - initialScore,
       changesApplied: totalChangesApplied,
-      message: `Completed max iterations (${options.maxIterations})`,
+      message: `Completed max iterations (${String(options.maxIterations)})`,
     };
   }
 
@@ -159,7 +159,7 @@ export class AutoImproveOrchestrator {
         newScores: currentScores,
         improvement: 0,
         rolledBack: false,
-        reason: `Dry run - ${consolidatedChanges.length} changes proposed (not applied)`,
+        reason: `Dry run - ${String(consolidatedChanges.length)} changes proposed (not applied)`,
       };
     }
 
@@ -171,18 +171,18 @@ export class AutoImproveOrchestrator {
     )];
 
     // Create checkpoint
-    const checkpoint = await this.checkpointService.create(
+    const checkpoint = this.checkpointService.create(
       filesToBackup,
       currentScores,
       { storeId: 'auto-improve', documentCount: 0 } as IndexState
     );
 
     // Apply changes
-    const applyResult = await this.changeApplier.apply(consolidatedChanges);
+    const applyResult = this.changeApplier.apply(consolidatedChanges);
 
     if (!applyResult.success) {
       // Rollback on application failure
-      await this.checkpointService.restore(checkpoint.id);
+      this.checkpointService.restore(checkpoint.id);
       return {
         iteration: iterationNumber,
         checkpointId: checkpoint.id,
@@ -201,7 +201,7 @@ export class AutoImproveOrchestrator {
 
     // Check if we need to rollback
     if (improvement < -options.rollbackThreshold) {
-      await this.checkpointService.restore(checkpoint.id);
+      this.checkpointService.restore(checkpoint.id);
       return {
         iteration: iterationNumber,
         checkpointId: checkpoint.id,
@@ -243,7 +243,7 @@ export class AutoImproveOrchestrator {
 
     // Select highest confidence change per file
     const selectedChanges: Change[] = [];
-    for (const [_file, changes] of changesByFile) {
+    for (const changes of changesByFile.values()) {
       changes.sort((a, b) => b.confidence - a.confidence);
       if (changes[0] !== undefined) {
         selectedChanges.push(changes[0].change);

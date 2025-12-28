@@ -31,7 +31,7 @@ export function getGlobalOptions(program: Command): GlobalOptions {
   return {
     config: opts.config,
     dataDir: opts.dataDir,
-    format: opts.format ?? 'table',
+    format: opts.format,
     quiet: opts.quiet,
     verbose: opts.verbose,
   };

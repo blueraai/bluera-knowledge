@@ -17,7 +17,7 @@ interface AgentPromptConfig {
  * Spawns Claude agents in parallel to research improvements.
  */
 export class ProductionAgentRunner implements AgentRunner {
-  private projectRoot: string;
+  private readonly projectRoot: string;
 
   constructor(projectRoot: string) {
     this.projectRoot = projectRoot;
@@ -74,7 +74,7 @@ export class ProductionAgentRunner implements AgentRunner {
     ];
   }
 
-  private async runAgent(
+  private runAgent(
     config: AgentPromptConfig,
     context: AgentContext
   ): Promise<AgentRecommendation | null> {
@@ -191,22 +191,23 @@ IMPORTANT change type rules:
         file: join(this.projectRoot, c.file),
       }));
 
-      return {
+      return Promise.resolve({
         agentId: config.agentId,
         confidence: response.confidence,
         targetDimension: response.targetDimension as keyof typeof context.baselineScores,
         changes,
         reasoning: response.reasoning,
         expectedImprovement: response.expectedImprovement,
-      };
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`\n❌ Agent ${config.agentId} failed:`);
-      console.error(`   ${errorMessage.split('\n')[0]}`);
+      const firstLine = errorMessage.split('\n')[0];
+      console.error(`   ${firstLine ?? ''}`);
       if (error instanceof Error && 'stderr' in error) {
         console.error(`   stderr: ${String((error as NodeJS.ErrnoException & { stderr?: string }).stderr).slice(0, 200)}`);
       }
-      return null;
+      return Promise.resolve(null);
     }
   }
 

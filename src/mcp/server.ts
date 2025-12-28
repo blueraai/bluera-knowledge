@@ -13,7 +13,9 @@ interface MCPServerOptions {
   config?: string | undefined;
 }
 
-export function createMCPServer(options: MCPServerOptions) {
+// eslint-disable-next-line @typescript-eslint/no-deprecated
+export function createMCPServer(options: MCPServerOptions): Server {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   const server = new Server(
     {
       name: 'bluera-knowledge',
@@ -27,8 +29,8 @@ export function createMCPServer(options: MCPServerOptions) {
   );
 
   // List available tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
+  server.setRequestHandler(ListToolsRequestSchema, () => {
+    return Promise.resolve({
       tools: [
         {
           name: 'search_codebase',
@@ -80,7 +82,7 @@ export function createMCPServer(options: MCPServerOptions) {
           }
         }
       ]
-    };
+    });
   });
 
   // Handle tool calls
@@ -106,7 +108,7 @@ export function createMCPServer(options: MCPServerOptions) {
       const stores = args['stores'] as string[] | undefined;
 
       // Get all stores if none specified
-      let storeIds: StoreId[] = stores as StoreId[] ?? (await services.store.list()).map(s => s.id);
+      const storeIds: StoreId[] = stores !== undefined ? stores as StoreId[] : (await services.store.list()).map(s => s.id);
 
       // Initialize stores with error handling
       try {
@@ -178,7 +180,7 @@ export function createMCPServer(options: MCPServerOptions) {
   return server;
 }
 
-export async function runMCPServer(options: MCPServerOptions) {
+export async function runMCPServer(options: MCPServerOptions): Promise<void> {
   const server = createMCPServer(options);
   const transport = new StdioServerTransport();
   await server.connect(transport);

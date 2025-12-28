@@ -376,8 +376,13 @@ export class SearchService {
 
     // Normalize scores to 0-1 range for better interpretability
     if (sorted.length > 0) {
-      const maxScore = sorted[0]!.score;
-      const minScore = sorted[sorted.length - 1]!.score;
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      if (first === undefined || last === undefined) {
+        return sorted.map(r => ({ ...r.result, score: r.score }));
+      }
+      const maxScore = first.score;
+      const minScore = last.score;
       const range = maxScore - minScore;
 
       if (range > 0) {
@@ -490,7 +495,7 @@ export class SearchService {
       name: codeUnit?.name ?? this.extractSymbolName(result.content),
       signature: codeUnit?.signature ?? '',
       purpose: this.generatePurpose(result.content, query),
-      location: `${path}${codeUnit ? ':' + codeUnit.startLine : ''}`,
+      location: `${path}${codeUnit ? ':' + String(codeUnit.startLine) : ''}`,
       relevanceReason: this.generateRelevanceReason(result, query)
     };
 
@@ -522,7 +527,7 @@ export class SearchService {
 
   private extractCodeUnitFromResult(result: SearchResult): CodeUnit | undefined {
     const path = result.metadata.path;
-    if (!path) return undefined;
+    if (path === undefined || path === '') return undefined;
 
     const ext = path.split('.').pop() ?? '';
     const language = ext === 'ts' || ext === 'tsx' ? 'typescript' :
@@ -530,7 +535,7 @@ export class SearchService {
 
     // Try to find a symbol name in the content
     const symbolName = this.extractSymbolName(result.content);
-    if (!symbolName) return undefined;
+    if (symbolName === '') return undefined;
 
     return this.codeUnitService.extractCodeUnit(result.content, symbolName, language);
   }
@@ -538,13 +543,13 @@ export class SearchService {
   private extractSymbolName(content: string): string {
     // Extract function or class name
     const funcMatch = content.match(/(?:export\s+)?(?:async\s+)?function\s+(\w+)/);
-    if (funcMatch && funcMatch[1]) return funcMatch[1];
+    if (funcMatch !== null && funcMatch[1] !== undefined && funcMatch[1] !== '') return funcMatch[1];
 
     const classMatch = content.match(/(?:export\s+)?class\s+(\w+)/);
-    if (classMatch && classMatch[1]) return classMatch[1];
+    if (classMatch !== null && classMatch[1] !== undefined && classMatch[1] !== '') return classMatch[1];
 
     const constMatch = content.match(/(?:export\s+)?const\s+(\w+)/);
-    if (constMatch && constMatch[1]) return constMatch[1];
+    if (constMatch !== null && constMatch[1] !== undefined && constMatch[1] !== '') return constMatch[1];
 
     // Fallback: return "(anonymous)" for unnamed symbols
     return '(anonymous)';
@@ -559,7 +564,7 @@ export class SearchService {
   private generatePurpose(content: string, query: string): string {
     // Extract first line of JSDoc comment if present
     const docMatch = content.match(/\/\*\*\s*\n\s*\*\s*([^\n]+)/);
-    if (docMatch && docMatch[1]) return docMatch[1].trim();
+    if (docMatch !== null && docMatch[1] !== undefined && docMatch[1] !== '') return docMatch[1].trim();
 
     const lines = content.split('\n');
     const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
@@ -609,7 +614,7 @@ export class SearchService {
     }
 
     // If we found a line with query terms, use it
-    if (bestLine && bestScore > 0) {
+    if (bestLine !== null && bestLine !== '' && bestScore > 0) {
       if (bestLine.length > 150) {
         const firstSentence = bestLine.match(/^[^.!?]+[.!?]/);
         if (firstSentence && firstSentence[0].length >= 20 && firstSentence[0].length <= 150) {
@@ -656,7 +661,7 @@ export class SearchService {
     const interfaces: string[] = [];
     const matches = content.matchAll(/interface\s+(\w+)/g);
     for (const match of matches) {
-      if (match[1]) interfaces.push(match[1]);
+      if (match[1] !== undefined && match[1] !== '') interfaces.push(match[1]);
     }
     return interfaces;
   }
@@ -665,7 +670,7 @@ export class SearchService {
     const imports: string[] = [];
     const matches = content.matchAll(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
     for (const match of matches) {
-      if (match[1]) imports.push(match[1]);
+      if (match[1] !== undefined && match[1] !== '') imports.push(match[1]);
     }
     return imports.slice(0, 5); // Top 5
   }
@@ -704,7 +709,7 @@ export class SearchService {
 
   private extractDocumentation(content: string): string {
     const docMatch = content.match(/\/\*\*([\s\S]*?)\*\//);
-    if (docMatch && docMatch[1]) {
+    if (docMatch !== null && docMatch[1] !== undefined && docMatch[1] !== '') {
       return docMatch[1]
         .split('\n')
         .map(line => line.replace(/^\s*\*\s?/, '').trim())

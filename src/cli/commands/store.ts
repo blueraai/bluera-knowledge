@@ -116,7 +116,7 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
       }
 
       // Require --force or -y in non-TTY mode, prompt in TTY mode
-      const skipConfirmation = options.force || options.yes;
+      const skipConfirmation = options.force === true || options.yes === true;
       if (!skipConfirmation) {
         if (!process.stdin.isTTY) {
           console.error('Error: Use --force or -y to delete without confirmation in non-interactive mode');

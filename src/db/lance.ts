@@ -21,7 +21,7 @@ interface SearchHit {
 
 export class LanceStore {
   private connection: Connection | null = null;
-  private tables: Map<string, Table> = new Map();
+  private readonly tables: Map<string, Table> = new Map();
   private readonly dataDir: string;
 
   constructor(dataDir: string) {
@@ -124,7 +124,7 @@ export class LanceStore {
       return results.map((r) => ({
         id: createDocumentId(r.id),
         content: r.content,
-        score: r.score ?? 1,
+        score: r.score,
         metadata: JSON.parse(r.metadata) as DocumentMetadata,
       }));
     } catch {

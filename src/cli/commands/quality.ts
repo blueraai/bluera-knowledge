@@ -700,7 +700,7 @@ function showQueries(verbose: boolean = false): void {
     const rows = sets.map(s => [
       s.name,
       String(s.queryCount),
-      `${s.source === 'curated' ? 'Curated' : 'AI-generated'} (v${s.version || '?'})`,
+      `${s.source === 'curated' ? 'Curated' : 'AI-generated'} (v${s.version ?? '?'})`,
     ]);
 
     console.log();
@@ -717,12 +717,12 @@ function showQueries(verbose: boolean = false): void {
       const data = loadQuerySet(set.name);
       const categories: Record<string, number> = {};
       for (const q of data.queries) {
-        categories[q.category] = (categories[q.category] || 0) + 1;
+        categories[q.category] = (categories[q.category] ?? 0) + 1;
       }
 
       const breakdown = Object.entries(categories)
         .sort((a, b) => b[1] - a[1])
-        .map(([cat, count]) => `${cat} (${count})`)
+        .map(([cat, count]) => `${cat} (${String(count)})`)
         .join(', ');
 
       console.log(`\n  ${set.name} categories: ${breakdown}`);
@@ -740,7 +740,7 @@ function showQueries(verbose: boolean = false): void {
 
       console.log();
       console.log(drawTable({
-        title: `${set.name} (${data.queries.length} queries)`,
+        title: `${set.name} (${String(data.queries.length)} queries)`,
         columns: [
           { header: 'ID', width: 12 },
           { header: 'Category', width: 14 },
@@ -779,7 +779,7 @@ function showRuns(): void {
 
   console.log();
   console.log(drawTable({
-    title: `Test Runs                                              (${runs.length} total)`,
+    title: `Test Runs                                              (${String(runs.length)} total)`,
     columns: [
       { header: 'Run ID', width: 21 },
       { header: 'Queries', width: 7, align: 'right' },
@@ -793,8 +793,10 @@ function showRuns(): void {
 
   const baselinePath = join(getResultsDir(), 'baseline.json');
   if (existsSync(baselinePath)) {
-    const baseline = JSON.parse(readFileSync(baselinePath, 'utf-8'));
-    console.log(`  Baseline: ${formatScore(baseline.scores?.overall || 0)} overall (set ${baseline.updatedAt?.slice(0, 10) || 'unknown'})`);
+    const baseline = JSON.parse(readFileSync(baselinePath, 'utf-8')) as { scores?: { overall?: number }; updatedAt?: string };
+    const overallScore = baseline.scores?.overall ?? 0;
+    const dateStr = baseline.updatedAt?.slice(0, 10) ?? 'unknown';
+    console.log(`  Baseline: ${formatScore(overallScore)} overall (set ${dateStr})`);
   }
   console.log();
 }
@@ -806,7 +808,7 @@ function showRunDetail(runId: string): void {
   if (!run) {
     console.log(`\n  Run not found: ${runId}`);
     console.log('  Available runs:');
-    runs.slice(0, 5).forEach(r => console.log(`    ${r.id}`));
+    runs.slice(0, 5).forEach(r => { console.log(`    ${r.id}`); });
     console.log();
     return;
   }
@@ -824,7 +826,7 @@ function showRunDetail(runId: string): void {
 
   console.log();
   const headerLines = [
-    `Overall: ${formatScore(scores.overall)}   Duration: ${formatDuration(summary.totalTimeMs)}   Queries: ${summary.totalQueries}   Query Set: ${config.querySet}`,
+    `Overall: ${formatScore(scores.overall)}   Duration: ${formatDuration(summary.totalTimeMs)}   Queries: ${String(summary.totalQueries)}   Query Set: ${config.querySet}`,
   ];
 
   console.log(drawBox(`Run: ${run.id}`, headerLines, 80));
@@ -843,10 +845,10 @@ function showRunDetail(runId: string): void {
   const rows = sortedEvals.map(e => {
     const topResult = e.searchResults[0];
     return [
-      e.query.id || '—',
+      e.query.id ?? '—',
       formatScore(e.evaluation.scores.overall),
       truncate(e.query.query, 40),
-      topResult ? shortPath(topResult.source, 14) : '—',
+      topResult !== undefined ? shortPath(topResult.source, 14) : '—',
     ];
   });
 
@@ -861,19 +863,19 @@ function showRunDetail(runId: string): void {
     ],
   }, rows));
 
-  if (summary.topSuggestions && summary.topSuggestions.length > 0) {
+  if (summary.topSuggestions.length > 0) {
     console.log('\n  Top Suggestions:');
     summary.topSuggestions.slice(0, 5).forEach((s, i) => {
-      console.log(`  ${i + 1}. ${truncate(s, 75)}`);
+      console.log(`  ${String(i + 1)}. ${truncate(s, 75)}`);
     });
   }
 
   const hilReview = summary.hilReview;
-  if (hilReview) {
+  if (hilReview !== undefined) {
     console.log('\n  HIL Review:');
     console.log(`    Human avg: ${formatScore(hilReview.humanAverageScore)} (AI: ${formatScore(scores.overall)}, delta: ${hilReview.aiVsHumanDelta >= 0 ? '+' : ''}${formatScore(hilReview.aiVsHumanDelta)})`);
-    console.log(`    Queries reviewed: ${hilReview.queriesReviewed}/${summary.totalQueries}`);
-    if (hilReview.synthesis) {
+    console.log(`    Queries reviewed: ${String(hilReview.queriesReviewed)}/${String(summary.totalQueries)}`);
+    if (hilReview.synthesis !== undefined && hilReview.synthesis !== '') {
       console.log(`    Summary: ${truncate(hilReview.synthesis, 70)}`);
     }
   }
@@ -899,15 +901,15 @@ function showQueryPerformance(queryId: string): void {
   for (const run of runs) {
     const parsed = parseRunFile(run.path);
     const evaluation = parsed.evaluations.find(
-      e => e.query.id === queryId || (e.query.id && e.query.id.includes(queryId))
+      e => e.query.id === queryId || (e.query.id !== undefined && e.query.id !== '' && e.query.id.includes(queryId))
     );
 
-    if (evaluation) {
+    if (evaluation !== undefined) {
       queryData.push({
         runId: run.id,
         timestamp: run.timestamp,
         scores: evaluation.evaluation.scores,
-        topResult: evaluation.searchResults[0]?.source || '—',
+        topResult: evaluation.searchResults[0]?.source ?? '—',
       });
     }
   }
@@ -916,25 +918,30 @@ function showQueryPerformance(queryId: string): void {
     console.log(`\n  Query not found: ${queryId}`);
 
     const firstRunInfo = runs[0];
-    if (firstRunInfo) {
+    if (firstRunInfo !== undefined) {
       const parsed = parseRunFile(firstRunInfo.path);
       console.log('  Available queries in latest run:');
       parsed.evaluations.slice(0, 10).forEach(e => {
-        console.log(`    ${e.query.id || 'unnamed'}: ${truncate(e.query.query, 50)}`);
+        console.log(`    ${e.query.id ?? 'unnamed'}: ${truncate(e.query.query, 50)}`);
       });
     }
     console.log();
     return;
   }
 
-  const matchingRun = runs.find(r => r.id === queryData[0]?.runId);
-  if (!matchingRun) {
+  const firstDataItem = queryData[0];
+  if (firstDataItem === undefined) {
+    console.log(`\n  No query data found.\n`);
+    return;
+  }
+  const matchingRun = runs.find(r => r.id === firstDataItem.runId);
+  if (matchingRun === undefined) {
     console.log(`\n  Could not find run data.\n`);
     return;
   }
   const firstRun = parseRunFile(matchingRun.path);
-  const queryEval = firstRun.evaluations.find(e => e.query.id === queryId || e.query.id?.includes(queryId));
-  const queryText = queryEval?.query.query || queryId;
+  const queryEval = firstRun.evaluations.find(e => e.query.id === queryId || (e.query.id !== undefined && e.query.id.includes(queryId)));
+  const queryText = queryEval?.query.query ?? queryId;
 
   console.log();
   console.log(`  Query: ${queryId}`);
@@ -956,7 +963,7 @@ function showQueryPerformance(queryId: string): void {
   });
 
   console.log(drawTable({
-    title: `Performance History (${queryData.length} runs)`,
+    title: `Performance History (${String(queryData.length)} runs)`,
     columns: [
       { header: 'Run', width: 19 },
       { header: 'Overall', width: 7, align: 'right' },
@@ -1009,7 +1016,7 @@ function showTrends(limit: number = 10): void {
 
   console.log();
   console.log(drawTable({
-    title: `Score Trends (last ${trendData.length} runs)`,
+    title: `Score Trends (last ${String(trendData.length)} runs)`,
     columns: [
       { header: 'Date', width: 16 },
       { header: 'Overall', width: 7, align: 'right' },
@@ -1022,14 +1029,14 @@ function showTrends(limit: number = 10): void {
 
   const firstEntry = trendData[trendData.length - 1];
   const lastEntry = trendData[0];
-  if (trendData.length >= 2 && firstEntry && lastEntry) {
+  if (trendData.length >= 2 && firstEntry !== undefined && lastEntry !== undefined) {
     const first = firstEntry.scores.overall;
     const last = lastEntry.scores.overall;
     const delta = last - first;
     const pct = ((delta / first) * 100).toFixed(1);
 
     console.log();
-    console.log(`  Overall trend: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} (${delta >= 0 ? '+' : ''}${pct}%) over ${trendData.length} runs`);
+    console.log(`  Overall trend: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} (${delta >= 0 ? '+' : ''}${pct}%) over ${String(trendData.length)} runs`);
   }
 
   console.log();
@@ -1091,6 +1098,7 @@ async function doIndex(): Promise<void> {
 
   console.log('\n✅ Corpus indexed successfully!');
   console.log(`   Run quality tests with: ./dist/index.js quality test`);
+  return Promise.resolve();
 }
 
 interface SearchResult {
@@ -1125,8 +1133,8 @@ function runSearch(query: string, config: QualityConfig): { results: SearchResul
 
   for (const line of lines) {
     const headerMatch = line.match(/^(\d+)\.\s+\[(-?[0-9.]+)\]\s+(.+)$/);
-    if (headerMatch && headerMatch[1] && headerMatch[2] && headerMatch[3]) {
-      if (currentResult && currentResult.content !== undefined) {
+    if (headerMatch !== null && headerMatch[1] !== undefined && headerMatch[1] !== '' && headerMatch[2] !== undefined && headerMatch[2] !== '' && headerMatch[3] !== undefined && headerMatch[3] !== '') {
+      if (currentResult !== null && currentResult.content !== undefined) {
         results.push(currentResult as SearchResult);
       }
       currentResult = {
@@ -1135,11 +1143,12 @@ function runSearch(query: string, config: QualityConfig): { results: SearchResul
         source: headerMatch[3].trim(),
         content: '',
       };
-    } else if (currentResult && line.startsWith('   ')) {
-      currentResult.content += (currentResult.content ? '\n' : '') + line.trim();
+    } else if (currentResult !== null && line.startsWith('   ')) {
+      const existingContent = currentResult.content ?? '';
+      currentResult.content = existingContent + (existingContent !== '' ? '\n' : '') + line.trim();
     }
   }
-  if (currentResult && currentResult.content !== undefined) {
+  if (currentResult !== null && currentResult.content !== undefined) {
     results.push(currentResult as SearchResult);
   }
 
@@ -1167,7 +1176,7 @@ function evaluateResults(
 **Coding Task Query:** "${query}"
 **What the agent is trying to do:** ${intent}
 
-**Search Results Returned (${results.length}):**
+**Search Results Returned (${String(results.length)}):**
 ${JSON.stringify(resultsForPrompt, null, 2)}
 
 Evaluate whether these results would help an agent COMPLETE THE CODING TASK (0.0 to 1.0 scale):
@@ -1241,7 +1250,7 @@ function extractTopSuggestions(evaluations: QueryEvaluation[]): string[] {
   for (const eval_ of evaluations) {
     for (const suggestion of eval_.evaluation.suggestions) {
       const key = suggestion.toLowerCase().slice(0, 100);
-      suggestionCounts.set(key, (suggestionCounts.get(key) || 0) + 1);
+      suggestionCounts.set(key, (suggestionCounts.get(key) ?? 0) + 1);
     }
   }
 
@@ -1263,7 +1272,7 @@ function generateQueriesFromCorpus(config: QualityConfig): QueryGenerationResult
 
 Your task:
 1. Use the Glob and Read tools to explore tests/fixtures/ and understand what content is available
-2. Generate exactly ${config.queryCount} diverse search queries that would thoroughly test the search system
+2. Generate exactly ${String(config.queryCount)} diverse search queries that would thoroughly test the search system
 
 Generate queries that:
 - Cover different content types (code, documentation, READMEs)
@@ -1303,18 +1312,18 @@ async function doTest(options: {
   const startTime = Date.now();
   const config = loadConfig();
   const runId = Math.random().toString(36).substring(2, 10);
-  const querySetName = options.set || (options.explore ? 'explore' : config.querySet);
+  const querySetName = options.set ?? (options.explore === true ? 'explore' : config.querySet);
 
   console.log('🚀 AI Search Quality Testing');
   console.log(`   Run ID: ${runId}`);
   console.log(`   Query set: ${querySetName}`);
   console.log(`   Search mode: ${config.searchMode}`);
-  console.log(`   Stores: ${config.stores?.join(', ') || 'all'}\n`);
+  console.log(`   Stores: ${config.stores?.join(', ') ?? 'all'}\n`);
 
   const baseline = loadBaseline();
-  if (baseline) {
+  if (baseline !== null) {
     console.log(`📊 Baseline: ${baseline.querySet} (${baseline.updatedAt})`);
-    console.log(`   Overall: ${baseline.scores.overall}\n`);
+    console.log(`   Overall: ${String(baseline.scores.overall)}\n`);
   }
 
   const resultsDir = getResultsDir();
@@ -1334,7 +1343,7 @@ async function doTest(options: {
 
   let queries: Array<{ id?: string; query: string; intent: string }>;
 
-  if (options.explore) {
+  if (options.explore === true) {
     console.log('🔍 Generating exploratory queries...');
     const generated = generateQueriesFromCorpus(config);
     queries = generated.queries;
@@ -1348,7 +1357,7 @@ async function doTest(options: {
       version: '1.0.0',
       description: `AI-generated queries from ${timestamp}`,
       queries: queries.map((q, i) => ({
-        id: `gen-${i + 1}`,
+        id: `gen-${String(i + 1)}`,
         query: q.query,
         intent: q.intent,
         category: 'implementation' as const,
@@ -1361,10 +1370,10 @@ async function doTest(options: {
     let querySet: QuerySet;
     if (querySetName === 'all') {
       querySet = loadAllQuerySets();
-      console.log(`📋 Loaded ${querySet.queries.length} queries from all curated sets\n`);
+      console.log(`📋 Loaded ${String(querySet.queries.length)} queries from all curated sets\n`);
     } else {
       querySet = loadQuerySet(querySetName);
-      console.log(`📋 Loaded ${querySet.queries.length} queries from ${querySetName}.json\n`);
+      console.log(`📋 Loaded ${String(querySet.queries.length)} queries from ${querySetName}.json\n`);
     }
     queries = querySet.queries.map(q => ({ id: q.id, query: q.query, intent: q.intent }));
   }
@@ -1373,7 +1382,7 @@ async function doTest(options: {
   const evaluations: QueryEvaluation[] = [];
 
   for (const q of queries) {
-    const progress = `[${evaluations.length + 1}/${queries.length}]`;
+    const progress = `[${String(evaluations.length + 1)}/${String(queries.length)}]`;
 
     const { results, timeMs: searchTimeMs } = runSearch(q.query, config);
     const { evaluation, timeMs: evaluationTimeMs } = evaluateResults(
@@ -1399,17 +1408,17 @@ async function doTest(options: {
     evaluations.push(record);
     appendFileSync(outputPath, JSON.stringify({ type: 'query_evaluation', data: record }) + '\n');
 
-    if (options.quiet) {
+    if (options.quiet === true) {
       console.log(`  ${progress} "${q.query.slice(0, 40)}${q.query.length > 40 ? '...' : ''}" - overall: ${evaluation.scores.overall.toFixed(2)}`);
     } else {
       console.log(`\n${progress} "${q.query}"`);
       for (const r of results.slice(0, 5)) {
-        console.log(`  → ${r.rank}. [${r.score.toFixed(2)}] ${r.source}`);
+        console.log(`  → ${String(r.rank)}. [${r.score.toFixed(2)}] ${r.source}`);
         const snippet = r.content.slice(0, 100).replace(/\n/g, ' ');
         console.log(`       "${snippet}${r.content.length > 100 ? '...' : ''}"`);
       }
       if (results.length > 5) {
-        console.log(`  ... and ${results.length - 5} more results`);
+        console.log(`  ... and ${String(results.length - 5)} more results`);
       }
       const s = evaluation.scores;
       console.log(`  ✓ AI: relevance=${s.relevance.toFixed(2)} ranking=${s.ranking.toFixed(2)} coverage=${s.coverage.toFixed(2)} snippet=${s.snippetQuality.toFixed(2)} overall=${s.overall.toFixed(2)}`);
@@ -1429,15 +1438,15 @@ async function doTest(options: {
   appendFileSync(outputPath, JSON.stringify({ type: 'run_summary', data: summary }) + '\n');
 
   console.log(`\n✓ Results written to ${outputPath}`);
-  console.log(`📈 Average overall score: ${summary.averageScores.overall}`);
+  console.log(`📈 Average overall score: ${String(summary.averageScores.overall)}`);
   console.log(`⏱️  Total time: ${(summary.totalTimeMs / 1000).toFixed(1)}s`);
 
   if (summary.topSuggestions.length > 0) {
     console.log('\n🎯 Top suggestions for improvement:');
-    summary.topSuggestions.forEach((suggestion, i) => console.log(`   ${i + 1}. ${suggestion}`));
+    summary.topSuggestions.forEach((suggestion, i) => { console.log(`   ${String(i + 1)}. ${suggestion}`); });
   }
 
-  if (baseline && !options.explore) {
+  if (baseline !== null && options.explore !== true) {
     console.log('\n📊 Comparison to Baseline:');
     const dims = ['relevance', 'ranking', 'coverage', 'snippetQuality', 'overall'] as const;
 
@@ -1462,7 +1471,7 @@ async function doTest(options: {
     }
   }
 
-  if (options.updateBaseline) {
+  if (options.updateBaseline === true) {
     saveBaseline(summary.averageScores, config);
   }
 
@@ -1470,7 +1479,8 @@ async function doTest(options: {
   const lowestDim = dimensions.reduce((min, dim) =>
     summary.averageScores[dim] < summary.averageScores[min] ? dim : min
   );
-  console.log(`\n💡 Recommended focus: ${lowestDim} (avg: ${summary.averageScores[lowestDim]})`);
+  console.log(`\n💡 Recommended focus: ${lowestDim} (avg: ${String(summary.averageScores[lowestDim])})`);
+  return Promise.resolve();
 }
 
 async function doBaseline(): Promise<void> {
@@ -1478,18 +1488,19 @@ async function doBaseline(): Promise<void> {
   const latest = runs[0];
   if (!latest) {
     console.log('\n  No test runs found. Run `quality test` first.\n');
-    return;
+    return Promise.resolve();
   }
 
   const parsed = parseRunFile(latest.path);
 
   if (!parsed.summary) {
     console.log(`\n  Run ${latest.id} has no summary data.\n`);
-    return;
+    return Promise.resolve();
   }
 
   const config = loadConfig();
   saveBaseline(parsed.summary.averageScores, config);
+  return Promise.resolve();
 }
 
 async function doGenerate(options: { seed?: string }): Promise<void> {
@@ -1499,10 +1510,10 @@ async function doGenerate(options: { seed?: string }): Promise<void> {
   console.log('🔍 Query Generation Mode\n');
 
   let seedQueries: CoreQuery[] = [];
-  if (options.seed) {
+  if (options.seed !== undefined && options.seed !== '') {
     const seed = options.seed === 'all' ? loadAllQuerySets() : loadQuerySet(options.seed);
     seedQueries = seed.queries as CoreQuery[];
-    console.log(`Seeding from ${options.seed} (${seedQueries.length} queries)\n`);
+    console.log(`Seeding from ${options.seed} (${String(seedQueries.length)} queries)\n`);
   }
 
   console.log('Generating queries from corpus analysis...\n');
@@ -1533,10 +1544,10 @@ Return as JSON array.`;
     });
   } catch (error: unknown) {
     const execError = error as { killed?: boolean; signal?: string; message?: string };
-    if (execError.killed && execError.signal === 'SIGTERM') {
+    if (execError.killed === true && execError.signal === 'SIGTERM') {
       console.error('Error: Claude CLI call timed out after 120 seconds');
     } else {
-      console.error(`Error calling Claude CLI: ${execError.message || String(error)}`);
+      console.error(`Error calling Claude CLI: ${execError.message ?? String(error)}`);
     }
     throw error;
   }
@@ -1549,7 +1560,7 @@ Return as JSON array.`;
     const parseError = error as { message?: string };
     console.error('Error: Failed to parse Claude CLI response');
     console.error(`Response was: ${result.substring(0, 500)}...`);
-    throw new Error(`Invalid response from Claude CLI: ${parseError.message || String(error)}`);
+    throw new Error(`Invalid response from Claude CLI: ${parseError.message ?? String(error)}`);
   }
 
   queries = queries.map((q, i) => ({
@@ -1559,7 +1570,7 @@ Return as JSON array.`;
 
   let done = false;
   while (!done) {
-    console.log(`\nProposed queries (${queries.length}):\n`);
+    console.log(`\nProposed queries (${String(queries.length)}):\n`);
     queries.forEach((q, i) => {
       console.log(`${String(i + 1).padStart(2)}. [${q.category}] "${q.query}"`);
       console.log(`    Intent: ${q.intent}\n`);
@@ -1572,7 +1583,7 @@ Return as JSON array.`;
     } else if (action.startsWith('d ') || action.startsWith('drop ')) {
       const nums = action.replace(/^d(rop)?\s+/, '').split(',').map(n => parseInt(n.trim(), 10) - 1);
       queries = queries.filter((_, i) => !nums.includes(i));
-      console.log(`Dropped ${nums.length} queries.`);
+      console.log(`Dropped ${String(nums.length)} queries.`);
     } else if (action.startsWith('e ') || action.startsWith('edit ')) {
       const num = parseInt(action.replace(/^e(dit)?\s+/, ''), 10) - 1;
       if (queries[num]) {
@@ -1589,7 +1600,9 @@ Return as JSON array.`;
   }
 
   const name = await prompt.question('Save as (name): ');
-  const filename = name.trim() || `generated-${new Date().toISOString().split('T')[0]}`;
+  const trimmedName = name.trim();
+  const datePart = new Date().toISOString().split('T')[0];
+  const filename = trimmedName !== '' ? trimmedName : `generated-${datePart ?? 'unknown'}`;
 
   const outputDir = join(getQueriesDir(), 'generated');
   if (!existsSync(outputDir)) {
@@ -1605,7 +1618,7 @@ Return as JSON array.`;
   };
 
   writeFileSync(outputPath, JSON.stringify(querySet, null, 2));
-  console.log(`\n✓ Saved ${queries.length} queries to ${outputPath}`);
+  console.log(`\n✓ Saved ${String(queries.length)} queries to ${outputPath}`);
 
   prompt.close();
 }
@@ -1613,19 +1626,19 @@ Return as JSON array.`;
 async function doReview(options: { runId?: string | undefined; list?: boolean | undefined }): Promise<void> {
   const runs = listRuns();
 
-  if (options.list || !options.runId) {
+  if (options.list === true || options.runId === undefined || options.runId === '') {
     showRuns();
-    if (!options.runId) {
+    if (options.runId === undefined || options.runId === '') {
       console.log('Usage: quality review <run-id>');
     }
     return;
   }
 
-  const run = runs.find(r => r.id === options.runId || r.id.includes(options.runId!));
+  const run = runs.find(r => r.id === options.runId || (options.runId !== undefined && r.id.includes(options.runId)));
   if (!run) {
     console.error(`Run not found: ${options.runId}`);
     console.log('\nAvailable runs:');
-    runs.slice(0, 5).forEach(r => console.log(`    ${r.id}`));
+    runs.slice(0, 5).forEach(r => { console.log(`    ${r.id}`); });
     return;
   }
 
@@ -1635,7 +1648,7 @@ async function doReview(options: { runId?: string | undefined; list?: boolean | 
   const parsed = parseRunFile(run.path);
 
   console.log(`\n📊 Reviewing run: ${run.id}`);
-  console.log(`   ${parsed.evaluations.length} queries, overall=${run.overallScore.toFixed(2)}\n`);
+  console.log(`   ${String(parsed.evaluations.length)} queries, overall=${run.overallScore.toFixed(2)}\n`);
 
   const hilData: Map<number, HilQueryData> = new Map();
 
@@ -1643,7 +1656,7 @@ async function doReview(options: { runId?: string | undefined; list?: boolean | 
     const eval_ = parsed.evaluations[i];
     if (!eval_) continue;
 
-    const progress = `[${i + 1}/${parsed.evaluations.length}]`;
+    const progress = `[${String(i + 1)}/${String(parsed.evaluations.length)}]`;
 
     console.log(`\n${progress} "${eval_.query.query}"`);
     console.log(`  AI overall: ${eval_.evaluation.scores.overall.toFixed(2)}`);
@@ -1688,9 +1701,13 @@ async function doReview(options: { runId?: string | undefined; list?: boolean | 
   prompt.close();
 
   const reviewed = [...hilData.values()].filter(h => h.reviewed);
-  const scores = reviewed.filter(h => h.humanScore !== undefined).map(h => h.humanScore!);
+  const scores = reviewed.filter(h => h.humanScore !== undefined).map(h => {
+    const score = h.humanScore;
+    if (score === undefined) throw new Error('Unexpected undefined score');
+    return score;
+  });
   const humanAvg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-  const flagged = reviewed.filter(h => h.flagged).length;
+  const flagged = reviewed.filter(h => h.flagged === true).length;
 
   console.log('\n📝 Generating synthesis...');
 
@@ -1698,13 +1715,14 @@ async function doReview(options: { runId?: string | undefined; list?: boolean | 
 
 AI average score: ${run.overallScore.toFixed(2)}
 Human average score: ${humanAvg.toFixed(2)}
-Queries reviewed: ${reviewed.length}/${parsed.evaluations.length}
+Queries reviewed: ${String(reviewed.length)}/${String(parsed.evaluations.length)}
 
 Human judgments:
 ${[...hilData.entries()].filter(([_, h]) => h.reviewed).map(([i, h]) => {
   const evalItem = parsed.evaluations[i];
   const q = evalItem?.query.query ?? 'unknown';
-  return `- "${q}": ${h.judgment ?? 'note only'}${h.note ? ` - "${h.note}"` : ''}`;
+  const noteText = (h.note !== undefined && h.note !== '') ? ` - "${h.note}"` : '';
+  return `- "${q}": ${h.judgment ?? 'note only'}${noteText}`;
 }).join('\n')}
 
 Provide:
@@ -1723,14 +1741,14 @@ Return as JSON: { "synthesis": "...", "actionItems": ["...", "..."] }`;
   });
 
   const synthResult = JSON.parse(result) as { result?: string; structured_output?: { synthesis: string; actionItems: string[] } };
-  const content = synthResult.result || '';
+  const content = synthResult.result ?? '';
 
   const jsonMatch = content.match(/\{[\s\S]*"synthesis"[\s\S]*"actionItems"[\s\S]*\}/);
-  if (!jsonMatch && !synthResult.structured_output) {
+  if (jsonMatch === null && synthResult.structured_output === undefined) {
     throw new Error(`Claude CLI did not return valid JSON. Response: ${content.slice(0, 200)}`);
   }
 
-  const synthesis = synthResult.structured_output ?? JSON.parse(jsonMatch![0]) as { synthesis: string; actionItems: string[] };
+  const synthesis = synthResult.structured_output ?? (jsonMatch !== null ? JSON.parse(jsonMatch[0]) as { synthesis: string; actionItems: string[] } : { synthesis: '', actionItems: [] });
 
   const hilReview: HilReviewSummary = {
     reviewedAt: new Date().toISOString(),
@@ -1745,19 +1763,19 @@ Return as JSON: { "synthesis": "...", "actionItems": ["...", "..."] }`;
 
   // Read original file and update with HIL data
   const originalContent = readFileSync(run.path, 'utf-8');
-  const originalLines = originalContent.trim().split('\n').map(l => JSON.parse(l));
+  const originalLines = originalContent.trim().split('\n').map(l => JSON.parse(l) as { type: string; data?: unknown });
 
   let evalIdx = 0;
   const updatedLines = originalLines.map(line => {
     if (line.type === 'query_evaluation') {
       const hil = hilData.get(evalIdx);
       evalIdx++;
-      if (hil) {
-        return { ...line, data: { ...line.data, hil } };
+      if (hil !== undefined) {
+        return { ...line, data: { ...(typeof line.data === 'object' && line.data !== null ? line.data as Record<string, unknown> : {}), hil } };
       }
     }
     if (line.type === 'run_summary') {
-      return { ...line, data: { ...line.data, hilReview } };
+      return { ...line, data: { ...(typeof line.data === 'object' && line.data !== null ? line.data as Record<string, unknown> : {}), hilReview } };
     }
     return line;
   });
@@ -1769,7 +1787,7 @@ Return as JSON: { "synthesis": "...", "actionItems": ["...", "..."] }`;
   console.log(`   Human avg: ${humanAvg.toFixed(2)} (AI: ${run.overallScore.toFixed(2)}, delta: ${hilReview.aiVsHumanDelta >= 0 ? '+' : ''}${hilReview.aiVsHumanDelta.toFixed(2)})`);
   console.log(`   ${hilReview.synthesis}`);
   console.log(`\n🎯 Action items:`);
-  hilReview.actionItems.forEach((item, i) => console.log(`   ${i + 1}. ${item}`));
+  hilReview.actionItems.forEach((item, i) => { console.log(`   ${String(i + 1)}. ${item}`); });
 }
 
 // ============================================================================
@@ -1885,7 +1903,7 @@ async function doAutoImprove(options: {
         }
         // Show agent recommendations summary
         if (iter.recommendations.length > 0) {
-          console.log(`        Agent recommendations: ${iter.recommendations.length}`);
+          console.log(`        Agent recommendations: ${String(iter.recommendations.length)}`);
           for (const rec of iter.recommendations) {
             console.log(`          - ${rec.agentId}: confidence=${rec.confidence.toFixed(2)}, target=${rec.targetDimension}, expected=+${rec.expectedImprovement.toFixed(3)}`);
             console.log(`            ${rec.reasoning.slice(0, 100)}${rec.reasoning.length > 100 ? '...' : ''}`);
@@ -1956,7 +1974,7 @@ export function createQualityCommand(_getOptions: () => GlobalOptions): Command 
     .description('Compare overall scores across runs (▲ up, ▼ down, — unchanged)')
     .option('-l, --limit <count>', 'Number of recent runs to include (default: 10)', '10')
     .action((options: { limit?: string }) => {
-      showTrends(parseInt(options.limit || '10', 10));
+      showTrends(parseInt(options.limit ?? '10', 10));
     });
 
   // Action commands
