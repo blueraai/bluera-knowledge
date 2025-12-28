@@ -104,6 +104,7 @@ export class IndexService {
             // New metadata for ranking
             fileType,
             sectionHeader: chunk.sectionHeader,
+            hasDocComments: /\/\*\*[\s\S]*?\*\//.test(chunk.content),
           },
         };
         documents.push(doc);
@@ -169,8 +170,12 @@ export class IndexService {
   private classifyFileType(ext: string, fileName: string, filePath: string): string {
     // Documentation files
     if (ext === '.md') {
+      // CHANGELOG files get their own category for intent-based penalties
+      if (fileName === 'changelog.md' || fileName === 'changes.md' || /changelog/i.test(fileName)) {
+        return 'changelog';
+      }
       // Special doc files get highest priority
-      if (['readme.md', 'changelog.md', 'migration.md', 'contributing.md'].includes(fileName)) {
+      if (['readme.md', 'migration.md', 'contributing.md'].includes(fileName)) {
         return 'documentation-primary';
       }
       // Check path for documentation indicators

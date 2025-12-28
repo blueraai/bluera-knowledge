@@ -18,14 +18,14 @@ export type QueryIntent = 'how-to' | 'implementation' | 'conceptual' | 'comparis
  */
 const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
   'how-to': {
-    'documentation-primary': 1.15,  // Modest boost for docs
-    'documentation': 1.1,
-    'example': 1.35,                 // Examples are ideal for "how to"
-    'source': 0.9,                  // Slight penalty - source might still have good content
-    'source-internal': 0.85,        // Moderate penalty - internal code less useful
-    'test': 0.9,
-    'config': 0.8,
-    'other': 0.95,
+    'documentation-primary': 1.3,   // Strong boost for docs
+    'documentation': 1.2,
+    'example': 1.5,                  // Examples are ideal for "how to"
+    'source': 0.85,                 // Moderate penalty - source might still have good content
+    'source-internal': 0.7,         // Stronger penalty - internal code less useful
+    'test': 0.8,
+    'config': 0.7,
+    'other': 0.9,
   },
   'implementation': {
     'documentation-primary': 0.95,
@@ -409,7 +409,7 @@ export class SearchService {
     let baseBoost: number;
     switch (fileType) {
       case 'documentation-primary':
-        baseBoost = 2.2;  // README, guides get very strong boost
+        baseBoost = 1.8;  // README, guides get very strong boost
         break;
       case 'documentation':
         baseBoost = 1.5;  // docs/, tutorials/ get strong boost
@@ -460,7 +460,7 @@ export class SearchService {
         if (resultMatchesFramework) {
           return 1.5; // Strong boost for matching framework
         } else {
-          return 0.5; // Strong penalty for non-matching when framework is specified
+          return 0.8; // Moderate penalty for non-matching when framework is specified
         }
       }
     }
