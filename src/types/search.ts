@@ -5,20 +5,20 @@ export type SearchMode = 'vector' | 'fts' | 'hybrid';
 
 export interface SearchQuery {
   readonly query: string;
-  readonly stores?: readonly StoreId[];
-  readonly mode?: SearchMode;
-  readonly limit?: number;
-  readonly threshold?: number;
-  readonly filter?: Record<string, unknown>;
-  readonly includeContent?: boolean;
-  readonly contextLines?: number;
+  readonly stores?: readonly StoreId[] | undefined;
+  readonly mode?: SearchMode | undefined;
+  readonly limit?: number | undefined;
+  readonly threshold?: number | undefined;
+  readonly filter?: Record<string, unknown> | undefined;
+  readonly includeContent?: boolean | undefined;
+  readonly contextLines?: number | undefined;
 }
 
 export interface SearchResult {
   readonly id: DocumentId;
   readonly score: number;
   readonly content: string;
-  readonly highlight?: string;
+  readonly highlight?: string | undefined;
   readonly metadata: DocumentMetadata;
 }
 

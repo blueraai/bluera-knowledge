@@ -19,11 +19,11 @@ export function createProgram(): Command {
 }
 
 export interface GlobalOptions {
-  config?: string;
-  dataDir?: string;
+  config?: string | undefined;
+  dataDir?: string | undefined;
   format: 'json' | 'table' | 'plain';
-  quiet?: boolean;
-  verbose?: boolean;
+  quiet?: boolean | undefined;
+  verbose?: boolean | undefined;
 }
 
 export function getGlobalOptions(program: Command): GlobalOptions {

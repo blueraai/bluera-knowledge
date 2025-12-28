@@ -9,6 +9,7 @@ interface LanceDocument {
   content: string;
   vector: number[];
   metadata: string; // JSON serialized
+  [key: string]: unknown;
 }
 
 interface SearchHit {

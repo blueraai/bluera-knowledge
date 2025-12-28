@@ -22,10 +22,15 @@ export function unwrap<T, E>(result: Result<T, E>): T {
   if (isOk(result)) {
     return result.data;
   }
-  if (result.error instanceof Error) {
-    throw result.error;
+  // Type guard ensures result has 'error' property
+  if (isErr(result)) {
+    if (result.error instanceof Error) {
+      throw result.error;
+    }
+    throw new Error(String(result.error));
   }
-  throw new Error(String(result.error));
+  // This should never happen due to discriminated union
+  throw new Error('Invalid result type');
 }
 
 export function unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {

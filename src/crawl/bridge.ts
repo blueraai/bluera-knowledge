@@ -104,7 +104,7 @@ export class PythonBridge {
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [id, pending] of this.pending) {
+    for (const [_id, pending] of this.pending) {
       clearTimeout(pending.timeout);
       pending.reject(error);
     }
