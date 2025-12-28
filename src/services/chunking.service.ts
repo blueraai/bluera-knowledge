@@ -10,7 +10,7 @@ export interface Chunk {
   startOffset: number;
   endOffset: number;
   /** Section header if this chunk starts a markdown section */
-  sectionHeader?: string;
+  sectionHeader?: string | undefined;
 }
 
 export class ChunkingService {

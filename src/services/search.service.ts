@@ -354,7 +354,7 @@ export class SearchService {
 
       // Apply file-type boost (base + intent-adjusted)
       const fileTypeBoost = this.getFileTypeBoost(
-        result.metadata.fileType as string | undefined,
+        result.metadata['fileType'] as string | undefined,
         intent
       );
 
@@ -409,7 +409,7 @@ export class SearchService {
     let baseBoost: number;
     switch (fileType) {
       case 'documentation-primary':
-        baseBoost = 1.8;  // README, guides get very strong boost
+        baseBoost = 2.2;  // README, guides get very strong boost
         break;
       case 'documentation':
         baseBoost = 1.5;  // docs/, tutorials/ get strong boost

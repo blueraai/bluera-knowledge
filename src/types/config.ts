@@ -64,7 +64,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     rrf: {
       k: 60,
       vectorWeight: 0.7,
-      ftsWeight: 0.3,
+      ftsWeight: 0.4,
     },
   },
   crawl: {

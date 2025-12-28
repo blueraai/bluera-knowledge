@@ -10,12 +10,12 @@ import { ok, err } from '../types/result.js';
 interface CreateStoreInput {
   name: string;
   type: StoreType;
-  path?: string;
-  url?: string;
-  description?: string;
-  tags?: string[];
-  branch?: string;
-  depth?: number;
+  path?: string | undefined;
+  url?: string | undefined;
+  description?: string | undefined;
+  tags?: string[] | undefined;
+  branch?: string | undefined;
+  depth?: number | undefined;
 }
 
 interface StoreRegistry {

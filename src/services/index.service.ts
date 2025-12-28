@@ -47,8 +47,6 @@ export class IndexService {
   }
 
   async indexStore(store: Store, onProgress?: ProgressCallback): Promise<Result<IndexResult>> {
-    const startTime = Date.now();
-
     try {
       if (store.type === 'file' || store.type === 'repo') {
         return await this.indexFileStore(store, onProgress);
