@@ -21,7 +21,10 @@ export class EmbeddingEngine {
     if (this.extractor === null) {
       await this.initialize();
     }
-    const output = await this.extractor!(text, {
+    if (this.extractor === null) {
+      throw new Error('Failed to initialize embedding model');
+    }
+    const output = await this.extractor(text, {
       pooling: 'mean',
       normalize: true,
     });

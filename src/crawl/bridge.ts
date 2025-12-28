@@ -14,10 +14,10 @@ interface CrawlResult {
 
 export class PythonBridge {
   private process: ChildProcess | null = null;
-  private pending: Map<string, { resolve: (v: CrawlResult) => void; reject: (e: Error) => void; timeout: NodeJS.Timeout }> = new Map();
+  private readonly pending: Map<string, { resolve: (v: CrawlResult) => void; reject: (e: Error) => void; timeout: NodeJS.Timeout }> = new Map();
 
-  async start(): Promise<void> {
-    if (this.process) return;
+  start(): Promise<void> {
+    if (this.process) return Promise.resolve();
 
     this.process = spawn('python3', ['python/crawl_worker.py'], {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -32,8 +32,8 @@ export class PythonBridge {
     // Add exit handler to detect non-zero exits
     this.process.on('exit', (code, signal) => {
       if (code !== 0 && code !== null) {
-        console.error(`Python bridge process exited with code ${code}`);
-        this.rejectAllPending(new Error(`Process exited with code ${code}`));
+        console.error(`Python bridge process exited with code ${String(code)}`);
+        this.rejectAllPending(new Error(`Process exited with code ${String(code)}`));
       } else if (signal) {
         console.error(`Python bridge process killed with signal ${signal}`);
         this.rejectAllPending(new Error(`Process killed with signal ${signal}`));
@@ -49,16 +49,23 @@ export class PythonBridge {
       });
     }
 
-    const rl = createInterface({ input: this.process.stdout! });
+    if (this.process.stdout === null) {
+      throw new Error('Python bridge process stdout is null');
+    }
+    const rl = createInterface({ input: this.process.stdout });
     rl.on('line', (line) => {
       try {
-        const response = JSON.parse(line);
+        const response = JSON.parse(line) as {
+          id: string;
+          error?: { message: string };
+          result?: CrawlResult;
+        };
         const pending = this.pending.get(response.id);
-        if (pending) {
+        if (pending !== undefined) {
           clearTimeout(pending.timeout);
-          if (response.error) {
+          if (response.error !== undefined) {
             pending.reject(new Error(response.error.message));
-          } else {
+          } else if (response.result !== undefined) {
             pending.resolve(response.result);
           }
           this.pending.delete(response.id);
@@ -67,6 +74,8 @@ export class PythonBridge {
         console.error('Failed to parse JSON response from Python bridge:', err, 'Line:', line);
       }
     });
+
+    return Promise.resolve();
   }
 
   async crawl(url: string, timeoutMs: number = 30000): Promise<CrawlResult> {
@@ -86,25 +95,30 @@ export class PythonBridge {
         const pending = this.pending.get(id);
         if (pending) {
           this.pending.delete(id);
-          reject(new Error(`Crawl timeout after ${timeoutMs}ms for URL: ${url}`));
+          reject(new Error(`Crawl timeout after ${String(timeoutMs)}ms for URL: ${url}`));
         }
       }, timeoutMs);
 
       this.pending.set(id, { resolve, reject, timeout });
-      this.process!.stdin!.write(JSON.stringify(request) + '\n');
+      if (this.process === null || this.process.stdin === null) {
+        reject(new Error('Python bridge process not available'));
+        return;
+      }
+      this.process.stdin.write(JSON.stringify(request) + '\n');
     });
   }
 
-  async stop(): Promise<void> {
+  stop(): Promise<void> {
     if (this.process) {
       this.rejectAllPending(new Error('Python bridge stopped'));
       this.process.kill();
       this.process = null;
     }
+    return Promise.resolve();
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [_id, pending] of this.pending) {
+    for (const pending of this.pending.values()) {
       clearTimeout(pending.timeout);
       pending.reject(error);
     }

@@ -8,7 +8,7 @@ import type { Checkpoint, CheckpointFile, Scores, IndexState } from './types.js'
  * enabling rollback if quality degrades.
  */
 export class CheckpointService {
-  private checkpointDir: string;
+  private readonly checkpointDir: string;
 
   constructor(checkpointDir: string) {
     this.checkpointDir = checkpointDir;
@@ -20,11 +20,11 @@ export class CheckpointService {
   /**
    * Creates a new checkpoint with the current state of the specified files.
    */
-  async create(
+  create(
     filePaths: string[],
     baselineScores: Scores,
     indexState: IndexState
-  ): Promise<Checkpoint> {
+  ): Checkpoint {
     const files: CheckpointFile[] = [];
 
     for (const filePath of filePaths) {
@@ -52,7 +52,7 @@ export class CheckpointService {
   /**
    * Lists all checkpoints, sorted by creation time (newest first).
    */
-  async list(): Promise<Checkpoint[]> {
+  list(): Checkpoint[] {
     if (!existsSync(this.checkpointDir)) {
       return [];
     }
@@ -76,14 +76,14 @@ export class CheckpointService {
   /**
    * Gets a checkpoint by ID.
    */
-  async get(id: string): Promise<Checkpoint | undefined> {
+  get(id: string): Checkpoint | undefined {
     return this.load(id);
   }
 
   /**
    * Restores files to their checkpointed state.
    */
-  async restore(id: string): Promise<void> {
+  restore(id: string): void {
     const checkpoint = this.load(id);
     if (checkpoint === undefined) {
       throw new Error(`Checkpoint not found: ${id}`);
@@ -97,7 +97,7 @@ export class CheckpointService {
   /**
    * Deletes a checkpoint.
    */
-  async delete(id: string): Promise<void> {
+  delete(id: string): void {
     const filePath = join(this.checkpointDir, `${id}.json`);
     if (existsSync(filePath)) {
       unlinkSync(filePath);
@@ -107,13 +107,13 @@ export class CheckpointService {
   /**
    * Removes checkpoints older than the specified age (in milliseconds).
    */
-  async cleanup(maxAgeMs: number): Promise<void> {
-    const checkpoints = await this.list();
+  cleanup(maxAgeMs: number): void {
+    const checkpoints = this.list();
     const cutoff = Date.now() - maxAgeMs;
 
     for (const checkpoint of checkpoints) {
       if (new Date(checkpoint.createdAt).getTime() < cutoff) {
-        await this.delete(checkpoint.id);
+        this.delete(checkpoint.id);
       }
     }
   }

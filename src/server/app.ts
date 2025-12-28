@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ServiceContainer } from '../services/index.js';
+import type { CreateStoreInput } from '../services/store.service.js';
+import type { SearchQuery } from '../types/search.js';
 
 export function createApp(services: ServiceContainer): Hono {
   const app = new Hono();
@@ -17,7 +19,8 @@ export function createApp(services: ServiceContainer): Hono {
   });
 
   app.post('/api/stores', async (c) => {
-    const body = await c.req.json();
+    const jsonData: unknown = await c.req.json();
+    const body = jsonData as CreateStoreInput;
     const result = await services.store.create(body);
     if (result.success) {
       return c.json(result.data, 201);
@@ -41,17 +44,18 @@ export function createApp(services: ServiceContainer): Hono {
 
   // Search
   app.post('/api/search', async (c) => {
-    const body = await c.req.json();
+    const body = await c.req.json() as unknown as Partial<SearchQuery>;
     const storeIds = (await services.store.list()).map(s => s.id);
 
     for (const id of storeIds) {
       await services.lance.initialize(id);
     }
 
-    const results = await services.search.search({
-      ...body,
-      stores: body.stores ?? storeIds,
-    });
+    const query: SearchQuery = {
+      ...(body as SearchQuery),
+      stores: (body.stores !== undefined ? body.stores : storeIds),
+    };
+    const results = await services.search.search(query);
     return c.json(results);
   });
 

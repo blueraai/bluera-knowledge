@@ -36,7 +36,7 @@ export function createImportCommand(getOptions: () => GlobalOptions): Command {
       const services = await createServices(globalOpts.config, globalOpts.dataDir);
 
       // Use spinner in interactive mode, simple output otherwise
-      const isInteractive = process.stdout.isTTY === true && globalOpts.quiet !== true;
+      const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true;
       let spinner: Ora | undefined;
 
       const updateStatus = (text: string): void => {

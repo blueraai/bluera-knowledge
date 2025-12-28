@@ -20,7 +20,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       }
 
       // Use spinner in interactive mode (not quiet, not json output)
-      const isInteractive = process.stdout.isTTY === true && globalOpts.quiet !== true && globalOpts.format !== 'json';
+      const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true && globalOpts.format !== 'json';
       let spinner: Ora | undefined;
 
       if (isInteractive) {
@@ -34,7 +34,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       const result = await services.index.indexStore(store, (event) => {
         if (event.type === 'progress') {
           if (spinner) {
-            spinner.text = `Indexing: ${event.current}/${event.total} files - ${event.message}`;
+            spinner.text = `Indexing: ${String(event.current)}/${String(event.total)} files - ${event.message}`;
           }
         }
       });
@@ -89,7 +89,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
 
       // Keep process alive
       process.on('SIGINT', () => {
-        void (async () => {
+        void (async (): Promise<void> => {
           await watchService.unwatchAll();
           process.exit(0);
         })();

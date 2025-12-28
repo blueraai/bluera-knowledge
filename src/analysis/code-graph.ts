@@ -19,8 +19,8 @@ export interface GraphEdge {
 }
 
 export class CodeGraph {
-  private nodes = new Map<string, GraphNode>();
-  private edges = new Map<string, GraphEdge[]>();
+  private readonly nodes: Map<string, GraphNode> = new Map<string, GraphNode>();
+  private readonly edges: Map<string, GraphEdge[]> = new Map<string, GraphEdge[]>();
 
   addNodes(nodes: CodeNode[], file: string): void {
     for (const node of nodes) {
@@ -76,7 +76,7 @@ export class CodeGraph {
 
     let match;
     while ((match = callPattern.exec(code)) !== null) {
-      if (match[1]) {
+      if (match[1] !== undefined && match[1] !== '') {
         calls.add(match[1]);
       }
     }

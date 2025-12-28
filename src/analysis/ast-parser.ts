@@ -1,10 +1,11 @@
-import { parse } from '@babel/parser';
+import { parse, type ParserPlugin } from '@babel/parser';
 import type { NodePath } from '@babel/traverse';
 import traverseModule from '@babel/traverse';
 import * as t from '@babel/types';
 
 // Handle both ESM and CJS module formats
-const traverse = (traverseModule as any).default || traverseModule;
+type TraverseFunction = (ast: t.File, visitor: Record<string, unknown>) => void;
+const traverse = ((traverseModule as { default?: TraverseFunction }).default ?? traverseModule) as TraverseFunction;
 
 export interface CodeNode {
   type: 'function' | 'class' | 'interface' | 'type' | 'const';
@@ -30,7 +31,7 @@ export interface ImportInfo {
 export class ASTParser {
   parse(code: string, language: 'typescript' | 'javascript'): CodeNode[] {
     try {
-      const plugins: any[] = ['jsx'];
+      const plugins: ParserPlugin[] = ['jsx'];
       if (language === 'typescript') {
         plugins.push('typescript');
       }
@@ -106,7 +107,7 @@ export class ASTParser {
       });
 
       return nodes;
-    } catch (error) {
+    } catch {
       // Return empty array for malformed code
       return [];
     }
@@ -145,7 +146,7 @@ export class ASTParser {
       });
 
       return imports;
-    } catch (error) {
+    } catch {
       // Return empty array for malformed code
       return [];
     }
@@ -157,7 +158,7 @@ export class ASTParser {
       return 'param';
     }).join(', ');
 
-    return `${node.id?.name}(${params})`;
+    return `${node.id?.name ?? 'anonymous'}(${params})`;
   }
 
   private extractMethodSignature(node: t.ClassMethod): string {

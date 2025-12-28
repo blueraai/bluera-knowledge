@@ -17,7 +17,7 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
       const port = parseInt(options.port ?? '3847', 10);
       const host = options.host ?? '127.0.0.1';
 
-      console.log(`Starting server on http://${host}:${port}`);
+      console.log(`Starting server on http://${host}:${String(port)}`);
 
       serve({
         fetch: app.fetch,

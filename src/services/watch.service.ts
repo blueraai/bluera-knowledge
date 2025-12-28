@@ -4,7 +4,7 @@ import type { IndexService } from './index.service.js';
 import type { LanceStore } from '../db/lance.js';
 
 export class WatchService {
-  private watchers: Map<string, FSWatcher> = new Map();
+  private readonly watchers: Map<string, FSWatcher> = new Map();
   private readonly indexService: IndexService;
   private readonly lanceStore: LanceStore;
 
@@ -19,35 +19,40 @@ export class WatchService {
     onReindex?: () => void
   ): Promise<void> {
     if (this.watchers.has(store.id)) {
-      return; // Already watching
+      return Promise.resolve(); // Already watching
     }
 
     let timeout: NodeJS.Timeout | null = null;
 
     const watcher = watch(store.path, {
-      ignored: /(^|[\/\\])\.(git|node_modules|dist|build)/,
+      ignored: /(^|[/\\])\.(git|node_modules|dist|build)/,
       persistent: true,
       ignoreInitial: true,
     });
 
-    watcher.on('all', () => {
+    const reindexHandler = (): void => {
       if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(async () => {
-        try {
-          await this.lanceStore.initialize(store.id);
-          await this.indexService.indexStore(store);
-          onReindex?.();
-        } catch (error) {
-          console.error('Error during reindexing:', error);
-        }
+      timeout = setTimeout(() => {
+        void (async (): Promise<void> => {
+          try {
+            await this.lanceStore.initialize(store.id);
+            await this.indexService.indexStore(store);
+            onReindex?.();
+          } catch (error) {
+            console.error('Error during reindexing:', error);
+          }
+        })();
       }, debounceMs);
-    });
+    };
+
+    watcher.on('all', reindexHandler);
 
     watcher.on('error', (error) => {
       console.error('Watcher error:', error);
     });
 
     this.watchers.set(store.id, watcher);
+    return Promise.resolve();
   }
 
   async unwatch(storeId: string): Promise<void> {

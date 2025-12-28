@@ -7,7 +7,7 @@ import { createStoreId } from '../types/brands.js';
 import type { Result } from '../types/result.js';
 import { ok, err } from '../types/result.js';
 
-interface CreateStoreInput {
+export interface CreateStoreInput {
   name: string;
   type: StoreType;
   path?: string | undefined;
@@ -109,21 +109,21 @@ export class StoreService {
 
   async list(type?: StoreType): Promise<Store[]> {
     if (type !== undefined) {
-      return this.registry.stores.filter((s) => s.type === type);
+      return Promise.resolve(this.registry.stores.filter((s) => s.type === type));
     }
-    return [...this.registry.stores];
+    return Promise.resolve([...this.registry.stores]);
   }
 
   async get(id: StoreId): Promise<Store | undefined> {
-    return this.registry.stores.find((s) => s.id === id);
+    return Promise.resolve(this.registry.stores.find((s) => s.id === id));
   }
 
   async getByName(name: string): Promise<Store | undefined> {
-    return this.registry.stores.find((s) => s.name === name);
+    return Promise.resolve(this.registry.stores.find((s) => s.name === name));
   }
 
   async getByIdOrName(idOrName: string): Promise<Store | undefined> {
-    return this.registry.stores.find((s) => s.id === idOrName || s.name === idOrName);
+    return Promise.resolve(this.registry.stores.find((s) => s.id === idOrName || s.name === idOrName));
   }
 
   async update(id: StoreId, updates: Partial<Pick<Store, 'name' | 'description' | 'tags'>>): Promise<Result<Store>> {
@@ -132,7 +132,11 @@ export class StoreService {
       return err(new Error(`Store not found: ${id}`));
     }
 
-    const store = this.registry.stores[index]!;
+    const store = this.registry.stores[index];
+    if (store === undefined) {
+      return err(new Error(`Store not found: ${id}`));
+    }
+
     const updated = {
       ...store,
       ...updates,

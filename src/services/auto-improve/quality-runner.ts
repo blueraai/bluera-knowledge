@@ -20,15 +20,15 @@ interface RunFileLine {
  * Reads quality results from disk and runs quality tests via CLI.
  */
 export class ProductionQualityRunner implements QualityRunner {
-  private resultsDir: string;
-  private projectRoot: string;
+  private readonly resultsDir: string;
+  private readonly projectRoot: string;
 
   constructor(resultsDir: string, projectRoot: string) {
     this.resultsDir = resultsDir;
     this.projectRoot = projectRoot;
   }
 
-  async getLatestRun(runId?: string): Promise<QualityRunSummary> {
+  getLatestRun(runId?: string): Promise<QualityRunSummary> {
     const runs = this.listRuns();
 
     if (runs.length === 0) {
@@ -57,16 +57,16 @@ export class ProductionQualityRunner implements QualityRunner {
 
     const lowestDimension = this.findLowestDimension(summary.averageScores);
 
-    return {
+    return Promise.resolve({
       runId: targetRun.id,
       timestamp: summary.timestamp,
       averageScores: summary.averageScores,
       queryCount: summary.totalQueries,
       lowestDimension,
-    };
+    });
   }
 
-  async runQualityTest(): Promise<Scores> {
+  runQualityTest(): Promise<Scores> {
     // Run the quality test using the CLI
     const output = execSync('node dist/index.js quality test --quiet', {
       cwd: this.projectRoot,
@@ -92,7 +92,7 @@ export class ProductionQualityRunner implements QualityRunner {
       throw new Error('Quality test completed but no summary found');
     }
 
-    return summary.averageScores;
+    return Promise.resolve(summary.averageScores);
   }
 
   private listRuns(): Array<{ id: string; path: string }> {

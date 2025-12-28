@@ -18,15 +18,11 @@ export interface ValidateResult {
  * Supports validation, application, and reversion of changes.
  */
 export class ChangeApplier {
-  constructor(_projectRoot: string) {
-    // projectRoot reserved for future use (TypeScript compilation checks, etc.)
-  }
-
   /**
    * Applies changes in priority order (lower priority number = applied first).
    * Stops on first error and reports partial success.
    */
-  async apply(changes: Change[]): Promise<ApplyResult> {
+  apply(changes: Change[]): ApplyResult {
     // Filter out reindex changes - they're just triggers, not actual file modifications
     const fileChanges = changes.filter(c => c.type !== 'reindex');
     const sortedChanges = [...fileChanges].sort((a, b) => a.priority - b.priority);
@@ -56,7 +52,7 @@ export class ChangeApplier {
    * Validates changes without applying them.
    * Checks that all files exist and before content matches.
    */
-  async validate(changes: Change[]): Promise<ValidateResult> {
+  validate(changes: Change[]): ValidateResult {
     // Filter out reindex changes - they don't have actual files to validate
     const fileChanges = changes.filter(c => c.type !== 'reindex');
     const result: ValidateResult = {
@@ -79,7 +75,7 @@ export class ChangeApplier {
    * Reverts changes by restoring the before content.
    * Reverts in reverse priority order.
    */
-  async revert(changes: Change[]): Promise<void> {
+  revert(changes: Change[]): void {
     const sortedChanges = [...changes].sort((a, b) => b.priority - a.priority);
 
     for (const change of sortedChanges) {

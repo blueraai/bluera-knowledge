@@ -28,12 +28,12 @@ export class ChunkingService {
    */
   chunk(text: string, filePath?: string): Chunk[] {
     // Use semantic chunking for Markdown files
-    if (filePath && /\.md$/i.test(filePath)) {
+    if (filePath !== undefined && filePath !== '' && /\.md$/i.test(filePath)) {
       return this.chunkMarkdown(text);
     }
 
     // Use semantic chunking for TypeScript/JavaScript files
-    if (filePath && /\.(ts|tsx|js|jsx)$/i.test(filePath)) {
+    if (filePath !== undefined && filePath !== '' && /\.(ts|tsx|js|jsx)$/i.test(filePath)) {
       return this.chunkCode(text);
     }
 
@@ -142,8 +142,12 @@ export class ChunkingService {
 
     // Find end of each declaration (next declaration or EOF)
     for (let i = 0; i < declarations.length; i++) {
-      const nextStart = i < declarations.length - 1 ? declarations[i + 1]!.startOffset : text.length;
-      declarations[i]!.endOffset = nextStart;
+      const currentDecl = declarations[i];
+      const nextDecl = declarations[i + 1];
+      if (currentDecl === undefined) continue;
+
+      const nextStart = nextDecl !== undefined ? nextDecl.startOffset : text.length;
+      currentDecl.endOffset = nextStart;
     }
 
     const chunks: Chunk[] = [];

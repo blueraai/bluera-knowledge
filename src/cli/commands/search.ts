@@ -74,16 +74,17 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
         }
       } else {
         console.log(`\nSearch: "${query}"`);
-        console.log(`Mode: ${results.mode} | Detail: ${options.detail} | Stores: ${results.stores.length} | Results: ${results.totalResults} | Time: ${results.timeMs}ms\n`);
+        console.log(`Mode: ${results.mode} | Detail: ${String(options.detail)} | Stores: ${String(results.stores.length)} | Results: ${String(results.totalResults)} | Time: ${String(results.timeMs)}ms\n`);
 
         if (results.results.length === 0) {
           console.log('No results found.\n');
         } else {
           for (let i = 0; i < results.results.length; i++) {
-            const r = results.results[i]!;
+            const r = results.results[i];
+            if (r === undefined) continue;
 
             if (r.summary) {
-              console.log(`${i + 1}. [${r.score.toFixed(2)}] ${r.summary.type}: ${r.summary.name}`);
+              console.log(`${String(i + 1)}. [${r.score.toFixed(2)}] ${r.summary.type}: ${r.summary.name}`);
               console.log(`   ${r.summary.location}`);
               console.log(`   ${r.summary.purpose}`);
 
@@ -96,7 +97,7 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
             } else {
               // Fallback to old format
               const path = r.metadata.path ?? r.metadata.url ?? 'unknown';
-              console.log(`${i + 1}. [${r.score.toFixed(2)}] ${path}`);
+              console.log(`${String(i + 1)}. [${r.score.toFixed(2)}] ${path}`);
               const preview = r.highlight ?? r.content.slice(0, 150).replace(/\n/g, ' ') + (r.content.length > 150 ? '...' : '');
               console.log(`   ${preview}\n`);
             }

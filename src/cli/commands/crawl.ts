@@ -23,7 +23,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
       }
 
       // Use spinner in interactive mode (not quiet, not json output)
-      const isInteractive = process.stdout.isTTY === true && globalOpts.quiet !== true && globalOpts.format !== 'json';
+      const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true && globalOpts.format !== 'json';
       let spinner: Ora | undefined;
 
       if (isInteractive) {

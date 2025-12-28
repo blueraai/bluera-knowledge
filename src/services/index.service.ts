@@ -86,7 +86,7 @@ export class IndexService {
       for (const chunk of chunks) {
         const vector = await this.embeddingEngine.embed(chunk.content);
         const chunkId = chunks.length > 1
-          ? `${store.id}-${fileHash}-${chunk.chunkIndex}`
+          ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}`
           : `${store.id}-${fileHash}`;
 
         const doc: Document = {
