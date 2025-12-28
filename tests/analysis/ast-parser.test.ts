@@ -64,4 +64,35 @@ import express from 'express';
     expect(imports[0]?.specifiers).toContain('User');
     expect(imports[2]?.specifiers).toContain('express');
   });
+
+  it('should extract correct line numbers', () => {
+    const code = `
+export function foo() {
+  return true;
+}
+
+class Bar {
+  method() {}
+}`;
+
+    const parser = new ASTParser();
+    const nodes = parser.parse(code, 'typescript');
+
+    const fooNode = nodes.find(n => n.name === 'foo');
+    expect(fooNode?.startLine).toBe(2);
+    expect(fooNode?.endLine).toBe(4);
+
+    const barNode = nodes.find(n => n.name === 'Bar');
+    expect(barNode?.startLine).toBe(6);
+    expect(barNode?.endLine).toBe(8);
+  });
+
+  it('should handle malformed code gracefully', () => {
+    const code = 'function broken(';
+
+    const parser = new ASTParser();
+    const nodes = parser.parse(code, 'typescript');
+
+    expect(nodes).toEqual([]);
+  });
 });

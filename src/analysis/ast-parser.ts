@@ -29,116 +29,126 @@ export interface ImportInfo {
 
 export class ASTParser {
   parse(code: string, language: 'typescript' | 'javascript'): CodeNode[] {
-    const plugins: any[] = ['jsx'];
-    if (language === 'typescript') {
-      plugins.push('typescript');
-    }
-
-    const ast = parse(code, {
-      sourceType: 'module',
-      plugins
-    });
-
-    const nodes: CodeNode[] = [];
-
-    traverse(ast, {
-      FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => {
-        const node = path.node;
-        if (!node.id) return;
-
-        const exported = path.parent.type === 'ExportNamedDeclaration' ||
-                        path.parent.type === 'ExportDefaultDeclaration';
-
-        nodes.push({
-          type: 'function',
-          name: node.id.name,
-          exported,
-          async: node.async,
-          startLine: node.loc?.start.line ?? 0,
-          endLine: node.loc?.end.line ?? 0,
-          signature: this.extractFunctionSignature(node)
-        });
-      },
-
-      ClassDeclaration: (path: NodePath<t.ClassDeclaration>) => {
-        const node = path.node;
-        if (!node.id) return;
-
-        const exported = path.parent.type === 'ExportNamedDeclaration' ||
-                        path.parent.type === 'ExportDefaultDeclaration';
-
-        const methods: CodeNode['methods'] = [];
-
-        for (const member of node.body.body) {
-          if (t.isClassMethod(member) && t.isIdentifier(member.key)) {
-            methods.push({
-              name: member.key.name,
-              async: member.async,
-              signature: this.extractMethodSignature(member)
-            });
-          }
-        }
-
-        nodes.push({
-          type: 'class',
-          name: node.id.name,
-          exported,
-          startLine: node.loc?.start.line ?? 0,
-          endLine: node.loc?.end.line ?? 0,
-          methods
-        });
-      },
-
-      TSInterfaceDeclaration: (path: NodePath<t.TSInterfaceDeclaration>) => {
-        const node = path.node;
-
-        const exported = path.parent.type === 'ExportNamedDeclaration';
-
-        nodes.push({
-          type: 'interface',
-          name: node.id.name,
-          exported,
-          startLine: node.loc?.start.line ?? 0,
-          endLine: node.loc?.end.line ?? 0
-        });
+    try {
+      const plugins: any[] = ['jsx'];
+      if (language === 'typescript') {
+        plugins.push('typescript');
       }
-    });
 
-    return nodes;
+      const ast = parse(code, {
+        sourceType: 'module',
+        plugins
+      });
+
+      const nodes: CodeNode[] = [];
+
+      traverse(ast, {
+        FunctionDeclaration: (path: NodePath<t.FunctionDeclaration>) => {
+          const node = path.node;
+          if (!node.id) return;
+
+          const exported = path.parent.type === 'ExportNamedDeclaration' ||
+                          path.parent.type === 'ExportDefaultDeclaration';
+
+          nodes.push({
+            type: 'function',
+            name: node.id.name,
+            exported,
+            async: node.async,
+            startLine: node.loc?.start.line ?? 0,
+            endLine: node.loc?.end.line ?? 0,
+            signature: this.extractFunctionSignature(node)
+          });
+        },
+
+        ClassDeclaration: (path: NodePath<t.ClassDeclaration>) => {
+          const node = path.node;
+          if (!node.id) return;
+
+          const exported = path.parent.type === 'ExportNamedDeclaration' ||
+                          path.parent.type === 'ExportDefaultDeclaration';
+
+          const methods: CodeNode['methods'] = [];
+
+          for (const member of node.body.body) {
+            if (t.isClassMethod(member) && t.isIdentifier(member.key)) {
+              methods.push({
+                name: member.key.name,
+                async: member.async,
+                signature: this.extractMethodSignature(member)
+              });
+            }
+          }
+
+          nodes.push({
+            type: 'class',
+            name: node.id.name,
+            exported,
+            startLine: node.loc?.start.line ?? 0,
+            endLine: node.loc?.end.line ?? 0,
+            methods
+          });
+        },
+
+        TSInterfaceDeclaration: (path: NodePath<t.TSInterfaceDeclaration>) => {
+          const node = path.node;
+
+          const exported = path.parent.type === 'ExportNamedDeclaration';
+
+          nodes.push({
+            type: 'interface',
+            name: node.id.name,
+            exported,
+            startLine: node.loc?.start.line ?? 0,
+            endLine: node.loc?.end.line ?? 0
+          });
+        }
+      });
+
+      return nodes;
+    } catch (error) {
+      // Return empty array for malformed code
+      return [];
+    }
   }
 
   extractImports(code: string): ImportInfo[] {
-    const ast = parse(code, {
-      sourceType: 'module',
-      plugins: ['typescript', 'jsx']
-    });
+    try {
+      const ast = parse(code, {
+        sourceType: 'module',
+        plugins: ['typescript', 'jsx']
+      });
 
-    const imports: ImportInfo[] = [];
+      const imports: ImportInfo[] = [];
 
-    traverse(ast, {
-      ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
-        const node = path.node;
-        const specifiers: string[] = [];
+      traverse(ast, {
+        ImportDeclaration: (path: NodePath<t.ImportDeclaration>) => {
+          const node = path.node;
+          const specifiers: string[] = [];
 
-        for (const spec of node.specifiers) {
-          if (t.isImportDefaultSpecifier(spec)) {
-            specifiers.push(spec.local.name);
-          } else if (t.isImportSpecifier(spec)) {
-            specifiers.push(spec.local.name);
-          } else if (t.isImportNamespaceSpecifier(spec)) {
-            specifiers.push(spec.local.name);
+          for (const spec of node.specifiers) {
+            if (t.isImportDefaultSpecifier(spec)) {
+              specifiers.push(spec.local.name);
+            } else if (t.isImportSpecifier(spec)) {
+              specifiers.push(spec.local.name);
+            } else if (t.isImportNamespaceSpecifier(spec)) {
+              specifiers.push(spec.local.name);
+            }
           }
+
+          imports.push({
+            source: node.source.value,
+            specifiers,
+            isType: node.importKind === 'type'
+          });
         }
+      });
 
-        imports.push({
-          source: node.source.value,
-          specifiers,
-          isType: node.importKind === 'type'
-        });
-      }
-    });
-
-    return imports;
+      return imports;
+    } catch (error) {
+      // Return empty array for malformed code
+      return [];
+    }
   }
 
   private extractFunctionSignature(node: t.FunctionDeclaration): string {
