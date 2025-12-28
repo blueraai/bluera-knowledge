@@ -16,6 +16,8 @@ export class CodeUnitService {
     let startLine = -1;
     let type: CodeUnit['type'] = 'function';
 
+    // NOTE: This only supports function and class declarations.
+    // It does not handle arrow functions, interfaces, or type definitions.
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? '';
 
@@ -39,6 +41,8 @@ export class CodeUnitService {
     let braceCount = 0;
     let foundFirstBrace = false;
 
+    // NOTE: This brace counting does not handle braces inside strings or comments.
+    // It may incorrectly determine boundaries if code contains braces in string literals.
     for (let i = startLine - 1; i < lines.length; i++) {
       const line = lines[i] ?? '';
 
@@ -75,12 +79,13 @@ export class CodeUnitService {
 
   private extractSignature(line: string, name: string, type: string): string {
     // Remove 'export', 'async', trim whitespace
-    let sig = line.replace(/^\s*export\s+/, '').replace(/^\s*async\s+/, '').trim();
+    const sig = line.replace(/^\s*export\s+/, '').replace(/^\s*async\s+/, '').trim();
 
     if (type === 'function') {
       // Extract just "functionName(params): returnType"
+      // TODO: This regex is limited and may not handle complex return types, generics, or multiline signatures
       const match = sig.match(/function\s+(\w+\([^)]*\):\s*\w+)/);
-      if (match && match[1]) return match[1];
+      if (match?.[1] !== undefined && match[1].length > 0) return match[1];
     }
 
     if (type === 'class') {
