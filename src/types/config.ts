@@ -53,7 +53,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
   indexing: {
     concurrency: 4,
-    chunkSize: 800,
+    chunkSize: 600,
     chunkOverlap: 100,
     ignorePatterns: ['node_modules/**', '.git/**', '*.min.js', '*.map'],
   },
@@ -62,9 +62,9 @@ export const DEFAULT_CONFIG: AppConfig = {
     defaultLimit: 10,
     minScore: 0.5,
     rrf: {
-      k: 60,
+      k: 40,
       vectorWeight: 0.7,
-      ftsWeight: 0.4,
+      ftsWeight: 0.3,
     },
   },
   crawl: {

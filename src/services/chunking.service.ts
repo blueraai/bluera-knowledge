@@ -107,7 +107,7 @@ export class ChunkingService {
             chunkIndex: chunks.length,
             startOffset: section.startOffset + subChunk.startOffset,
             endOffset: section.startOffset + subChunk.endOffset,
-            sectionHeader: subChunk.chunkIndex === 0 ? section.header || undefined : undefined,
+            sectionHeader: section.header || undefined,
           });
         }
       }
@@ -126,8 +126,8 @@ export class ChunkingService {
    * Splits on top-level declarations to keep functions/classes together.
    */
   private chunkCode(text: string): Chunk[] {
-    // Match top-level declarations: export/function/class/interface/type/const/let/var
-    const declarationRegex = /^(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+\w+/gm;
+    // Match top-level declarations with optional JSDoc/comments before them
+    const declarationRegex = /^(?:\/\*\*[\s\S]*?\*\/\s*)?^(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+\w+/gm;
     const declarations: Array<{ startOffset: number; endOffset: number }> = [];
     
     let match: RegExpExecArray | null;
