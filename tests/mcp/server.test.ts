@@ -9,11 +9,7 @@ describe('MCP Server', () => {
     });
 
     expect(server).toBeDefined();
-    // MCP SDK doesn't expose tools list directly, so we test via integration
-  });
-
-  it('should handle search_codebase tool call', async () => {
-    // Integration test - will implement after server is created
-    expect(true).toBe(true);
+    // Note: MCP SDK doesn't expose tools list directly for unit testing.
+    // Integration testing is performed manually via MCP inspector or client.
   });
 });
