@@ -3,6 +3,16 @@ import type { DocumentMetadata } from './document.js';
 
 export type SearchMode = 'vector' | 'fts' | 'hybrid';
 
+export interface CodeUnit {
+  type: 'function' | 'class' | 'interface' | 'type' | 'const' | 'documentation' | 'example';
+  name: string;
+  signature: string;
+  fullContent: string;
+  startLine: number;
+  endLine: number;
+  language: string;
+}
+
 export interface SearchQuery {
   readonly query: string;
   readonly stores?: readonly StoreId[] | undefined;
@@ -20,6 +30,9 @@ export interface SearchResult {
   readonly content: string;
   readonly highlight?: string | undefined;
   readonly metadata: DocumentMetadata;
+
+  // NEW: Structured code unit for AI agents
+  readonly codeUnit?: CodeUnit | undefined;
 }
 
 export interface SearchResponse {
