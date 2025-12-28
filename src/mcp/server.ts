@@ -95,6 +95,12 @@ export function createMCPServer(options: MCPServerOptions) {
       }
 
       const query = args['query'] as string;
+
+      // Validate query input
+      if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        throw new Error('Invalid query: must be a non-empty string');
+      }
+
       const detail = (args['detail'] as DetailLevel | undefined) ?? 'minimal';
       const limit = (args['limit'] as number | undefined) ?? 10;
       const stores = args['stores'] as string[] | undefined;
@@ -102,9 +108,13 @@ export function createMCPServer(options: MCPServerOptions) {
       // Get all stores if none specified
       let storeIds: StoreId[] = stores as StoreId[] ?? (await services.store.list()).map(s => s.id);
 
-      // Initialize stores
-      for (const storeId of storeIds) {
-        await services.lance.initialize(storeId);
+      // Initialize stores with error handling
+      try {
+        for (const storeId of storeIds) {
+          await services.lance.initialize(storeId);
+        }
+      } catch (error) {
+        throw new Error(`Failed to initialize vector stores: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       // Perform search
