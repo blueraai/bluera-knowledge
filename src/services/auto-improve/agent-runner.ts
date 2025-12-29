@@ -157,13 +157,13 @@ IMPORTANT change type rules:
         required: ['confidence', 'targetDimension', 'changes', 'reasoning', 'expectedImprovement'],
       });
 
-      console.log(`       Calling Claude CLI (timeout: 120s)...`);
+      console.log(`       Calling Claude CLI (timeout: 300s)...`);
       const result = execSync(
         `${CLAUDE_CLI} -p ${this.shellEscape(prompt)} --output-format json --json-schema ${this.shellEscape(schema)}`,
         {
           cwd: this.projectRoot,
           encoding: 'utf-8',
-          timeout: 120000,
+          timeout: 300000, // 300 seconds (5 minutes) - agents need time to analyze code
           maxBuffer: 10 * 1024 * 1024,
         }
       );
@@ -201,11 +201,18 @@ IMPORTANT change type rules:
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`\n❌ Agent ${config.agentId} failed:`);
-      const firstLine = errorMessage.split('\n')[0];
-      console.error(`   ${firstLine ?? ''}`);
-      if (error instanceof Error && 'stderr' in error) {
-        console.error(`   stderr: ${String((error as NodeJS.ErrnoException & { stderr?: string }).stderr).slice(0, 200)}`);
+
+      // Detect timeout specifically
+      if (errorMessage.includes('ETIMEDOUT')) {
+        console.error(`\n⏱️  Agent ${config.agentId} timed out (exceeded 300s)`);
+        console.error(`   Consider simplifying the agent's task or increasing timeout further`);
+      } else {
+        console.error(`\n❌ Agent ${config.agentId} failed:`);
+        const firstLine = errorMessage.split('\n')[0];
+        console.error(`   ${firstLine ?? ''}`);
+        if (error instanceof Error && 'stderr' in error) {
+          console.error(`   stderr: ${String((error as NodeJS.ErrnoException & { stderr?: string }).stderr).slice(0, 200)}`);
+        }
       }
       return Promise.resolve(null);
     }
@@ -228,7 +235,14 @@ Think about:
 - Smaller chunks are more precise but may miss context
 - RRF weights balance semantic vs keyword matching
 
-Only propose changes you're confident will help. If you're unsure, set confidence lower.`;
+CRITICAL RULES:
+1. Make SMALL, incremental changes (adjust values by 10-20%, not 50%+)
+2. Change ONE parameter per recommendation
+3. NEVER remove existing logic - only adjust values
+4. Test your reasoning: would this change help for code-heavy queries?
+5. If unsure, set confidence lower
+
+Only propose changes you're confident will help.`;
   }
 
   private createRankingAgentPrompt(context: AgentContext): string {
@@ -246,6 +260,14 @@ Think about:
 - Do intent multipliers align with user expectations?
 - Are framework boosts helping or hurting relevance?
 
+CRITICAL RULES:
+1. Make SMALL, incremental changes (adjust boosts by 0.1-0.2, not 0.5+)
+2. Change ONE boost parameter per recommendation
+3. NEVER remove existing logic - only adjust values or add new logic
+4. For snippet filtering: PRESERVE code examples, don't filter them out
+5. Test your reasoning: would this change help for code-heavy queries?
+6. Avoid radical changes to snippet extraction logic
+
 Only propose small, targeted changes. Big changes are risky.`;
   }
 
@@ -262,6 +284,14 @@ Think about:
 - Should code files be chunked differently than markdown?
 - Are function/class boundaries being respected?
 - Is important metadata being preserved in chunks?
+
+CRITICAL RULES:
+1. Make SMALL, incremental changes (adjust logic slightly, not complete rewrites)
+2. Propose ONE change per recommendation
+3. NEVER remove existing logic - only enhance or adjust it
+4. Focus on metadata extraction, not core chunking algorithm
+5. Avoid changing core chunking strategy (risky, requires full reindex)
+6. Test your reasoning: would this change help for code-heavy queries?
 
 Be conservative. Changes to indexing require reindexing the entire corpus.`;
   }
