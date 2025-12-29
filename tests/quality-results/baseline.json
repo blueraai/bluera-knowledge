@@ -1,13 +1,13 @@
 {
-  "updatedAt": "2025-12-18",
+  "updatedAt": "2025-12-29",
   "corpus": "1.0.0",
   "querySet": "extended@1.0.0",
   "scores": {
-    "relevance": 0.46,
-    "ranking": 0.43,
-    "coverage": 0.37,
-    "snippetQuality": 0.35,
-    "overall": 0.39
+    "relevance": 0.37,
+    "ranking": 0.34,
+    "coverage": 0.33,
+    "snippetQuality": 0.27,
+    "overall": 0.32
   },
   "thresholds": {
     "regression": 0.05,
