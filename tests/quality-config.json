@@ -1,9 +1,9 @@
 {
-  "queryCount": 15,
+  "queryCount": 60,
   "searchLimit": 10,
   "searchMode": "hybrid",
   "stores": ["bluera-test-corpus"],
   "timeoutMs": 120000,
-  "querySet": "core",
+  "querySet": "extended",
   "corpusVersion": "1.0.0"
 }
