@@ -13,6 +13,8 @@ export interface Chunk {
   sectionHeader?: string | undefined;
   /** Function or class name if this chunk contains a code declaration */
   functionName?: string | undefined;
+  /** JSDoc/comment summary extracted from this chunk */
+  docSummary?: string | undefined;
 }
 
 export class ChunkingService {
@@ -173,6 +175,7 @@ export class ChunkingService {
           totalChunks: 0,
           startOffset: decl.startOffset,
           endOffset: decl.endOffset,
+          functionName: decl.name,
         });
       } else {
         // Split large declaration with sliding window

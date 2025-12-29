@@ -611,7 +611,7 @@ export class SearchService {
       // Boost score for code examples (contains function calls or assignments)
       // Favor complete patterns: function calls WITH arguments, assignments with values
       if (/\w+\([^)]*\)|=\s*\w+\(|=>/.test(cleaned)) {
-        score += 0.5;  // Increased from 0.3 to prioritize actionable code
+        score += 0.6;  // Enhanced boost to preserve code examples in snippets
       }
       
       if (score > bestScore) {
