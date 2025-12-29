@@ -106,6 +106,7 @@ export class IndexService {
             sectionHeader: chunk.sectionHeader,
             functionName: chunk.functionName,
             hasDocComments: /\/\*\*[\s\S]*?\*\//.test(chunk.content),
+            docSummary: chunk.docSummary,
           },
         };
         documents.push(doc);
