@@ -1,0 +1,19 @@
+{
+  "name": "bluera-knowledge",
+  "owner": {
+    "name": "Bluera",
+    "email": "plugins@bluera.com"
+  },
+  "metadata": {
+    "description": "Bluera's custom marketplace for knowledge management tools",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "bluera-knowledge",
+      "source": "github:chris-bluera/bluera-knowledge#transform-to-ckb-plugin",
+      "description": "Project-specific knowledge stores for definitive library sources. Clone and index important dependencies for authoritative reference.",
+      "version": "0.1.0"
+    }
+  ]
+}
