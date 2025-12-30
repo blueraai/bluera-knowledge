@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "bluera-knowledge",
-      "source": "github:chris-bluera/bluera-knowledge#transform-to-ckb-plugin",
+      "source": "./",
       "description": "Project-specific knowledge stores for definitive library sources. Clone and index important dependencies for authoritative reference.",
       "version": "0.1.0"
     }
