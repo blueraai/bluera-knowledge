@@ -1,30 +1,28 @@
 ---
-name: add-folder
 description: Index a local folder of reference material
-arguments:
-  - name: path
-    description: Absolute or relative path
-    required: true
-  - name: --name
-    description: Store name (adds to existing if name matches)
-    required: false
-allowed-tools: [Bash]
+argument-hint: "[path] [--name store-name]"
+allowed-tools: [mcp__bluera-knowledge__create_store, mcp__bluera-knowledge__index_store]
 ---
 
-Indexes local documentation or reference material.
+Index a local folder as a knowledge store.
 
-Usage:
-```
-/bk:add-folder ~/docs/api-reference --name=docs
-/bk:add-folder ./local-libs/custom-framework --name=framework
-```
+Arguments: $ARGUMENTS
 
-**Use cases**:
-- **Specifications**: Add requirements docs, API specs, RFC files
-- **Documentation**: Add design docs, architecture guides, ADRs
-- **Reference material**: Add coding standards, best practices, examples
-- **Non-code content**: Add markdown docs, research papers, diagrams
+Parse the arguments:
+- First argument is the folder path (required)
+- --name: Store name (optional, defaults to folder name)
 
-**Store behavior**: Same as add-repo - adds to existing store if `--name` matches.
+Steps:
+1. Call create_store MCP tool with:
+   - name: Use --name if provided, otherwise use folder basename
+   - type: "file"
+   - source: The folder path
 
-**Note**: Files/folders don't need to be code - CKB works with any text content (markdown, JSON, YAML, plain text, etc.).
+2. After store is created successfully, call index_store MCP tool with:
+   - store: The store name or ID from step 1
+
+3. Report to the user:
+   - Store name and ID
+   - Folder path indexed
+   - Number of files indexed
+   - How to search it (use /search command)

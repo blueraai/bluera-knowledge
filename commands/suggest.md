@@ -1,33 +1,32 @@
 ---
-name: suggest
 description: Suggest important dependencies to add to knowledge stores
-allowed-tools: [Read, Bash]
+allowed-tools: [Read, mcp__bluera-knowledge__list_stores]
 ---
 
-Analyzes project dependencies and suggests important libraries to clone and index.
+Analyze project dependencies and suggest important libraries to add to knowledge stores.
 
-Usage:
-```
-/bk:suggest
-```
+Steps:
+1. Check for dependency files in the current project:
+   - package.json (Node.js)
+   - requirements.txt, pyproject.toml (Python)
+   - Cargo.toml (Rust)
+   - go.mod (Go)
+   - Gemfile (Ruby)
 
-Scans:
-- `package.json` (Node.js projects)
-- `requirements.txt` / `pyproject.toml` (Python projects)
-- `Cargo.toml` (Rust projects)
-- Other dependency manifests
+2. Read and parse the dependency files found
 
-Suggests adding **major dependencies** only - frameworks, core libraries, not every package.
+3. Identify **major dependencies** - frameworks and core libraries:
+   - Focus on: frameworks, state management, routing, UI libraries, major tools
+   - Skip: minor utilities, plugins, type definitions, build tools
 
-Example output:
-```
-Suggested repositories to add:
+4. Call list_stores to check what's already indexed
 
-vue - Core framework for this Vue.js project
-  Command: /bk:add-repo https://github.com/vuejs/core --name=vue
+5. For each major dependency not yet indexed, suggest adding it:
+   - Provide the GitHub URL (look up if needed)
+   - Show the /add-repo command to run
+   - Explain why it's important
 
-pinia - State management library (heavily used)
-  Command: /bk:add-repo https://github.com/vuejs/pinia --name=pinia
-
-Not suggesting: 127 other dependencies (too minor/specific)
-```
+Display suggestions with priority:
+- ⭐️ Critical (core framework)
+- 🔵 High (heavily used library)
+- ◆ Medium (useful reference)

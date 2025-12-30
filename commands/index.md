@@ -1,17 +1,18 @@
 ---
-name: index
 description: Re-index a knowledge store
-arguments:
-  - name: store
-    description: Store name or ID
-    required: true
-allowed-tools: [Bash]
+argument-hint: "[store-name-or-id]"
+allowed-tools: [mcp__bluera-knowledge__index_store]
 ---
 
-Updates the search index for a store (e.g., after pulling new commits).
+Re-index a knowledge store to update the search index.
 
-Usage:
-```
-/bk:index vue
-/bk:index pydantic
-```
+Store to index: $ARGUMENTS
+
+Call the index_store MCP tool with:
+- store: The store name or ID provided by the user
+
+Report to the user:
+- Store name and ID
+- Number of documents indexed
+- Time taken
+- Success/failure status

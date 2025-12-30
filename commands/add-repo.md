@@ -1,35 +1,30 @@
 ---
-name: add-repo
 description: Clone and index a library source repository
-arguments:
-  - name: url
-    description: Git repository URL
-    required: true
-  - name: --name
-    description: Store name (adds to existing if name matches)
-    required: false
-  - name: --branch
-    description: Branch to clone
-    required: false
-allowed-tools: [Bash]
+argument-hint: "[git-url] [--name store-name] [--branch branch-name]"
+allowed-tools: [mcp__bluera-knowledge__create_store, mcp__bluera-knowledge__index_store]
 ---
 
-Clones a definitive library source repository for authoritative reference.
+Clone a git repository and add it to the knowledge stores.
 
-Usage:
-```
-/bk:add-repo https://github.com/vuejs/core --name=vue
-/bk:add-repo https://github.com/pydantic/pydantic --name=pydantic --branch=main
-```
+Arguments: $ARGUMENTS
 
-**Use cases**:
-- **Library sources**: Vue project → add Vue.js source, Pydantic project → add Pydantic
-- **Documentation**: Add framework docs, design patterns, best practices
-- **Reference repos**: Add example implementations, boilerplate projects
+Parse the arguments:
+- First argument is the git URL (required)
+- --name: Store name (optional, defaults to repo name)
+- --branch: Git branch (optional, defaults to default branch)
 
-**Store behavior**:
-- If `--name` matches existing store: Adds repo to that store
-- If `--name` is new: Creates new store with that name
-- If no `--name`: Uses repo name (e.g., "core" from vuejs/core)
+Steps:
+1. Call create_store MCP tool with:
+   - name: Use --name if provided, otherwise extract from git URL
+   - type: "repo"
+   - source: The git URL
+   - branch: The branch name if specified
 
-Clones to `.bluera/bluera-knowledge/repos/<store-name>/` making it accessible to both vector search and Grep/Read.
+2. After store is created successfully, call index_store MCP tool with:
+   - store: The store name or ID from step 1
+
+3. Report to the user:
+   - Store name and ID
+   - Clone location
+   - Number of files indexed
+   - How to search it (use /search command)
