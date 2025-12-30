@@ -357,6 +357,7 @@ export class SearchService {
 
       // Apply file-type boost (base + intent-adjusted)
       const fileTypeBoost = this.getFileTypeBoost(
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         result.metadata['fileType'] as string | undefined,
         intent
       );
@@ -485,6 +486,7 @@ export class SearchService {
 
     // Layer 1: Always add summary
     const path = result.metadata.path ?? result.metadata.url ?? 'unknown';
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const fileType = result.metadata['fileType'] as string | undefined;
 
     // Try to extract code unit
@@ -556,6 +558,7 @@ export class SearchService {
   }
 
   private inferType(fileType: string | undefined, codeUnit: CodeUnit | undefined): import('../types/search.js').ResultSummary['type'] {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     if (codeUnit) return codeUnit.type as import('../types/search.js').ResultSummary['type'];
     if (fileType === 'documentation' || fileType === 'documentation-primary') return 'documentation';
     return 'function';

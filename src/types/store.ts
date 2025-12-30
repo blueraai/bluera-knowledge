@@ -21,6 +21,7 @@ export interface FileStore extends BaseStore {
 export interface RepoStore extends BaseStore {
   readonly type: 'repo';
   readonly path: string;
+  readonly url?: string | undefined;
   readonly branch?: string | undefined;
 }
 

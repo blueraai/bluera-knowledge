@@ -5,7 +5,22 @@ import * as t from '@babel/types';
 
 // Handle both ESM and CJS module formats
 type TraverseFunction = (ast: t.File, visitor: Record<string, unknown>) => void;
-const traverse = ((traverseModule as { default?: TraverseFunction }).default ?? traverseModule) as TraverseFunction;
+function getTraverse(mod: unknown): TraverseFunction {
+  if (typeof mod === 'function') {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    return mod as TraverseFunction;
+  }
+  if (mod !== null && typeof mod === 'object' && 'default' in mod) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const withDefault = mod as { default: unknown };
+    if (typeof withDefault.default === 'function') {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      return withDefault.default as TraverseFunction;
+    }
+  }
+  throw new Error('Invalid traverse module export');
+}
+const traverse = getTraverse(traverseModule);
 
 export interface CodeNode {
   type: 'function' | 'class' | 'interface' | 'type' | 'const';

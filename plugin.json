@@ -1,0 +1,14 @@
+{
+  "name": "claude-knowledge-base",
+  "version": "0.1.0",
+  "displayName": "Claude Knowledge Base (CKB)",
+  "description": "Project-specific knowledge stores for definitive library sources. Clone and index important dependencies for authoritative reference.",
+  "author": "Bluera",
+  "autoActivate": true,
+  "commands": ["search", "add-repo", "add-folder", "index", "stores", "suggest"],
+  "skills": ["knowledge-search", "when-to-query"],
+  "mcp": {
+    "enabled": true,
+    "configFile": ".mcp.json"
+  }
+}

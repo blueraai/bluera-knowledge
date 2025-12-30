@@ -6,6 +6,7 @@ import type { StoreId } from '../types/brands.js';
 import { createStoreId } from '../types/brands.js';
 import type { Result } from '../types/result.js';
 import { ok, err } from '../types/result.js';
+import { cloneRepository } from '../plugin/git-clone.js';
 
 export interface CreateStoreInput {
   name: string;
@@ -64,15 +65,35 @@ export class StoreService {
         } satisfies FileStore;
         break;
 
-      case 'repo':
-        if (input.path === undefined) {
-          return err(new Error('Path is required for repo stores'));
+      case 'repo': {
+        let repoPath = input.path;
+
+        // If URL provided, clone it
+        if (input.url !== undefined) {
+          const cloneDir = join(this.dataDir, 'repos', id);
+          const result = await cloneRepository({
+            url: input.url,
+            targetDir: cloneDir,
+            ...(input.branch !== undefined ? { branch: input.branch } : {}),
+            depth: input.depth ?? 1
+          });
+
+          if (!result.success) {
+            return err(result.error);
+          }
+          repoPath = result.data;
         }
+
+        if (repoPath === undefined) {
+          return err(new Error('Path or URL required for repo stores'));
+        }
+
         store = {
           type: 'repo',
           id,
           name: input.name,
-          path: input.path,
+          path: repoPath,
+          url: input.url,
           branch: input.branch,
           description: input.description,
           tags: input.tags,
@@ -81,6 +102,7 @@ export class StoreService {
           updatedAt: now,
         } satisfies RepoStore;
         break;
+      }
 
       case 'web':
         if (input.url === undefined) {
@@ -137,6 +159,7 @@ export class StoreService {
       return err(new Error(`Store not found: ${id}`));
     }
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const updated = {
       ...store,
       ...updates,
@@ -165,6 +188,7 @@ export class StoreService {
     const registryPath = join(this.dataDir, 'stores.json');
     try {
       const content = await readFile(registryPath, 'utf-8');
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const data = JSON.parse(content) as { stores: Store[] };
       this.registry = {
         stores: data.stores.map((s) => ({

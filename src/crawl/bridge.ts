@@ -55,6 +55,7 @@ export class PythonBridge {
     const rl = createInterface({ input: this.process.stdout });
     rl.on('line', (line) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const response = JSON.parse(line) as {
           id: string;
           error?: { message: string };

@@ -85,6 +85,7 @@ export class LanceStore {
       query = query.distanceType('cosine');
     }
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const results = (await query.toArray()) as SearchHit[];
 
     return results
@@ -97,6 +98,7 @@ export class LanceStore {
         id: createDocumentId(r.id),
         content: r.content,
         score: 1 - r._distance,
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         metadata: JSON.parse(r.metadata) as DocumentMetadata,
       }));
   }
@@ -116,6 +118,7 @@ export class LanceStore {
     const table = await this.getTable(storeId);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const results = await table
         .search(query, 'fts')
         .limit(limit)
@@ -125,6 +128,7 @@ export class LanceStore {
         id: createDocumentId(r.id),
         content: r.content,
         score: r.score,
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         metadata: JSON.parse(r.metadata) as DocumentMetadata,
       }));
     } catch {

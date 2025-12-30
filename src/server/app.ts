@@ -20,6 +20,7 @@ export function createApp(services: ServiceContainer): Hono {
 
   app.post('/api/stores', async (c) => {
     const jsonData: unknown = await c.req.json();
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const body = jsonData as CreateStoreInput;
     const result = await services.store.create(body);
     if (result.success) {
@@ -44,6 +45,7 @@ export function createApp(services: ServiceContainer): Hono {
 
   // Search
   app.post('/api/search', async (c) => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const body = await c.req.json() as unknown as Partial<SearchQuery>;
     const storeIds = (await services.store.list()).map(s => s.id);
 
@@ -52,6 +54,7 @@ export function createApp(services: ServiceContainer): Hono {
     }
 
     const query: SearchQuery = {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       ...(body as SearchQuery),
       stores: (body.stores !== undefined ? body.stores : storeIds),
     };

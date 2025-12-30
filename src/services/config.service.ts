@@ -24,6 +24,7 @@ export class ConfigService {
 
     try {
       const content = await readFile(this.configPath, 'utf-8');
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       this.config = { ...DEFAULT_CONFIG, ...JSON.parse(content) } as AppConfig;
     } catch {
       this.config = { ...DEFAULT_CONFIG };
