@@ -1,17 +1,10 @@
 ---
 description: List all indexed library stores
-allowed-tools: [mcp__bluera-knowledge__list_stores]
+allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
 ---
 
-List all indexed knowledge stores.
+List all indexed knowledge stores:
 
-Call the list_stores MCP tool to get all stores.
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js stores`
 
-Display the results showing:
-- Store name and type (repo or file)
-- Store ID
-- Path or URL
-- Description if available
-- Created date
-
-Format it in a clear, readable way for the user.
+The output shows all indexed stores with their names, types, IDs, and paths.

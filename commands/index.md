@@ -1,18 +1,11 @@
 ---
 description: Re-index a knowledge store
 argument-hint: "[store-name-or-id]"
-allowed-tools: [mcp__bluera-knowledge__index_store]
+allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
 ---
 
-Re-index a knowledge store to update the search index.
+Re-indexing store: $ARGUMENTS
 
-Store to index: $ARGUMENTS
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js index $ARGUMENTS`
 
-Call the index_store MCP tool with:
-- store: The store name or ID provided by the user
-
-Report to the user:
-- Store name and ID
-- Number of documents indexed
-- Time taken
-- Success/failure status
+The store's search index will be updated with any new or modified files.

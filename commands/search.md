@@ -1,25 +1,11 @@
 ---
 description: Search indexed library sources
 argument-hint: "[query] [--stores names] [--limit N]"
-allowed-tools: [mcp__bluera-knowledge__search_codebase]
+allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
 ---
 
-Search the indexed library sources for the user's query.
+Search indexed library sources for: $ARGUMENTS
 
-Query: $ARGUMENTS
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js search $ARGUMENTS`
 
-Parse the arguments:
-- First argument is the search query (required)
-- --stores: Comma-separated store names (optional)
-- --limit: Maximum results (optional, default 10)
-
-Call the search_codebase MCP tool with:
-- query: The search query
-- limit: Parse from --limit or default to 10
-- stores: If --stores provided, split by commas into an array
-- detail: Use "contextual" for helpful results with imports and types
-
-Display the results clearly, showing:
-- Code location and purpose
-- Relevance score
-- Key context from the match
+The results show relevant code locations, purposes, and relevance scores from your indexed libraries.
