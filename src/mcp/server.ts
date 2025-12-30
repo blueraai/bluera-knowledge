@@ -96,6 +96,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
         throw new Error('No arguments provided');
       }
 
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const query = args['query'] as string;
 
       // Validate query input
@@ -103,11 +104,15 @@ export function createMCPServer(options: MCPServerOptions): Server {
         throw new Error('Invalid query: must be a non-empty string');
       }
 
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const detail = (args['detail'] as DetailLevel | undefined) ?? 'minimal';
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const limit = (args['limit'] as number | undefined) ?? 10;
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const stores = args['stores'] as string[] | undefined;
 
       // Get all stores if none specified
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const storeIds: StoreId[] = stores !== undefined ? stores as StoreId[] : (await services.store.list()).map(s => s.id);
 
       // Initialize stores with error handling

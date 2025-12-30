@@ -5,7 +5,7 @@ dist/
 *.log
 .DS_Store
 coverage/
-tests/quality-results/.checkpoints/
 .vscode/
 *.local.md
 .claude/settings.local.json
+.bluera/

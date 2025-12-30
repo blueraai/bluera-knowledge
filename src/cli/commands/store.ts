@@ -92,7 +92,7 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
         console.log(`  ID: ${s.id}`);
         console.log(`  Type: ${s.type}`);
         if ('path' in s) console.log(`  Path: ${s.path}`);
-        if ('url' in s) console.log(`  URL: ${s.url}`);
+        if ('url' in s && s.url !== undefined) console.log(`  URL: ${s.url}`);
         if (s.description !== undefined) console.log(`  Description: ${s.description}`);
         console.log(`  Created: ${s.createdAt.toISOString()}`);
         console.log(`  Updated: ${s.updatedAt.toISOString()}`);

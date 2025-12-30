@@ -28,6 +28,7 @@ export class EmbeddingEngine {
       pooling: 'mean',
       normalize: true,
     });
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return Array.from(output.data as Float32Array);
   }
 

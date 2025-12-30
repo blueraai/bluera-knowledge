@@ -69,10 +69,12 @@ export function createImportCommand(getOptions: () => GlobalOptions): Command {
           parsed === null ||
           !('store' in parsed) ||
           !('documents' in parsed) ||
+          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
           !Array.isArray((parsed as { documents: unknown }).documents)
         ) {
           throw new Error('Invalid format');
         }
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         data = parsed as ImportData;
       } catch (error) {
         failStatus('Failed to read import file');
