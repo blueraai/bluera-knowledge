@@ -428,3 +428,9 @@ export async function runMCPServer(options: MCPServerOptions): Promise<void> {
 
   console.error('Bluera Knowledge MCP server running on stdio');
 }
+
+// Run the server when this file is executed directly
+runMCPServer({
+  dataDir: process.env['DATA_DIR'],
+  config: process.env['CONFIG_PATH']
+}).catch(console.error);
