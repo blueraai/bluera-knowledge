@@ -1,6 +1,6 @@
-# When to Query CKB vs Current Project
+# When to Query BK vs Current Project
 
-## Query CKB When:
+## Query BK When:
 
 **Questions about libraries/dependencies:**
 - "How does Vue's reactivity system work?"
@@ -38,12 +38,12 @@
 
 ## Setup First: Add Important Dependencies
 
-Before CKB is useful, you need to add library sources:
+Before BK is useful, you need to add library sources:
 
 ```
-/ckb:suggest                  # Get recommendations
-/ckb:add-repo <url> --name=<lib>   # Add important libs
-/ckb:stores                   # Verify what's indexed
+/bk:suggest                  # Get recommendations
+/bk:add-repo <url> --name=<lib>   # Add important libs
+/bk:stores                   # Verify what's indexed
 ```
 
 ## Mental Model
@@ -51,10 +51,10 @@ Before CKB is useful, you need to add library sources:
 ```
 Current Project Files → Grep/Read directly
            vs
-Library Sources (Vue, Pydantic, etc.) → CKB (vector search OR Grep/Read)
+Library Sources (Vue, Pydantic, etc.) → BK (vector search OR Grep/Read)
 ```
 
-CKB gives you both ways to access library sources:
+BK gives you both ways to access library sources:
 1. Semantic search for discovery
 2. Grep/Read for precision
 

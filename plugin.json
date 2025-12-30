@@ -1,7 +1,7 @@
 {
-  "name": "claude-knowledge-base",
+  "name": "bluera-knowledge",
   "version": "0.1.0",
-  "displayName": "Claude Knowledge Base (CKB)",
+  "displayName": "Bluera Knowledge (BK)",
   "description": "Project-specific knowledge stores for definitive library sources. Clone and index important dependencies for authoritative reference.",
   "author": "Bluera",
   "autoActivate": true,

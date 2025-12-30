@@ -147,8 +147,8 @@ export async function handleStores(): Promise<void> {
   if (stores.length === 0) {
     console.log('No stores found.');
     console.log('\nCreate a store with:');
-    console.log('  /ckb:add-repo <url> --name=<name>');
-    console.log('  /ckb:add-folder <path> --name=<name>');
+    console.log('  /bk:add-repo <url> --name=<name>');
+    console.log('  /bk:add-folder <path> --name=<name>');
     return;
   }
 
@@ -179,7 +179,7 @@ export async function handleSuggest(): Promise<void> {
   if (suggestions.length === 0) {
     console.log('No recognized dependencies found to suggest.');
     console.log('\nYou can manually add repos with:');
-    console.log('  /ckb:add-repo <url> --name=<name>');
+    console.log('  /bk:add-repo <url> --name=<name>');
     return;
   }
 
@@ -194,7 +194,7 @@ export async function handleSuggest(): Promise<void> {
 
     console.log(`${badge} ${suggestion.name}`);
     console.log(`   ${suggestion.reason}`);
-    console.log(`   /ckb:add-repo ${suggestion.url} --name=${suggestion.name}\n`);
+    console.log(`   /bk:add-repo ${suggestion.url} --name=${suggestion.name}\n`);
   }
 
   console.log(`Showing ${String(suggestions.length)} important dependencies.`);
