@@ -12,6 +12,6 @@ Updates the search index for a store (e.g., after pulling new commits).
 
 Usage:
 ```
-/ckb:index vue
-/ckb:index pydantic
+/bk:index vue
+/bk:index pydantic
 ```

@@ -18,8 +18,8 @@ Searches indexed library sources using semantic (vector) + full-text search.
 
 Usage:
 ```
-/ckb:search "how does Vue handle reactivity"
-/ckb:search "pydantic validators" --stores=pydantic --limit=5
+/bk:search "how does Vue handle reactivity"
+/bk:search "pydantic validators" --stores=pydantic --limit=5
 ```
 
 Note: This searches the definitive library sources you've indexed, not your current project.

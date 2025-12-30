@@ -8,7 +8,7 @@ Analyzes project dependencies and suggests important libraries to clone and inde
 
 Usage:
 ```
-/ckb:suggest
+/bk:suggest
 ```
 
 Scans:
@@ -24,10 +24,10 @@ Example output:
 Suggested repositories to add:
 
 vue - Core framework for this Vue.js project
-  Command: /ckb:add-repo https://github.com/vuejs/core --name=vue
+  Command: /bk:add-repo https://github.com/vuejs/core --name=vue
 
 pinia - State management library (heavily used)
-  Command: /ckb:add-repo https://github.com/vuejs/pinia --name=pinia
+  Command: /bk:add-repo https://github.com/vuejs/pinia --name=pinia
 
 Not suggesting: 127 other dependencies (too minor/specific)
 ```

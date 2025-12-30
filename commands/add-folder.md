@@ -15,8 +15,8 @@ Indexes local documentation or reference material.
 
 Usage:
 ```
-/ckb:add-folder ~/docs/api-reference --name=docs
-/ckb:add-folder ./local-libs/custom-framework --name=framework
+/bk:add-folder ~/docs/api-reference --name=docs
+/bk:add-folder ./local-libs/custom-framework --name=framework
 ```
 
 **Use cases**:

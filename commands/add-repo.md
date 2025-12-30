@@ -18,8 +18,8 @@ Clones a definitive library source repository for authoritative reference.
 
 Usage:
 ```
-/ckb:add-repo https://github.com/vuejs/core --name=vue
-/ckb:add-repo https://github.com/pydantic/pydantic --name=pydantic --branch=main
+/bk:add-repo https://github.com/vuejs/core --name=vue
+/bk:add-repo https://github.com/pydantic/pydantic --name=pydantic --branch=main
 ```
 
 **Use cases**:
@@ -32,4 +32,4 @@ Usage:
 - If `--name` is new: Creates new store with that name
 - If no `--name`: Uses repo name (e.g., "core" from vuejs/core)
 
-Clones to `.bluera/claude-knowledge-base/repos/<store-name>/` making it accessible to both vector search and Grep/Read.
+Clones to `.bluera/bluera-knowledge/repos/<store-name>/` making it accessible to both vector search and Grep/Read.

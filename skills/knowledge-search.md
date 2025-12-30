@@ -1,6 +1,6 @@
-# Using Claude Knowledge Base (CKB)
+# Using Bluera Knowledge (BK)
 
-CKB provides access to **definitive library sources** for your project dependencies.
+BK provides access to **definitive library sources** for your project dependencies.
 
 ## Purpose: Authoritative References, Not Project Search
 
@@ -12,7 +12,7 @@ CKB provides access to **definitive library sources** for your project dependenc
 
 **CKB is NOT for**: Searching your current project code
 - Use Grep/Read directly on project files
-- CKB stores are for external reference material
+- BK stores are for external reference material
 
 ## Two Ways to Access Library Sources
 
@@ -20,14 +20,14 @@ CKB provides access to **definitive library sources** for your project dependenc
 Find concepts and patterns across library docs:
 ```
 search_codebase("vue reactivity system")
-/ckb:search "pydantic custom validators"
+/bk:search "pydantic custom validators"
 ```
 
 ### 2. Direct File Access (Grep/Read)
 Precise lookups in cloned library source:
 ```
-Grep: pattern="defineReactive" path=".bluera/claude-knowledge-base/repos/vue/"
-Read: .bluera/claude-knowledge-base/repos/pydantic/pydantic/validators.py
+Grep: pattern="defineReactive" path=".bluera/bluera-knowledge/repos/vue/"
+Read: .bluera/bluera-knowledge/repos/pydantic/pydantic/validators.py
 ```
 
 ## Both Are Valid!
@@ -44,6 +44,6 @@ User: "How does Vue's computed properties work internally?"
 Claude:
 1. Check stores: `list_stores` MCP tool → vue store exists
 2. Vector search: `search_codebase("vue computed properties")` → finds computed.ts
-3. Read file: `.bluera/claude-knowledge-base/repos/vue/packages/reactivity/src/computed.ts`
+3. Read file: `.bluera/bluera-knowledge/repos/vue/packages/reactivity/src/computed.ts`
 4. Grep for implementation: pattern="class ComputedRefImpl"
 5. Explain with authoritative source code examples
