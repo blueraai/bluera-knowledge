@@ -1,26 +1,25 @@
 ---
-name: search
 description: Search indexed library sources
-arguments:
-  - name: query
-    description: Natural language search query
-    required: true
-  - name: --stores
-    description: Comma-separated store names
-    required: false
-  - name: --limit
-    description: Max results (default 10)
-    required: false
-allowed-tools: [Bash]
+argument-hint: "[query] [--stores names] [--limit N]"
+allowed-tools: [mcp__bluera-knowledge__search_codebase]
 ---
 
-Searches indexed library sources using semantic (vector) + full-text search.
+Search the indexed library sources for the user's query.
 
-Usage:
-```
-/bk:search "how does Vue handle reactivity"
-/bk:search "pydantic validators" --stores=pydantic --limit=5
-```
+Query: $ARGUMENTS
 
-Note: This searches the definitive library sources you've indexed, not your current project.
-For project files, use Grep/Read directly.
+Parse the arguments:
+- First argument is the search query (required)
+- --stores: Comma-separated store names (optional)
+- --limit: Maximum results (optional, default 10)
+
+Call the search_codebase MCP tool with:
+- query: The search query
+- limit: Parse from --limit or default to 10
+- stores: If --stores provided, split by commas into an array
+- detail: Use "contextual" for helpful results with imports and types
+
+Display the results clearly, showing:
+- Code location and purpose
+- Relevance score
+- Key context from the match

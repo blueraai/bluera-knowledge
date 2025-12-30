@@ -1,23 +1,17 @@
 ---
-name: stores
 description: List all indexed library stores
-allowed-tools: [Bash]
+allowed-tools: [mcp__bluera-knowledge__list_stores]
 ---
 
-Shows all indexed library sources with their paths.
+List all indexed knowledge stores.
 
-Usage:
-```
-/bk:stores
-```
+Call the list_stores MCP tool to get all stores.
 
-Example output:
-```
-vue (repo) - 8a4b2c
-  URL: https://github.com/vuejs/core
-  Path: .bluera/bluera-knowledge/repos/vue/
+Display the results showing:
+- Store name and type (repo or file)
+- Store ID
+- Path or URL
+- Description if available
+- Created date
 
-pydantic (repo) - 3f1a9e
-  URL: https://github.com/pydantic/pydantic
-  Path: .bluera/bluera-knowledge/repos/pydantic/
-```
+Format it in a clear, readable way for the user.
