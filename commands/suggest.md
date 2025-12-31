@@ -1,10 +1,10 @@
 ---
 description: Suggest important dependencies to add to knowledge stores
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
+allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
 ---
 
 Analyzing project dependencies and suggesting important libraries to add:
 
-!`PROJECT_ROOT="${PWD}" node ${CLAUDE_PLUGIN_ROOT}/dist/index.js suggest`
+!`${CLAUDE_PLUGIN_ROOT}/run.sh suggest`
 
 This scans your project's dependency files and suggests major libraries that would be useful to index as knowledge stores.
