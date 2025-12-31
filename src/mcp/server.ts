@@ -189,9 +189,15 @@ export function createMCPServer(options: MCPServerOptions): Server {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const stores = args['stores'] as string[] | undefined;
 
-      // Get all stores if none specified
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      const storeIds: StoreId[] = stores !== undefined ? stores as StoreId[] : (await services.store.list()).map(s => s.id);
+      // Get all stores if none specified, resolve store names to IDs
+      const storeIds: StoreId[] = stores !== undefined
+        ? await Promise.all(stores.map(async (s) => {
+            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+            const store = await services.store.getByIdOrName(s as StoreId);
+            if (!store) throw new Error(`Store not found: ${s}`);
+            return store.id;
+          }))
+        : (await services.store.list()).map(s => s.id);
 
       // Initialize stores with error handling
       try {
