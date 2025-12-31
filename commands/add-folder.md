@@ -1,7 +1,7 @@
 ---
 description: Index a local folder of reference material
 argument-hint: "[path] [--name store-name]"
-allowed-tools: [Bash(*/run.sh:*)]
+allowed-tools: [Bash(run.sh:*)]
 ---
 
 Indexing folder: $ARGUMENTS
