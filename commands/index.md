@@ -1,7 +1,7 @@
 ---
 description: Re-index a knowledge store
 argument-hint: "[store-name-or-id]"
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
+allowed-tools: [Bash(*/run.sh:*)]
 ---
 
 Re-indexing store: $ARGUMENTS

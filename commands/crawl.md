@@ -1,7 +1,7 @@
 ---
 description: Crawl web pages and add content to a web store
 argument-hint: "[url] [store-name]"
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
+allowed-tools: [Bash(*/run.sh:*)]
 ---
 
 Crawling $ARGUMENTS

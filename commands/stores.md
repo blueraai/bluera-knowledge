@@ -1,6 +1,6 @@
 ---
 description: List all indexed library stores
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
+allowed-tools: [Bash(*/run.sh:*)]
 ---
 
 List all indexed knowledge stores:

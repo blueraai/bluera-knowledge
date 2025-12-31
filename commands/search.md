@@ -1,7 +1,7 @@
 ---
 description: Search indexed library sources
 argument-hint: "[query] [--stores names] [--limit N]"
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
+allowed-tools: [Bash(*/run.sh:*)]
 ---
 
 Search indexed library sources for: $ARGUMENTS
