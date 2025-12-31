@@ -1,4 +1,22 @@
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+interface PackageJson {
+  version: string;
+}
+
+function getVersion(): string {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const content = readFileSync(join(__dirname, '../package.json'), 'utf-8');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const pkg: PackageJson = JSON.parse(content);
+  return pkg.version;
+}
+
+const version = getVersion();
 
 export function createProgram(): Command {
   const program = new Command();
@@ -6,7 +24,7 @@ export function createProgram(): Command {
   program
     .name('bkb')
     .description('CLI tool for managing knowledge stores with semantic search')
-    .version('0.2.1');
+    .version(version);
 
   program
     .option('-c, --config <path>', 'Path to config file')
