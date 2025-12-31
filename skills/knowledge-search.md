@@ -19,8 +19,8 @@ BK provides access to **definitive library sources** for your project dependenci
 ### 1. Vector Search (MCP or slash command)
 Find concepts and patterns across library docs:
 ```
-search_codebase("vue reactivity system")
-/bk:search "pydantic custom validators"
+search("vue reactivity system")
+/bluera-knowledge:search "pydantic custom validators"
 ```
 
 ### 2. Direct File Access (Grep/Read)
@@ -43,7 +43,7 @@ User: "How does Vue's computed properties work internally?"
 
 Claude:
 1. Check stores: `list_stores` MCP tool → vue store exists
-2. Vector search: `search_codebase("vue computed properties")` → finds computed.ts
+2. Vector search: `search("vue computed properties")` → finds computed.ts
 3. Read file: `.bluera/bluera-knowledge/repos/vue/packages/reactivity/src/computed.ts`
 4. Grep for implementation: pattern="class ComputedRefImpl"
 5. Explain with authoritative source code examples

@@ -33,8 +33,8 @@ export function createMCPServer(options: MCPServerOptions): Server {
     return Promise.resolve({
       tools: [
         {
-          name: 'search_codebase',
-          description: 'Search indexed library sources with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.',
+          name: 'search',
+          description: 'Search all indexed knowledge stores with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -142,7 +142,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
         },
         {
           name: 'get_full_context',
-          description: 'Get complete code and context for a specific search result by ID. Use this after search_codebase to get full implementation details.',
+          description: 'Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -162,7 +162,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    if (name === 'search_codebase') {
+    if (name === 'search') {
       const services = await createServices(options.config, options.dataDir);
 
       if (!args) {

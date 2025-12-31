@@ -777,7 +777,7 @@ describe('MCP Server', () => {
     // MCP SDK doesn't expose tools list directly, so we test via integration
   });
 
-  it('should handle search_codebase tool call', async () => {
+  it('should handle search tool call', async () => {
     // Integration test - will implement after server is created
     expect(true).toBe(true);
   });
@@ -829,8 +829,8 @@ export function createMCPServer(options: MCPServerOptions) {
     return {
       tools: [
         {
-          name: 'search_codebase',
-          description: 'Search codebase with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.',
+          name: 'search',
+          description: 'Search all indexed knowledge stores with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -865,7 +865,7 @@ export function createMCPServer(options: MCPServerOptions) {
         },
         {
           name: 'get_full_context',
-          description: 'Get complete code and context for a specific search result by ID. Use this after search_codebase to get full implementation details.',
+          description: 'Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -885,7 +885,7 @@ export function createMCPServer(options: MCPServerOptions) {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    if (name === 'search_codebase') {
+    if (name === 'search') {
       const services = await createServices(options.config, options.dataDir);
 
       const query = args.query as string;
