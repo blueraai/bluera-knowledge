@@ -16,8 +16,8 @@ export class CodeUnitService {
     let startLine = -1;
     let type: CodeUnit['type'] = 'function';
 
-    // NOTE: This only supports function and class declarations.
-    // It does not handle arrow functions, interfaces, or type definitions.
+    // NOTE: Now supports function declarations, class declarations, and arrow functions (const/let/var).
+    // Does not handle interfaces or type definitions yet.
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? '';
 
@@ -30,6 +30,13 @@ export class CodeUnitService {
       if (line.includes(`class ${symbolName}`)) {
         startLine = i + 1;
         type = 'class';
+        break;
+      }
+
+      // Check for arrow functions: const/let/var name = ...
+      if (line.match(new RegExp(`(?:const|let|var)\\s+${symbolName}\\s*=`))) {
+        startLine = i + 1;
+        type = 'const';
         break;
       }
     }
@@ -90,6 +97,17 @@ export class CodeUnitService {
 
     if (type === 'class') {
       return `class ${name}`;
+    }
+
+    if (type === 'const') {
+      // For arrow functions, extract the variable declaration part
+      // Example: const myFunc = (param: string): void => ...
+      // Returns: const myFunc = (param: string): void
+      const arrowMatch = sig.match(new RegExp(`((?:const|let|var)\\s+${name}\\s*=\\s*(?:async\\s+)?\\([^)]*\\)(?::\\s*[^=]+)?)`));
+      if (arrowMatch?.[1] != null && arrowMatch[1] !== '') return arrowMatch[1].trim();
+
+      // Fallback for simple arrow functions without params
+      return `const ${name}`;
     }
 
     return sig;

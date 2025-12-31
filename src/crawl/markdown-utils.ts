@@ -143,6 +143,10 @@ export function cleanupMarkdown(markdown: string): string {
   // Pattern: "## \n\nSome text" → "## Some text"
   result = result.replace(/^(#{1,6})\s*\n\n+(\S[^\n]*)/gm, '$1 $2');
 
+  // 0.5. Normalize multiple spaces after heading markers to single space
+  // Pattern: "##  Subtitle" → "## Subtitle"
+  result = result.replace(/(#{1,6})\s{2,}/g, '$1 ');
+
   // 1. Fix navigation links with excessive whitespace
   result = result.replace(/\*\s+\[\s*([^\n]+?)\s*\]\(([^)]+)\)/g, '* [$1]($2)');
 
@@ -165,6 +169,9 @@ export function cleanupMarkdown(markdown: string): string {
     /(\* Item 1)\n\n+(\* Item 2)\n\n+(\* Item 3)/g,
     '$1\n$2\n$3',
   );
+
+  // 3.5. General list item spacing - ensure single newlines between list items
+  result = result.replace(/(^\*\s[^\n]+)\n{2,}(^\*\s)/gm, '$1\n$2');
 
   // 4. Clean up excessive blank lines (3+ newlines → 2 newlines)
   result = result.replace(/\n{3,}/g, '\n\n');
@@ -198,8 +205,8 @@ export function cleanupMarkdown(markdown: string): string {
   result = result.replace(/<\/?pre[^>]*>/gi, '');
   result = result.replace(/<\/?code[^>]*>/gi, '');
 
-  // 8. Remove empty markdown links: [](url)
-  result = result.replace(/\[\]\([^)]+\)/g, '');
+  // 8. Remove empty markdown links: [](url) and []()
+  result = result.replace(/\[\]\([^)]*\)/g, '');
 
   // 9. Remove codelineno references that leaked into content
   // Pattern: [](_file.md#__codelineno-N-M)
