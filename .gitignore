@@ -14,6 +14,7 @@ coverage/
 # Test debugging and temporary files
 test_*.cjs
 test_*.ts
+test-*.js
 fix_*.sh
 fix_*.py
 fix_*.pl
