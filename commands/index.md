@@ -1,7 +1,7 @@
 ---
 description: Re-index a knowledge store
 argument-hint: "[store-name-or-id]"
-allowed-tools: [Bash(run.sh:*)]
+allowed-tools: [Bash(*)]
 ---
 
 Re-indexing store: $ARGUMENTS

@@ -1,7 +1,7 @@
 ---
 description: Clone and index a library source repository
 argument-hint: "[git-url] [--name store-name] [--branch branch-name]"
-allowed-tools: [Bash(run.sh:*)]
+allowed-tools: [Bash(*)]
 ---
 
 Cloning and indexing repository: $ARGUMENTS
