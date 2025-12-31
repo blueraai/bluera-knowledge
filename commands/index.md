@@ -6,6 +6,6 @@ allowed-tools: [Bash(*)]
 
 Re-indexing store: $ARGUMENTS
 
-!`${CLAUDE_PLUGIN_ROOT}/run.sh index $ARGUMENTS`
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js index $ARGUMENTS`
 
 The store's search index will be updated with any new or modified files.

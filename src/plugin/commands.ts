@@ -9,8 +9,8 @@ export async function handleSearch(args: {
   stores?: string;
   limit?: string;
 }): Promise<void> {
-  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
-  const services = await createServices(undefined, undefined, projectRoot);
+  // PWD is set by Claude Code to user's project directory
+  const services = await createServices(undefined, undefined, process.env['PWD']);
   const storeNames = args.stores?.split(',').map((s: string) => s.trim());
 
   const allStores = await services.store.list();
@@ -51,8 +51,8 @@ export async function handleAddRepo(args: {
   name?: string;
   branch?: string;
 }): Promise<void> {
-  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
-  const services = await createServices(undefined, undefined, projectRoot);
+  // PWD is set by Claude Code to user's project directory
+  const services = await createServices(undefined, undefined, process.env['PWD']);
   const storeName = args.name ?? extractRepoName(args.url);
 
   console.log(`Cloning ${args.url}...`);
@@ -89,8 +89,8 @@ export async function handleAddFolder(args: {
   path: string;
   name?: string;
 }): Promise<void> {
-  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
-  const services = await createServices(undefined, undefined, projectRoot);
+  // PWD is set by Claude Code to user's project directory
+  const services = await createServices(undefined, undefined, process.env['PWD']);
   const { basename } = await import('node:path');
   const storeName = args.name ?? basename(args.path);
 
@@ -126,8 +126,8 @@ export async function handleAddFolder(args: {
 export async function handleIndex(args: {
   store: string;
 }): Promise<void> {
-  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
-  const services = await createServices(undefined, undefined, projectRoot);
+  // PWD is set by Claude Code to user's project directory
+  const services = await createServices(undefined, undefined, process.env['PWD']);
   const store = await services.store.getByIdOrName(args.store);
 
   if (store === undefined) {
@@ -147,8 +147,8 @@ export async function handleIndex(args: {
 }
 
 export async function handleStores(): Promise<void> {
-  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
-  const services = await createServices(undefined, undefined, projectRoot);
+  // PWD is set by Claude Code to user's project directory
+  const services = await createServices(undefined, undefined, process.env['PWD']);
   const stores = await services.store.list();
 
   if (stores.length === 0) {
@@ -177,8 +177,8 @@ export async function handleStores(): Promise<void> {
 }
 
 export async function handleSuggest(): Promise<void> {
-  // Use PROJECT_ROOT env var or PWD for project root, with fallback to process.cwd()
-  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'] ?? process.cwd();
+  // PWD is set by Claude Code to user's project directory
+  const projectRoot = process.env['PWD'] ?? process.cwd();
 
   console.log('Analyzing project dependencies...\n');
 

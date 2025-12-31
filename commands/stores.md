@@ -5,6 +5,6 @@ allowed-tools: [Bash(*)]
 
 List all indexed knowledge stores:
 
-!`${CLAUDE_PLUGIN_ROOT}/run.sh stores`
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js stores`
 
 The output shows all indexed stores with their names, types, IDs, and paths.
