@@ -27,6 +27,7 @@ def main():
                             'url': url,
                             'title': result.title or '',
                             'content': result.markdown or result.text or '',
+                            'html': result.html or '',
                             'links': result.links or [],
                             'crawledAt': result.crawled_at or '',
                         }]

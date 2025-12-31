@@ -3,9 +3,8 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "outDir": "dist",
-    "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -30,6 +29,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "turndown-plugin-gfm.d.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
