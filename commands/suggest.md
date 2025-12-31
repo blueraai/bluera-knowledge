@@ -1,6 +1,6 @@
 ---
 description: Suggest important dependencies to add to knowledge stores
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
+allowed-tools: [Bash(*/run.sh:*)]
 ---
 
 Analyzing project dependencies and suggesting important libraries to add:
