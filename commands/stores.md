@@ -1,6 +1,6 @@
 ---
 description: List all indexed library stores
-allowed-tools: [Bash(run.sh:*)]
+allowed-tools: [Bash(*)]
 ---
 
 List all indexed knowledge stores:

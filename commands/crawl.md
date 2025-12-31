@@ -1,7 +1,7 @@
 ---
 description: Crawl web pages and add content to a web store
 argument-hint: "[url] [store-name]"
-allowed-tools: [Bash(run.sh:*)]
+allowed-tools: [Bash(*)]
 ---
 
 Crawling $ARGUMENTS
