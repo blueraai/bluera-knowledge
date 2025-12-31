@@ -9,7 +9,8 @@ export async function handleSearch(args: {
   stores?: string;
   limit?: string;
 }): Promise<void> {
-  const services = await createServices();
+  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
+  const services = await createServices(undefined, undefined, projectRoot);
   const storeNames = args.stores?.split(',').map((s: string) => s.trim());
 
   const allStores = await services.store.list();
@@ -50,7 +51,8 @@ export async function handleAddRepo(args: {
   name?: string;
   branch?: string;
 }): Promise<void> {
-  const services = await createServices();
+  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
+  const services = await createServices(undefined, undefined, projectRoot);
   const storeName = args.name ?? extractRepoName(args.url);
 
   console.log(`Cloning ${args.url}...`);
@@ -87,7 +89,8 @@ export async function handleAddFolder(args: {
   path: string;
   name?: string;
 }): Promise<void> {
-  const services = await createServices();
+  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
+  const services = await createServices(undefined, undefined, projectRoot);
   const { basename } = await import('node:path');
   const storeName = args.name ?? basename(args.path);
 
@@ -123,7 +126,8 @@ export async function handleAddFolder(args: {
 export async function handleIndex(args: {
   store: string;
 }): Promise<void> {
-  const services = await createServices();
+  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
+  const services = await createServices(undefined, undefined, projectRoot);
   const store = await services.store.getByIdOrName(args.store);
 
   if (store === undefined) {
@@ -143,7 +147,8 @@ export async function handleIndex(args: {
 }
 
 export async function handleStores(): Promise<void> {
-  const services = await createServices();
+  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'];
+  const services = await createServices(undefined, undefined, projectRoot);
   const stores = await services.store.list();
 
   if (stores.length === 0) {
@@ -172,12 +177,13 @@ export async function handleStores(): Promise<void> {
 }
 
 export async function handleSuggest(): Promise<void> {
-  const projectRoot = process.cwd();
+  // Use PROJECT_ROOT env var or PWD for project root, with fallback to process.cwd()
+  const projectRoot = process.env['PROJECT_ROOT'] ?? process.env['PWD'] ?? process.cwd();
 
   console.log('Analyzing project dependencies...\n');
 
   // Create analyzer instance
-  const services = await createServices();
+  const services = await createServices(undefined, undefined, projectRoot);
   const analyzer = new DependencyUsageAnalyzer();
   const resolver = new RepoUrlResolver();
 

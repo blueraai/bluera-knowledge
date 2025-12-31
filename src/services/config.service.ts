@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import type { AppConfig } from '../types/config.js';
 import { DEFAULT_CONFIG } from '../types/config.js';
+import { ProjectRootService } from './project-root.service.js';
 
 export class ConfigService {
   private readonly configPath: string;
@@ -11,10 +12,20 @@ export class ConfigService {
 
   constructor(
     configPath = `${homedir()}/.bluera/bluera-knowledge/config.json`,
-    dataDir?: string
+    dataDir?: string,
+    projectRoot?: string
   ) {
     this.configPath = configPath;
-    this.dataDir = dataDir ?? this.expandPath(DEFAULT_CONFIG.dataDir);
+
+    if (dataDir !== undefined && dataDir !== '') {
+      // Explicit dataDir provided, use it as-is
+      this.dataDir = dataDir;
+    } else {
+      // Resolve project root using hierarchical detection
+      const root = projectRoot ?? ProjectRootService.resolve();
+      // Expand relative default path against project root
+      this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, root);
+    }
   }
 
   async load(): Promise<AppConfig> {
@@ -43,14 +54,14 @@ export class ConfigService {
     return this.dataDir;
   }
 
-  private expandPath(path: string): string {
+  private expandPath(path: string, baseDir: string): string {
     // Expand ~ to home directory
     if (path.startsWith('~')) {
       return path.replace('~', homedir());
     }
-    // Resolve relative paths against current working directory
+    // Resolve relative paths against base directory (not process.cwd())
     if (!path.startsWith('/')) {
-      return resolve(process.cwd(), path);
+      return resolve(baseDir, path);
     }
     // Return absolute paths as-is
     return path;

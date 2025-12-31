@@ -6,6 +6,6 @@ allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
 
 Crawling $ARGUMENTS
 
-!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js crawl $ARGUMENTS`
+!`PROJECT_ROOT="${PWD}" node ${CLAUDE_PLUGIN_ROOT}/dist/index.js crawl $ARGUMENTS`
 
 The web page will be crawled, converted to markdown, and indexed for searching.

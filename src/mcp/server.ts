@@ -11,6 +11,7 @@ import type { StoreId, DocumentId } from '../types/brands.js';
 interface MCPServerOptions {
   dataDir?: string | undefined;
   config?: string | undefined;
+  projectRoot?: string | undefined;
 }
 
 // In-memory result cache for get_full_context
@@ -167,7 +168,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
     const { name, arguments: args } = request.params;
 
     if (name === 'search') {
-      const services = await createServices(options.config, options.dataDir);
+      const services = await createServices(options.config, options.dataDir, options.projectRoot);
 
       if (!args) {
         throw new Error('No arguments provided');
@@ -259,7 +260,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
     }
 
     if (name === 'list_stores') {
-      const services = await createServices(options.config, options.dataDir);
+      const services = await createServices(options.config, options.dataDir, options.projectRoot);
 
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const typeFilter = args?.['type'] as 'file' | 'repo' | 'web' | undefined;
@@ -290,7 +291,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
     }
 
     if (name === 'get_store_info') {
-      const services = await createServices(options.config, options.dataDir);
+      const services = await createServices(options.config, options.dataDir, options.projectRoot);
 
       if (!args) {
         throw new Error('No arguments provided');
@@ -326,7 +327,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
     }
 
     if (name === 'create_store') {
-      const services = await createServices(options.config, options.dataDir);
+      const services = await createServices(options.config, options.dataDir, options.projectRoot);
 
       if (!args) {
         throw new Error('No arguments provided');
@@ -375,7 +376,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
     }
 
     if (name === 'index_store') {
-      const services = await createServices(options.config, options.dataDir);
+      const services = await createServices(options.config, options.dataDir, options.projectRoot);
 
       if (!args) {
         throw new Error('No arguments provided');
@@ -448,7 +449,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
       }
 
       // Otherwise, re-query with full detail
-      const services = await createServices(options.config, options.dataDir);
+      const services = await createServices(options.config, options.dataDir, options.projectRoot);
       const store = await services.store.getByIdOrName(cachedResult.metadata.storeId);
 
       if (!store) {
@@ -524,5 +525,6 @@ export async function runMCPServer(options: MCPServerOptions): Promise<void> {
 // Run the server when this file is executed directly
 runMCPServer({
   dataDir: process.env['DATA_DIR'],
-  config: process.env['CONFIG_PATH']
+  config: process.env['CONFIG_PATH'],
+  projectRoot: process.env['PROJECT_ROOT'] ?? process.env['PWD']
 }).catch(console.error);
