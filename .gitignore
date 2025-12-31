@@ -10,3 +10,13 @@ coverage/
 *.local.md
 .claude/settings.local.json
 .bluera/
+
+# Test debugging and temporary files
+test_*.cjs
+test_*.ts
+fix_*.sh
+fix_*.py
+fix_*.pl
+*-status.txt
+*-output.txt
+coverage-*.json
