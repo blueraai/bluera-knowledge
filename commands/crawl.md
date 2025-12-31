@@ -6,6 +6,6 @@ allowed-tools: [Bash(*)]
 
 Crawling $ARGUMENTS
 
-!`${CLAUDE_PLUGIN_ROOT}/run.sh crawl $ARGUMENTS`
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js crawl $ARGUMENTS`
 
 The web page will be crawled, converted to markdown, and indexed for searching.

@@ -6,6 +6,6 @@ allowed-tools: [Bash(*)]
 
 Cloning and indexing repository: $ARGUMENTS
 
-!`${CLAUDE_PLUGIN_ROOT}/run.sh add-repo $ARGUMENTS`
+!`node ${CLAUDE_PLUGIN_ROOT}/dist/index.js add-repo $ARGUMENTS`
 
 The repository will be cloned, added as a knowledge store, and automatically indexed for searching.
