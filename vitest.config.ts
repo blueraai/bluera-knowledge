@@ -9,7 +9,19 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/index.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/index.ts',
+        'src/types/index.ts', // Barrel exports
+        'src/services/index.ts',
+        'src/db/index.ts',
+      ],
+      thresholds: {
+        lines: 80,
+        branches: 80,
+        functions: 80,
+        statements: 80,
+      },
     },
   },
 });

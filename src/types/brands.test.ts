@@ -13,6 +13,14 @@ describe('branded types', () => {
       expect(isStoreId('')).toBe(false);
       expect(isStoreId('has spaces')).toBe(false);
     });
+
+    it('throws error for invalid store ID', () => {
+      expect(() => createStoreId('invalid id with spaces')).toThrow('Invalid store ID: invalid id with spaces');
+    });
+
+    it('throws error for empty store ID', () => {
+      expect(() => createStoreId('')).toThrow('Invalid store ID: ');
+    });
   });
 
   describe('DocumentId', () => {
@@ -24,6 +32,14 @@ describe('branded types', () => {
     it('validates document ID format', () => {
       expect(isDocumentId('valid-doc-id')).toBe(true);
       expect(isDocumentId('')).toBe(false);
+    });
+
+    it('throws error for invalid document ID', () => {
+      expect(() => createDocumentId('invalid@id')).toThrow('Invalid document ID: invalid@id');
+    });
+
+    it('throws error for empty document ID', () => {
+      expect(() => createDocumentId('')).toThrow('Invalid document ID: ');
     });
   });
 });

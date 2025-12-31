@@ -32,6 +32,22 @@ describe('EmbeddingEngine', () => {
 
     expect(sim12).toBeGreaterThan(sim13);
   });
+
+  it('returns correct dimensions', async () => {
+    expect(engine.getDimensions()).toBe(384);
+  });
+
+  it('handles embed when extractor is not initialized', async () => {
+    // Create new engine without initializing
+    const newEngine = new EmbeddingEngine();
+    const embedding = await newEngine.embed('Test');
+    expect(embedding).toHaveLength(384);
+  });
+
+  it('supports custom model dimensions', async () => {
+    const customEngine = new EmbeddingEngine('Xenova/all-MiniLM-L6-v2', 512);
+    expect(customEngine.getDimensions()).toBe(512);
+  });
 });
 
 function cosineSimilarity(a: number[], b: number[]): number {
