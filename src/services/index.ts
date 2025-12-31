@@ -23,9 +23,10 @@ export interface ServiceContainer {
 
 export async function createServices(
   configPath?: string,
-  dataDir?: string
+  dataDir?: string,
+  projectRoot?: string
 ): Promise<ServiceContainer> {
-  const config = new ConfigService(configPath, dataDir);
+  const config = new ConfigService(configPath, dataDir, projectRoot);
   const appConfig = await config.load();
   const resolvedDataDir = config.resolveDataDir();
 
