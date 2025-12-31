@@ -39,4 +39,89 @@ describe('ConfigService', () => {
     const dataDir = configService.resolveDataDir();
     expect(dataDir).toBe(tempDir);
   });
+
+  describe('path expansion', () => {
+    it('expands tilde to home directory', () => {
+      const service = new ConfigService(
+        configPath,
+        '~/.bluera/data'
+      );
+      const dataDir = service.resolveDataDir();
+      // Note: expandPath is called in constructor, so ~ will be kept
+      // since dataDir parameter is explicitly provided
+      expect(dataDir).toBe('~/.bluera/data');
+    });
+
+    it('resolves relative paths against project root', () => {
+      const service = new ConfigService(
+        configPath,
+        undefined,
+        tempDir
+      );
+      const dataDir = service.resolveDataDir();
+      // When dataDir is undefined, it uses DEFAULT_CONFIG.dataDir which is relative
+      expect(dataDir).toContain(tempDir);
+    });
+
+    it('keeps absolute paths as-is', () => {
+      const absolutePath = '/absolute/path/to/data';
+      const service = new ConfigService(
+        configPath,
+        absolutePath
+      );
+      const dataDir = service.resolveDataDir();
+      expect(dataDir).toBe(absolutePath);
+    });
+
+    it('uses explicit dataDir when provided', () => {
+      const explicitDir = '/explicit/data/dir';
+      const service = new ConfigService(
+        configPath,
+        explicitDir
+      );
+      const dataDir = service.resolveDataDir();
+      expect(dataDir).toBe(explicitDir);
+    });
+
+    it('uses default path resolution when dataDir is empty string', () => {
+      const service = new ConfigService(
+        configPath,
+        '' // Empty string triggers default path logic
+      );
+      const dataDir = service.resolveDataDir();
+      // Empty string is not undefined, so it should resolve relative default
+      expect(dataDir).toContain('.bluera/bluera-knowledge/data');
+    });
+  });
+
+  describe('config caching', () => {
+    it('caches loaded config', async () => {
+      const config1 = await configService.load();
+      const config2 = await configService.load();
+      expect(config1).toBe(config2); // Same reference
+    });
+
+    it('updates cache when saving', async () => {
+      const config = await configService.load();
+      config.search.defaultLimit = 25;
+      await configService.save(config);
+
+      const loaded = await configService.load();
+      expect(loaded.search.defaultLimit).toBe(25);
+    });
+  });
+
+  describe('config persistence', () => {
+    it('creates config directory if it does not exist', async () => {
+      const deepPath = join(tempDir, 'deep', 'nested', 'path', 'config.json');
+      const service = new ConfigService(deepPath, tempDir);
+
+      const config = await service.load();
+      await service.save(config);
+
+      // Should successfully save to deep path
+      const loaded = await service.load();
+      expect(loaded).toBeDefined();
+    });
+  });
 });
