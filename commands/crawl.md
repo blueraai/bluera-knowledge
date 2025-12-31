@@ -1,11 +1,11 @@
 ---
 description: Crawl web pages and add content to a web store
 argument-hint: "[url] [store-name]"
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
+allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
 ---
 
 Crawling $ARGUMENTS
 
-!`PROJECT_ROOT="${PWD}" node ${CLAUDE_PLUGIN_ROOT}/dist/index.js crawl $ARGUMENTS`
+!`${CLAUDE_PLUGIN_ROOT}/run.sh crawl $ARGUMENTS`
 
 The web page will be crawled, converted to markdown, and indexed for searching.

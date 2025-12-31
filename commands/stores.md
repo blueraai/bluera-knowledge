@@ -1,10 +1,10 @@
 ---
 description: List all indexed library stores
-allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/dist/index.js:*)]
+allowed-tools: [Bash(${CLAUDE_PLUGIN_ROOT}/run.sh:*)]
 ---
 
 List all indexed knowledge stores:
 
-!`PROJECT_ROOT="${PWD}" node ${CLAUDE_PLUGIN_ROOT}/dist/index.js stores`
+!`${CLAUDE_PLUGIN_ROOT}/run.sh stores`
 
 The output shows all indexed stores with their names, types, IDs, and paths.
