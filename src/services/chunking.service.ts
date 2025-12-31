@@ -59,9 +59,9 @@ export class ChunkingService {
 
     while ((match = headerRegex.exec(text)) !== null) {
       // Save previous section
-      if (match.index > lastIndex || sections.length === 0) {
+      if (match.index > lastIndex) {
         const content = text.slice(lastIndex, match.index).trim();
-        if (content || sections.length === 0) {
+        if (content) {
           sections.push({
             header: lastHeader,
             content: content,
@@ -83,8 +83,8 @@ export class ChunkingService {
       });
     }
 
-    // If no sections found (no headers), fall back to sliding window
-    if (sections.length <= 1) {
+    // If no sections found, fall back to sliding window
+    if (sections.length === 0) {
       return this.chunkSlidingWindow(text);
     }
 
@@ -131,9 +131,9 @@ export class ChunkingService {
    */
   private chunkCode(text: string): Chunk[] {
     // Match top-level declarations with optional JSDoc/comments before them
-    const declarationRegex = /^(?:\/\*\*[\s\S]*?\*\/\s*)?^(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+(\w+)/gm;
+    const declarationRegex = /^(?:\/\*\*[\s\S]*?\*\/\s*)?(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+(\w+)/gm;
     const declarations: Array<{ startOffset: number; endOffset: number; name?: string }> = [];
-    
+
     let match: RegExpExecArray | null;
     while ((match = declarationRegex.exec(text)) !== null) {
       const name = match[1];
@@ -147,26 +147,39 @@ export class ChunkingService {
       declarations.push(decl);
     }
 
-    // If no declarations found or only one, use sliding window
-    if (declarations.length <= 1) {
+    // If no declarations found, use sliding window
+    if (declarations.length === 0) {
       return this.chunkSlidingWindow(text);
     }
 
-    // Find end of each declaration (next declaration or EOF)
+    // Find end of each declaration using brace-aware boundary detection
     for (let i = 0; i < declarations.length; i++) {
       const currentDecl = declarations[i];
       const nextDecl = declarations[i + 1];
       if (currentDecl === undefined) continue;
 
-      const nextStart = nextDecl !== undefined ? nextDecl.startOffset : text.length;
-      currentDecl.endOffset = nextStart;
+      // For declarations that likely have braces (functions, classes, enums)
+      // use smart boundary detection
+      const declText = text.slice(currentDecl.startOffset);
+      if (/^(?:\/\*\*[\s\S]*?\*\/\s*)?(?:export\s+)?(?:async\s+)?(?:function|class|enum)\s+/m.test(declText)) {
+        const boundary = this.findDeclarationEnd(declText);
+        if (boundary > 0) {
+          currentDecl.endOffset = currentDecl.startOffset + boundary;
+        } else {
+          // Fall back to next declaration or EOF
+          currentDecl.endOffset = nextDecl !== undefined ? nextDecl.startOffset : text.length;
+        }
+      } else {
+        // For other declarations (interface, type, const, let, var), use next declaration or EOF
+        currentDecl.endOffset = nextDecl !== undefined ? nextDecl.startOffset : text.length;
+      }
     }
 
     const chunks: Chunk[] = [];
-    
+
     for (const decl of declarations) {
       const content = text.slice(decl.startOffset, decl.endOffset).trim();
-      
+
       if (content.length <= this.chunkSize) {
         // Declaration fits in one chunk
         chunks.push({
@@ -186,6 +199,7 @@ export class ChunkingService {
             chunkIndex: chunks.length,
             startOffset: decl.startOffset + subChunk.startOffset,
             endOffset: decl.startOffset + subChunk.endOffset,
+            functionName: decl.name,
           });
         }
       }
@@ -197,6 +211,102 @@ export class ChunkingService {
     }
 
     return chunks.length > 0 ? chunks : this.chunkSlidingWindow(text);
+  }
+
+  /**
+   * Find the end of a code declaration by counting braces while ignoring
+   * braces inside strings and comments.
+   * Returns the offset where the declaration ends, or -1 if not found.
+   */
+  private findDeclarationEnd(text: string): number {
+    let braceCount = 0;
+    let inString = false;
+    let inSingleLineComment = false;
+    let inMultiLineComment = false;
+    let stringChar = '';
+    let i = 0;
+    let foundFirstBrace = false;
+
+    // Find the first opening brace
+    while (i < text.length) {
+      const char = text[i];
+      const nextChar = i + 1 < text.length ? text[i + 1] : '';
+
+      // Handle comments
+      if (!inString && !inMultiLineComment && char === '/' && nextChar === '/') {
+        inSingleLineComment = true;
+        i += 2;
+        continue;
+      }
+
+      if (!inString && !inSingleLineComment && char === '/' && nextChar === '*') {
+        inMultiLineComment = true;
+        i += 2;
+        continue;
+      }
+
+      if (inMultiLineComment && char === '*' && nextChar === '/') {
+        inMultiLineComment = false;
+        i += 2;
+        continue;
+      }
+
+      if (inSingleLineComment && char === '\n') {
+        inSingleLineComment = false;
+        i++;
+        continue;
+      }
+
+      // Skip if in comment
+      if (inSingleLineComment || inMultiLineComment) {
+        i++;
+        continue;
+      }
+
+      // Handle strings
+      if (!inString && (char === '"' || char === "'" || char === '`')) {
+        inString = true;
+        stringChar = char;
+        i++;
+        continue;
+      }
+
+      if (inString && char === '\\') {
+        // Skip escaped character
+        i += 2;
+        continue;
+      }
+
+      if (inString && char === stringChar) {
+        inString = false;
+        stringChar = '';
+        i++;
+        continue;
+      }
+
+      // Skip if in string
+      if (inString) {
+        i++;
+        continue;
+      }
+
+      // Count braces
+      if (char === '{') {
+        braceCount++;
+        foundFirstBrace = true;
+      } else if (char === '}') {
+        braceCount--;
+        if (foundFirstBrace && braceCount === 0) {
+          // Found the closing brace
+          return i + 1;
+        }
+      }
+
+      i++;
+    }
+
+    // If we didn't find a complete declaration, return -1
+    return -1;
   }
 
   /**
