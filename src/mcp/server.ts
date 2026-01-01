@@ -5,6 +5,8 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { createServices } from '../services/index.js';
+import { JobService } from '../services/job.service.js';
+import { spawnBackgroundWorker } from '../workers/spawn-worker.js';
 import type { SearchQuery, DetailLevel, SearchResult } from '../types/search.js';
 import type { StoreId, DocumentId } from '../types/brands.js';
 
@@ -157,6 +159,53 @@ export function createMCPServer(options: MCPServerOptions): Server {
               }
             },
             required: ['resultId']
+          }
+        },
+        {
+          name: 'check_job_status',
+          description: 'Check the status of a background job (clone, index, crawl operations)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              jobId: {
+                type: 'string',
+                description: 'Job ID to check status for'
+              }
+            },
+            required: ['jobId']
+          }
+        },
+        {
+          name: 'list_jobs',
+          description: 'List all background jobs, optionally filtered by status',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              status: {
+                type: 'string',
+                enum: ['pending', 'running', 'completed', 'failed', 'cancelled'],
+                description: 'Filter jobs by status (optional)'
+              },
+              activeOnly: {
+                type: 'boolean',
+                default: false,
+                description: 'Only show active (pending/running) jobs'
+              }
+            }
+          }
+        },
+        {
+          name: 'cancel_job',
+          description: 'Cancel a running or pending background job',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              jobId: {
+                type: 'string',
+                description: 'Job ID to cancel'
+              }
+            },
+            required: ['jobId']
           }
         }
       ]
@@ -365,16 +414,44 @@ export function createMCPServer(options: MCPServerOptions): Server {
         throw new Error(result.error.message);
       }
 
+      // Create background job for indexing
+      const jobService = new JobService(options.dataDir);
+      const jobDetails: Record<string, unknown> = {
+        storeName: result.data.name,
+        storeId: result.data.id
+      };
+      if (isUrl) {
+        jobDetails['url'] = source;
+      }
+      if ('path' in result.data && result.data.path) {
+        jobDetails['path'] = result.data.path;
+      }
+      const job = jobService.createJob({
+        type: storeType === 'repo' && isUrl ? 'clone' : 'index',
+        details: jobDetails,
+        message: `Indexing ${result.data.name}...`
+      });
+
+      // Spawn background worker
+      spawnBackgroundWorker(job.id);
+
       return {
         content: [
           {
             type: 'text',
             text: JSON.stringify({
-              id: result.data.id,
-              name: result.data.name,
-              type: result.data.type,
-              path: 'path' in result.data ? result.data.path : undefined,
-              created: true
+              store: {
+                id: result.data.id,
+                name: result.data.name,
+                type: result.data.type,
+                path: 'path' in result.data ? result.data.path : undefined
+              },
+              job: {
+                id: job.id,
+                status: job.status,
+                message: job.message
+              },
+              message: `Store created. Indexing started in background (Job ID: ${job.id})`
             }, null, 2)
           }
         ]
@@ -396,21 +473,39 @@ export function createMCPServer(options: MCPServerOptions): Server {
         throw new Error(`Store not found: ${storeName}`);
       }
 
-      const result = await services.index.indexStore(store);
-
-      if (!result.success) {
-        throw new Error(result.error.message);
+      // Create background job for indexing
+      const jobService = new JobService(options.dataDir);
+      const jobDetails: Record<string, unknown> = {
+        storeName: store.name,
+        storeId: store.id
+      };
+      if ('path' in store && store.path) {
+        jobDetails['path'] = store.path;
       }
+      const job = jobService.createJob({
+        type: 'index',
+        details: jobDetails,
+        message: `Re-indexing ${store.name}...`
+      });
+
+      // Spawn background worker
+      spawnBackgroundWorker(job.id);
 
       return {
         content: [
           {
             type: 'text',
             text: JSON.stringify({
-              storeId: store.id,
-              storeName: store.name,
-              documentsIndexed: result.data.documentsIndexed,
-              timeMs: result.data.timeMs
+              store: {
+                id: store.id,
+                name: store.name
+              },
+              job: {
+                id: job.id,
+                status: job.status,
+                message: job.message
+              },
+              message: `Indexing started in background (Job ID: ${job.id})`
             }, null, 2)
           }
         ]
@@ -508,6 +603,87 @@ export function createMCPServer(options: MCPServerOptions): Server {
               summary: fullResult.summary,
               context: fullResult.context,
               full: fullResult.full
+            }, null, 2)
+          }
+        ]
+      };
+    }
+
+    if (name === 'check_job_status') {
+      if (!args) {
+        throw new Error('No arguments provided');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const jobId = args['jobId'] as string;
+      const jobService = new JobService(options.dataDir);
+      const job = jobService.getJob(jobId);
+
+      if (!job) {
+        throw new Error(`Job not found: ${jobId}`);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(job, null, 2)
+          }
+        ]
+      };
+    }
+
+    if (name === 'list_jobs') {
+      const jobService = new JobService(options.dataDir);
+
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const activeOnly = args?.['activeOnly'] as boolean | undefined ?? false;
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const statusFilter = args?.['status'] as 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | undefined;
+
+      let jobs;
+      if (activeOnly) {
+        jobs = jobService.listActiveJobs();
+      } else if (statusFilter) {
+        jobs = jobService.listJobs(statusFilter);
+      } else {
+        jobs = jobService.listJobs();
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({ jobs }, null, 2)
+          }
+        ]
+      };
+    }
+
+    if (name === 'cancel_job') {
+      if (!args) {
+        throw new Error('No arguments provided');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const jobId = args['jobId'] as string;
+      const jobService = new JobService(options.dataDir);
+      const result = jobService.cancelJob(jobId);
+
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
+
+      const job = jobService.getJob(jobId);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              job,
+              message: 'Job cancelled successfully'
             }, null, 2)
           }
         ]
