@@ -15,13 +15,15 @@ Re-index a knowledge store: **$ARGUMENTS**
 2. Use mcp__bluera-knowledge__index_store tool:
    - store: The store name or ID from $ARGUMENTS
 
-3. Display progress and results:
+3. Display results showing job ID for background indexing:
 
 ```
 ✓ Indexing store: react...
-✓ Indexed 1,247 documents in 3,421ms
+🔄 Indexing started in background
+   Job ID: job_def456ghi789
 
-Store search index is up to date!
+Check status with: /bluera-knowledge:check-status job_def456ghi789
+Or view all jobs: /bluera-knowledge:check-status
 ```
 
 ## When to Re-index
