@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.14] - 2026-01-01
+
+### Fixed
+- Enforced strict column width limits in search command output to prevent table formatting issues
+- Added explicit truncation rules (Store: 12 chars, File: 45 chars, Purpose: 48 chars)
+- Improved command documentation with clear examples of text truncation
+
 ## [0.4.13] - 2026-01-01
 
 ### Fixed
