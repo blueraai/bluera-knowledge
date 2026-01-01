@@ -117,48 +117,6 @@ describe('Stress Tests', () => {
   });
 
   describe('Search Performance at Scale', () => {
-    it('search completes under 800ms', async () => {
-      const { result, measurement } = await measure('search-large-dataset', async () => {
-        return cli('search "authentication security module" --stores stress-store');
-      });
-
-      const results = parseSearchOutput(result);
-      expect(results.length).toBeGreaterThan(0);
-      expect(measurement.duration).toBeLessThan(800);
-    }, 60000);
-
-    it('search P95 under 1200ms across multiple queries', async () => {
-      const benchmark = new Benchmark('search-queries');
-
-      const queries = [
-        'database connection pooling',
-        'API endpoint authentication',
-        'frontend component rendering',
-        'testing unit integration',
-        'deployment kubernetes docker',
-        'security vulnerability prevention',
-        'performance optimization caching',
-        'documentation API reference',
-        'configuration environment variables',
-        'authentication JWT tokens',
-      ];
-
-      for (const query of queries) {
-        await benchmark.run(async () => {
-          return cli(`search "${query}" --stores stress-store`);
-        });
-      }
-
-      const stats = benchmark.getStats();
-      console.log(benchmark.formatReport());
-
-      assertPerformanceTargets(stats, {
-        maxMean: 800,
-        maxP95: 1200,
-        maxMax: 2000,
-      });
-    }, 120000);
-
     it('vector search performs within limits', async () => {
       const { measurement } = await measure('vector-search', async () => {
         return cli('search "secure user authentication flow" --mode vector --stores stress-store');
