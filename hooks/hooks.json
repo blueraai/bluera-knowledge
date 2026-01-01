@@ -1,5 +1,5 @@
 {
-  "description": "bluera-knowledge plugin hooks - automatic dependency checking and installation",
+  "description": "bluera-knowledge plugin hooks - automatic dependency checking and job status monitoring",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,17 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-dependencies.sh",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/job-status-hook.sh",
+            "timeout": 5
           }
         ]
       }
