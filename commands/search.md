@@ -13,12 +13,12 @@ Search indexed library sources for: **$ARGUMENTS**
 1. Parse the query from $ARGUMENTS:
    - Extract the search query (required)
    - Extract --stores parameter (optional, comma-separated store names)
-   - Extract --limit parameter (optional, default 5)
+   - Extract --limit parameter (optional, default 10)
 
 2. Call mcp__bluera-knowledge__search with:
    - query: The search query string
    - stores: Array of store names (if --stores specified)
-   - limit: Number of results (if --limit specified, default 5)
+   - limit: Number of results (if --limit specified, default 10)
    - detail: "contextual"
    - intent: "find-implementation"
 
@@ -30,21 +30,21 @@ Search indexed library sources for: **$ARGUMENTS**
    **1. [Score: 0.95] store-name**
    📄 path/to/file.ts
    → Purpose description here
-   🔗 Related: concept1, concept2, concept3
+   🔑 Keywords: concept1, concept2, concept3
    📦 Imports: package1, package2
 
    **2. [Score: 0.87] store-name**
    📄 path/to/file.js
    → Another purpose here
-   🔗 Related: other-concept
+   🔑 Keywords: other-concept
 
    ---
-   **Found 5 results**
+   **Found 10 results**
 
    💡 **Next Steps:**
    - Read file: `Read /path/to/file.ts`
    - Get full code: `mcp__bluera-knowledge__get_full_context("result-id")`
-   - Refine search: Use related concepts above
+   - Refine search: Use keywords above
    ```
 
    **Formatting rules:**
@@ -52,15 +52,15 @@ Search indexed library sources for: **$ARGUMENTS**
    - Header: `**N. [Score: X.XX] storeName**` (bold, with rank and score)
    - File: `📄 filename` (strip repoRoot prefix from location)
    - Purpose: `→ purpose text` (arrow prefix, keep concise)
-   - Related: `🔗 Related: ...` (from context.relatedConcepts, first 4-5 concepts, comma-separated)
+   - Keywords: `🔑 Keywords: ...` (from context.relatedConcepts - most frequent terms in content, first 4-5, comma-separated)
    - Imports: `📦 Imports: ...` (from context.keyImports, first 3-4 imports, comma-separated)
-   - Skip Related/Imports lines if arrays are empty
+   - Skip Keywords/Imports lines if arrays are empty
    - Footer: Total count + helpful next steps with actual result IDs
 
 4. For the footer next steps, include:
    - First result's ID in the get_full_context example
    - First result's actual file path in the Read example
-   - Use the actual related concepts from top results
+   - Use the actual keywords from top results
 
 5. If no results:
    ```

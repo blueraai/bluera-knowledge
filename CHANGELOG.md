@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.22] - 2026-01-01
+
+### Changed
+- Renamed "Related" to "Keywords" for clarity - these are the most frequent meaningful terms extracted from the code
+- Restored default search limit from 5 to 10 results (user preference)
+- Updated README with new search output format and current version badge
+
+### Fixed
+- Search result labels now accurately describe what they show (Keywords are top 5 frequent words, not related concepts)
+
 ## [0.4.21] - 2026-01-01
 
 ### Added
