@@ -136,6 +136,20 @@ export function createMCPServer(options: MCPServerOptions): Server {
           }
         },
         {
+          name: 'delete_store',
+          description: 'Delete a knowledge store and all associated data (database, cloned files)',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              store: {
+                type: 'string',
+                description: 'Store name or ID to delete'
+              }
+            },
+            required: ['store']
+          }
+        },
+        {
           name: 'get_full_context',
           description: 'Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.',
           inputSchema: {
