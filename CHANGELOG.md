@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.18] - 2026-01-01
+
+### Fixed
+- Search command now displays results correctly in conversation transcript
+- Removed PostToolUse hook approach (output only visible in verbose mode)
+- Claude now formats results directly with simpler markdown table syntax
+
+### Changed
+- Simplified search result formatting - removed fixed-width column requirements
+- Updated command to use standard markdown tables instead of hook-based formatting
+
+### Removed
+- PostToolUse hook for search formatting (`format-search-results.py` retained for reference)
+
 ## [0.4.17] - 2026-01-01
 
 ### Fixed
