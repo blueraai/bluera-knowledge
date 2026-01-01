@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.3] - 2026-01-01
+
+### Changed
+- Move Store to its own line for better vertical scannability
+
 ## [0.5.2] - 2026-01-01
 
 ### Changed
