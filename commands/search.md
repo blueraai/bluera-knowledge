@@ -27,11 +27,11 @@ Search indexed library sources for: **$ARGUMENTS**
 ```
 ## Search Results for "your query"
 
-| Score | Store | File | Purpose |
-|-------|-------|------|---------|
-| 1.00 | react | src/components/Button.tsx | Reusable button component with variants |
-| 0.87 | react | src/hooks/useButton.ts | Custom hook for button state management |
-| 0.65 | lodash | src/array.js | Array utility functions |
+| Score | Store       | File                                          | Purpose                                           |
+|------:|-------------|-----------------------------------------------|---------------------------------------------------|
+|  1.00 | react       | src/components/Button.tsx                     | Reusable button component with variants           |
+|  0.87 | react       | src/hooks/useButton.ts                        | Custom hook for button state management           |
+|  0.65 | lodash      | src/array.js                                  | Array utility functions                           |
 
 **Found**: 3 results
 ```
