@@ -15,15 +15,37 @@ Search indexed library sources for: **$ARGUMENTS**
    - Extract --stores parameter (optional, comma-separated store names)
    - Extract --limit parameter (optional, default 10)
 
-2. Use mcp__bluera-knowledge__search tool with:
+2. Call mcp__bluera-knowledge__search with:
    - query: The search query string
    - stores: Array of store names (if --stores specified)
    - limit: Number of results (if --limit specified, default 10)
    - detail: "contextual"
    - intent: "find-implementation"
 
-3. **CRITICAL**: After calling the tool, DO NOT output any table, results, or formatted content.
-   The PostToolUse hook has already formatted and displayed the results above.
-   Simply output: "Search complete."
+3. Format and display the results as a markdown table:
 
-4. If no results found, suggest broadening search terms or checking stores.
+   ```markdown
+   ## Search Results: "query"
+
+   | Score | Store | File | Purpose |
+   |------:|-------|------|---------|
+   | 0.95  | store-name | path/to/file.ts | Brief description |
+
+   **Found X results**
+   ```
+
+   **Formatting rules:**
+   - Score: Right-aligned, 2 decimal places (e.g., `0.95`, `1.00`)
+   - Store: Extract from `summary.storeName`
+   - File: Strip `summary.repoRoot` prefix from `summary.location`
+   - Purpose: Extract from `summary.purpose`, keep it concise (truncate if needed)
+   - Use standard markdown table syntax (don't worry about fixed-width alignment)
+
+4. If no results:
+   ```markdown
+   No results found for "query"
+
+   Try:
+   - Broadening your search terms
+   - Checking indexed stores: /bluera-knowledge:stores
+   ```
