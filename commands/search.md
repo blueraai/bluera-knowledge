@@ -37,10 +37,10 @@ Search indexed library sources for: **$ARGUMENTS**
 ```
 
 4. Format each column:
-   - **Score**: Relevance score (0-1, formatted to 2 decimals)
-   - **Store**: Store name (from summary.storeName)
-   - **File**: Relative file path within repo (strip repoRoot prefix if present)
-   - **Purpose**: Brief summary - truncate to ~50 chars if needed
+   - **Score**: Relevance score (0-1, formatted to 2 decimals), right-aligned
+   - **Store**: Store name (from summary.storeName), max 15 chars
+   - **File**: Relative file path within repo (strip repoRoot prefix if present), max 45 chars with "..." if truncated
+   - **Purpose**: Brief summary, max 50 chars with "..." if truncated
 
 5. If no results found:
 
