@@ -809,19 +809,27 @@ npm test
 
 src/
 ├── analysis/           # Dependency analysis & URL resolution
+├── crawl/              # Web crawling with Python bridge
 ├── services/           # Index, store, and search services
 ├── plugin/             # Plugin commands
 ├── mcp/                # MCP server
 └── cli/                # CLI entry point
+
+tests/
+├── integration/        # Integration tests with real Python execution
+├── fixtures/           # Test infrastructure (HTTP server, mocks)
+└── ...                 # Unit tests
 ```
 
 ## Technologies
 
 - **Claude Code Plugin System** with MCP server
+- **Runtime Validation**: Zod schemas for Python-TypeScript boundary
 - **AST Parsing**: @babel/parser, @babel/traverse
 - **Semantic Search**: AI-powered vector embeddings
 - **Git Operations**: Native git clone
 - **CLI**: Commander.js
+- **Web Crawling**: crawl4ai with Playwright (headless browser)
 
 ## Contributing
 
