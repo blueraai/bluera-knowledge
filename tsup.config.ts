@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'mcp/server': 'src/mcp/server.ts',
+    'workers/background-worker-cli': 'src/workers/background-worker-cli.ts',
   },
   format: ['esm'],
   dts: true,

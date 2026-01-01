@@ -4,7 +4,8 @@
   "description": "CLI tool for managing knowledge stores with semantic search",
   "type": "module",
   "bin": {
-    "bkb": "./dist/index.js"
+    "bkb": "./dist/index.js",
+    "bkb-worker": "./dist/workers/background-worker-cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
