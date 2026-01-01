@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.21] - 2026-01-01
+
+### Added
+- Display related concepts and key imports in search results (from contextual detail)
+- Actionable "Next Steps" footer with examples using actual result IDs and paths
+- Richer context to help users decide which results to explore
+
+### Changed
+- Reduced default limit from 10 to 5 results (quality over quantity)
+- Enhanced result format shows Related concepts (🔗) and Imports (📦)
+
 ## [0.4.20] - 2026-01-01
 
 ### Fixed
