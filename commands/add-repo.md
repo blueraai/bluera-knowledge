@@ -1,7 +1,7 @@
 ---
 description: Clone and index a library source repository
 argument-hint: "[git-url] [--name store-name] [--branch branch-name]"
-allowed-tools: ["mcp__bluera-knowledge__create_store", "mcp__bluera-knowledge__index_store"]
+allowed-tools: ["mcp__bluera-knowledge__create_store"]
 ---
 
 # Add Repository to Knowledge Stores
@@ -21,20 +21,18 @@ Clone and index a library source repository: **$ARGUMENTS**
    - source: The git URL
    - branch: Branch name (if --branch specified)
 
-3. After successful creation, use mcp__bluera-knowledge__index_store tool:
-   - store: The store name that was just created
-
-4. Display progress and results:
+3. Display results showing job ID for background indexing:
 
 ```
 ✓ Cloning https://github.com/facebook/react...
 ✓ Created store: react (a1b2c3d4...)
   Location: ~/.local/share/bluera-knowledge/stores/a1b2c3d4.../
 
-✓ Indexing...
-✓ Indexed 1,247 files
+🔄 Indexing started in background
+   Job ID: job_abc123def456
 
-Store is ready for searching!
+Check status with: /bluera-knowledge:check-status job_abc123def456
+Or view all jobs: /bluera-knowledge:check-status
 ```
 
 ## Error Handling

@@ -1,7 +1,7 @@
 ---
 description: Index a local folder of reference material
 argument-hint: "[path] [--name store-name]"
-allowed-tools: ["mcp__bluera-knowledge__create_store", "mcp__bluera-knowledge__index_store"]
+allowed-tools: ["mcp__bluera-knowledge__create_store"]
 ---
 
 # Add Local Folder to Knowledge Stores
@@ -19,20 +19,18 @@ Index a local folder of reference material: **$ARGUMENTS**
    - type: "file"
    - source: The folder path
 
-3. After successful creation, use mcp__bluera-knowledge__index_store tool:
-   - store: The store name that was just created
-
-4. Display progress and results:
+3. Display results showing job ID for background indexing:
 
 ```
 ✓ Adding folder: /Users/me/my-docs...
 ✓ Created store: my-docs (e5f6g7h8...)
   Location: ~/.local/share/bluera-knowledge/stores/e5f6g7h8.../
 
-✓ Indexing...
-✓ Indexed 342 files
+🔄 Indexing started in background
+   Job ID: job_xyz789abc123
 
-Store is ready for searching!
+Check status with: /bluera-knowledge:check-status job_xyz789abc123
+Or view all jobs: /bluera-knowledge:check-status
 ```
 
 ## Error Handling
