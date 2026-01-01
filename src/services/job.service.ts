@@ -177,9 +177,14 @@ export class JobService {
       try {
         const pid = parseInt(fs.readFileSync(pidFile, 'utf-8'), 10);
         process.kill(pid, 'SIGTERM');
-        fs.unlinkSync(pidFile);
       } catch {
         // Process may have already exited, ignore
+      }
+      // Always delete the PID file, even if kill failed
+      try {
+        fs.unlinkSync(pidFile);
+      } catch {
+        // Ignore if file already deleted
       }
     }
 
