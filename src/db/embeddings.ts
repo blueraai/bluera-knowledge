@@ -35,10 +35,25 @@ export class EmbeddingEngine {
   }
 
   async embedBatch(texts: string[]): Promise<number[][]> {
+    const BATCH_SIZE = 32; // Process 32 chunks in parallel
     const results: number[][] = [];
-    for (const text of texts) {
-      results.push(await this.embed(text));
+
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+      const batch = texts.slice(i, i + BATCH_SIZE);
+
+      // Process batch in parallel using Promise.all
+      const batchResults = await Promise.all(
+        batch.map(text => this.embed(text))
+      );
+
+      results.push(...batchResults);
+
+      // Small delay between batches to prevent memory issues
+      if (i + BATCH_SIZE < texts.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     }
+
     return results;
   }
 
