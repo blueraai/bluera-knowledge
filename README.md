@@ -1,6 +1,6 @@
 # Bluera Knowledge
 
-![Version](https://img.shields.io/badge/version-0.4.13-blue)
+![Version](https://img.shields.io/badge/version-0.4.21-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
@@ -370,15 +370,32 @@ Search across indexed knowledge stores:
 <summary><b>Expected Output</b></summary>
 
 ```
-## Search Results for "button component"
+## Search Results: "button component"
 
-| Score | Store       | File                                          | Purpose                                           |
-|------:|-------------|-----------------------------------------------|---------------------------------------------------|
-|  0.95 | react       | src/components/Button.tsx                     | Reusable button component with variants           |
-|  0.87 | react       | src/hooks/useButton.ts                        | Custom hook for button state management           |
-|  0.81 | react       | src/components/IconButton.tsx                 | Button component with icon support                |
+**1. [Score: 0.95] react**
+📄 src/components/Button.tsx
+→ Reusable button component with variants
+🔑 Keywords: component, button, variant, style, props
+📦 Imports: react, styled-components, prop-types
 
-**Found**: 3 results
+**2. [Score: 0.87] react**
+📄 src/hooks/useButton.ts
+→ Custom hook for button state management
+🔑 Keywords: hook, state, button, handler, event
+📦 Imports: react, react-dom
+
+**3. [Score: 0.81] react**
+📄 src/components/IconButton.tsx
+→ Button component with icon support
+🔑 Keywords: icon, button, component, render
+
+---
+**Found 3 results**
+
+💡 **Next Steps:**
+- Read file: `Read src/components/Button.tsx`
+- Get full code: `mcp__bluera-knowledge__get_full_context("doc_abc123")`
+- Refine search: Use keywords above
 ```
 </details>
 
