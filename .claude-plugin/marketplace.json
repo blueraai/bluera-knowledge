@@ -1,11 +1,11 @@
 {
-  "name": "bluera-knowledge",
+  "name": "bluera",
   "owner": {
-    "name": "Bluera",
-    "email": "plugins@bluera.com"
+    "name": "Bluera Inc",
+    "email": "contact@bluera.ai"
   },
   "metadata": {
-    "description": "Bluera's custom marketplace for knowledge management tools",
+    "description": "Claude Code plugins by Bluera Inc",
     "version": "0.1.0"
   },
   "plugins": [
@@ -13,7 +13,7 @@
       "name": "bluera-knowledge",
       "source": "./",
       "description": "Project-specific knowledge stores for definitive library sources. Clone and index important dependencies for authoritative reference.",
-      "version": "0.6.2"
+      "version": "0.6.3"
     }
   ]
 }
