@@ -5,8 +5,7 @@
     "email": "contact@bluera.ai"
   },
   "metadata": {
-    "description": "Claude Code plugins by Bluera Inc",
-    "version": "0.1.0"
+    "description": "Claude Code plugins by Bluera Inc"
   },
   "plugins": [
     {
