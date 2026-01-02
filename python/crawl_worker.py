@@ -3,6 +3,8 @@ import sys
 import json
 import asyncio
 import os
+import ast
+from typing import List, Dict, Any
 
 # Suppress crawl4ai logging before import
 os.environ['CRAWL4AI_VERBOSE'] = '0'
@@ -32,6 +34,116 @@ async def fetch_headless(url: str):
             "markdown": result.markdown or result.cleaned_html or '',
             "links": result.links.get("internal", []) if isinstance(result.links, dict) else []
         }
+
+def is_exported(node: ast.AST) -> bool:
+    """Check if a function or class is exported (Python doesn't have explicit exports, check if starts with '_')"""
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return not node.name.startswith('_')
+    return False
+
+def get_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Extract function signature from AST node"""
+    args_list = []
+
+    for arg in node.args.args:
+        arg_str = arg.arg
+        if arg.annotation:
+            arg_str += f': {ast.unparse(arg.annotation)}'
+        args_list.append(arg_str)
+
+    return_annotation = ''
+    if node.returns:
+        return_annotation = f' -> {ast.unparse(node.returns)}'
+
+    return f"{node.name}({', '.join(args_list)}){return_annotation}"
+
+def extract_imports(tree: ast.AST) -> List[Dict[str, Any]]:
+    """Extract import statements from AST"""
+    imports = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.append({
+                    'source': alias.name,
+                    'imported': alias.asname if alias.asname else alias.name
+                })
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module if node.module else ''
+            for alias in node.names:
+                imports.append({
+                    'source': module,
+                    'imported': alias.name,
+                    'alias': alias.asname if alias.asname else None
+                })
+
+    return imports
+
+def extract_calls(node: ast.AST) -> List[str]:
+    """Extract function calls from a function/method body"""
+    calls = []
+
+    for child in ast.walk(node):
+        if isinstance(child, ast.Call):
+            if isinstance(child.func, ast.Name):
+                calls.append(child.func.id)
+            elif isinstance(child.func, ast.Attribute):
+                calls.append(child.func.attr)
+
+    return calls
+
+async def parse_python_ast(code: str, file_path: str) -> Dict[str, Any]:
+    """Parse Python code and return CodeNode array"""
+    try:
+        tree = ast.parse(code)
+        nodes = []
+
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                nodes.append({
+                    'type': 'function',
+                    'name': node.name,
+                    'exported': is_exported(node),
+                    'startLine': node.lineno,
+                    'endLine': node.end_lineno if node.end_lineno else node.lineno,
+                    'async': isinstance(node, ast.AsyncFunctionDef),
+                    'signature': get_signature(node),
+                    'calls': extract_calls(node)
+                })
+
+            elif isinstance(node, ast.ClassDef):
+                methods = []
+                for item in node.body:
+                    if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        methods.append({
+                            'name': item.name,
+                            'async': isinstance(item, ast.AsyncFunctionDef),
+                            'signature': get_signature(item),
+                            'startLine': item.lineno,
+                            'endLine': item.end_lineno if item.end_lineno else item.lineno,
+                            'calls': extract_calls(item)
+                        })
+
+                nodes.append({
+                    'type': 'class',
+                    'name': node.name,
+                    'exported': is_exported(node),
+                    'startLine': node.lineno,
+                    'endLine': node.end_lineno if node.end_lineno else node.lineno,
+                    'methods': methods
+                })
+
+        imports = extract_imports(tree)
+
+        return {
+            'nodes': nodes,
+            'imports': imports
+        }
+
+    except SyntaxError as e:
+        raise Exception(f"Python syntax error at line {e.lineno}: {e.msg}")
+    except Exception as e:
+        raise Exception(f"Failed to parse Python AST: {str(e)}")
 
 async def process_request(crawler, request):
     """Process a single crawl request"""
@@ -112,6 +224,31 @@ async def main():
                             raise ValueError('URL parameter is required')
 
                         result = await fetch_headless(url)
+                        response = {
+                            'jsonrpc': '2.0',
+                            'id': request.get('id'),
+                            'result': result
+                        }
+                        print(json.dumps(response), flush=True)
+                    except Exception as e:
+                        error_response = {
+                            'jsonrpc': '2.0',
+                            'id': request.get('id'),
+                            'error': {'code': -1, 'message': str(e)}
+                        }
+                        print(json.dumps(error_response), flush=True)
+
+                elif method == 'parse_python':
+                    # Handle Python AST parsing request
+                    try:
+                        params = request.get('params', {})
+                        code = params.get('code')
+                        file_path = params.get('filePath', '<unknown>')
+
+                        if not code:
+                            raise ValueError('code parameter is required')
+
+                        result = await parse_python_ast(code, file_path)
                         response = {
                             'jsonrpc': '2.0',
                             'id': request.get('id'),

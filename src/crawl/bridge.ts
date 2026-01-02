@@ -5,21 +5,23 @@ import { ZodError } from 'zod';
 import {
   type CrawlResult,
   type HeadlessResult,
+  type ParsePythonResult,
   type CrawledLink,
   validateCrawlResult,
   validateHeadlessResult,
+  validateParsePythonResult,
 } from './schemas.js';
 
 // Re-export for backwards compatibility
-export type { CrawledLink };
+export type { CrawledLink, ParsePythonResult };
 
-type PendingResult = CrawlResult | HeadlessResult;
+type PendingResult = CrawlResult | HeadlessResult | ParsePythonResult;
 
 interface PendingRequest {
   resolve: (v: PendingResult) => void;
   reject: (e: Error) => void;
   timeout: NodeJS.Timeout;
-  method: 'crawl' | 'fetch_headless';
+  method: 'crawl' | 'fetch_headless' | 'parse_python';
 }
 
 export class PythonBridge {
@@ -92,8 +94,10 @@ export class PythonBridge {
               let validated: PendingResult;
               if (pending.method === 'crawl') {
                 validated = validateCrawlResult(response.result);
-              } else {
+              } else if (pending.method === 'fetch_headless') {
                 validated = validateHeadlessResult(response.result);
+              } else {
+                validated = validateParsePythonResult(response.result);
               }
               pending.resolve(validated);
             } catch (error: unknown) {
@@ -171,6 +175,36 @@ export class PythonBridge {
 
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       this.pending.set(id, { resolve: resolve as (v: PendingResult) => void, reject, timeout, method: 'fetch_headless' });
+      if (this.process === null || this.process.stdin === null) {
+        reject(new Error('Python bridge process not available'));
+        return;
+      }
+      this.process.stdin.write(JSON.stringify(request) + '\n');
+    });
+  }
+
+  async parsePython(code: string, filePath: string, timeoutMs: number = 10000): Promise<ParsePythonResult> {
+    if (!this.process) await this.start();
+
+    const id = randomUUID();
+    const request = {
+      jsonrpc: '2.0',
+      id,
+      method: 'parse_python',
+      params: { code, filePath },
+    };
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        const pending = this.pending.get(id);
+        if (pending) {
+          this.pending.delete(id);
+          reject(new Error(`Python parsing timeout after ${String(timeoutMs)}ms for file: ${filePath}`));
+        }
+      }, timeoutMs);
+
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      this.pending.set(id, { resolve: resolve as (v: PendingResult) => void, reject, timeout, method: 'parse_python' });
       if (this.process === null || this.process.stdin === null) {
         reject(new Error('Python bridge process not available'));
         return;

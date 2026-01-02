@@ -19,7 +19,7 @@ describe('CodeGraphService', () => {
   });
 
   describe('buildGraph', () => {
-    it('should build a graph from TypeScript files', () => {
+    it('should build a graph from TypeScript files', async () => {
       const files = [
         {
           path: '/src/utils.ts',
@@ -36,7 +36,7 @@ export function doWork() {
         }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       const nodes = graph.getAllNodes();
 
       expect(nodes.length).toBe(2);
@@ -44,7 +44,7 @@ export function doWork() {
       expect(nodes.some(n => n.name === 'doWork')).toBe(true);
     });
 
-    it('should track function calls', () => {
+    it('should track function calls', async () => {
       const files = [
         {
           path: '/src/main.ts',
@@ -60,7 +60,7 @@ function callee() {
         }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
 
       // Check that caller calls callee
       const callerEdges = graph.getEdges('/src/main.ts:caller');
@@ -68,7 +68,7 @@ function callee() {
       expect(callsCallee).toBe(true);
     });
 
-    it('should track imports', () => {
+    it('should track imports', async () => {
       const files = [
         {
           path: '/src/consumer.ts',
@@ -82,20 +82,20 @@ function useHelper() {
         }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       const consumerEdges = graph.getEdges('/src/consumer.ts');
       const hasImport = consumerEdges.some(e => e.type === 'imports');
       expect(hasImport).toBe(true);
     });
 
-    it('should skip non-TypeScript/JavaScript files', () => {
+    it('should skip non-TypeScript/JavaScript files', async () => {
       const files = [
         { path: '/src/readme.md', content: '# README\n\nThis is docs.' },
         { path: '/src/config.json', content: '{"key": "value"}' },
         { path: '/src/main.ts', content: 'export function main() {}' }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       const nodes = graph.getAllNodes();
 
       // Only the .ts file should have nodes
@@ -118,7 +118,7 @@ export function helper() {
         }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       await service.saveGraph(storeId, graph);
 
       // Clear cache to force load from disk
@@ -144,7 +144,7 @@ export function helper() {
         { path: '/src/main.ts', content: 'export function main() {}' }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       await service.saveGraph(storeId, graph);
 
       // Load twice - second should come from cache
@@ -161,7 +161,7 @@ export function helper() {
         { path: '/src/main.ts', content: 'export function main() {}' }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       await service.saveGraph(storeId, graph);
 
       // Check file exists
@@ -176,7 +176,7 @@ export function helper() {
   });
 
   describe('getUsageStats', () => {
-    it('should return calledBy and calls counts', () => {
+    it('should return calledBy and calls counts', async () => {
       const files = [
         {
           path: '/src/main.ts',
@@ -192,7 +192,7 @@ function target() {
         }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
 
       // target is called by caller
       const targetStats = service.getUsageStats(graph, '/src/main.ts', 'target');
@@ -205,7 +205,7 @@ function target() {
   });
 
   describe('getRelatedCode', () => {
-    it('should return callers and callees', () => {
+    it('should return callers and callees', async () => {
       const files = [
         {
           path: '/src/main.ts',
@@ -225,7 +225,7 @@ function callee() {
         }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       const related = service.getRelatedCode(graph, '/src/main.ts', 'target');
 
       // target is called by caller (and possibly itself due to regex-based detection)
@@ -247,7 +247,7 @@ function callee() {
         { path: '/src/main.ts', content: 'export function main() {}' }
       ];
 
-      const graph = service.buildGraph(files);
+      const graph = await service.buildGraph(files);
       await service.saveGraph(storeId, graph);
 
       // Load to populate cache

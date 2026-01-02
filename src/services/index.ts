@@ -5,6 +5,7 @@ import { IndexService } from './index.service.js';
 import { CodeGraphService } from './code-graph.service.js';
 import { LanceStore } from '../db/lance.js';
 import { EmbeddingEngine } from '../db/embeddings.js';
+import { PythonBridge } from '../crawl/bridge.js';
 
 export { ConfigService } from './config.service.js';
 export { StoreService } from './store.service.js';
@@ -23,6 +24,7 @@ export interface ServiceContainer {
   lance: LanceStore;
   embeddings: EmbeddingEngine;
   codeGraph: CodeGraphService;
+  pythonBridge: PythonBridge;
 }
 
 export async function createServices(
@@ -45,7 +47,10 @@ export async function createServices(
   const store = new StoreService(resolvedDataDir);
   await store.initialize();
 
-  const codeGraph = new CodeGraphService(resolvedDataDir);
+  const pythonBridge = new PythonBridge();
+  await pythonBridge.start();
+
+  const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
   const search = new SearchService(lance, embeddings, undefined, codeGraph);
   const index = new IndexService(lance, embeddings, { codeGraphService: codeGraph });
 
@@ -57,5 +62,6 @@ export async function createServices(
     lance,
     embeddings,
     codeGraph,
+    pythonBridge,
   };
 }
