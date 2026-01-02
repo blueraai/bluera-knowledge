@@ -1,14 +1,21 @@
+import { createHash } from 'node:crypto';
 import { JobService } from '../services/job.service.js';
 import { StoreService } from '../services/store.service.js';
 import { IndexService } from '../services/index.service.js';
+import type { LanceStore } from '../db/lance.js';
+import type { EmbeddingEngine } from '../db/embeddings.js';
+import { IntelligentCrawler, type CrawlProgress } from '../crawl/intelligent-crawler.js';
 import type { Job } from '../types/job.js';
-import { createStoreId } from '../types/brands.js';
+import type { Document } from '../types/document.js';
+import { createStoreId, createDocumentId } from '../types/brands.js';
 
 export class BackgroundWorker {
   constructor(
     private readonly jobService: JobService,
     private readonly storeService: StoreService,
-    private readonly indexService: IndexService
+    private readonly indexService: IndexService,
+    private readonly lanceStore: LanceStore,
+    private readonly embeddingEngine: EmbeddingEngine
   ) {}
 
   /**
@@ -168,9 +175,120 @@ export class BackgroundWorker {
   /**
    * Execute a crawl job (web crawling + indexing)
    */
-  private executeCrawlJob(_job: Job): Promise<void> {
-    // TODO: Implement web crawling
-    // This will be implemented when web crawling feature is added
-    throw new Error('Crawl jobs not yet implemented');
+  private async executeCrawlJob(job: Job): Promise<void> {
+    const {
+      storeId,
+      url,
+      crawlInstruction,
+      extractInstruction,
+      maxPages,
+      simple,
+      useHeadless,
+    } = job.details;
+
+    if (storeId === undefined || typeof storeId !== 'string') {
+      throw new Error('Store ID required for crawl job');
+    }
+    if (url === undefined || typeof url !== 'string') {
+      throw new Error('URL required for crawl job');
+    }
+
+    // Get the store
+    const store = await this.storeService.get(createStoreId(storeId));
+    if (!store || store.type !== 'web') {
+      throw new Error(`Web store ${storeId} not found`);
+    }
+
+    const resolvedMaxPages = typeof maxPages === 'number' ? maxPages : 50;
+    const crawler = new IntelligentCrawler();
+
+    // Listen for progress events
+    crawler.on('progress', (progress: CrawlProgress) => {
+      // Check if job was cancelled
+      const currentJob = this.jobService.getJob(job.id);
+      if (currentJob?.status === 'cancelled') {
+        void crawler.stop();
+        return;
+      }
+
+      // Crawling is 80% of total progress (0-80%)
+      const crawlProgress = (progress.pagesVisited / resolvedMaxPages) * 80;
+
+      this.jobService.updateJob(job.id, {
+        message: progress.message ?? `Crawling page ${String(progress.pagesVisited)}/${String(resolvedMaxPages)}`,
+        progress: Math.min(80, crawlProgress),
+        details: { pagesCrawled: progress.pagesVisited }
+      });
+    });
+
+    try {
+      await this.lanceStore.initialize(store.id);
+      const docs: Document[] = [];
+
+      // Build crawl options, only including defined values
+      const crawlOptions: {
+        maxPages: number;
+        simple: boolean;
+        useHeadless: boolean;
+        crawlInstruction?: string;
+        extractInstruction?: string;
+      } = {
+        maxPages: resolvedMaxPages,
+        simple: simple ?? false,
+        useHeadless: useHeadless ?? false,
+      };
+      if (crawlInstruction !== undefined) {
+        crawlOptions.crawlInstruction = crawlInstruction;
+      }
+      if (extractInstruction !== undefined) {
+        crawlOptions.extractInstruction = extractInstruction;
+      }
+
+      // Crawl pages using IntelligentCrawler
+      for await (const result of crawler.crawl(url, crawlOptions)) {
+        // Check cancellation between pages
+        const currentJob = this.jobService.getJob(job.id);
+        if (currentJob?.status === 'cancelled') {
+          throw new Error('Job cancelled by user');
+        }
+
+        // Embed and index the content (use extracted if available, otherwise markdown)
+        const contentToEmbed = result.extracted ?? result.markdown;
+        const vector = await this.embeddingEngine.embed(contentToEmbed);
+
+        docs.push({
+          id: createDocumentId(`${store.id}-${createHash('md5').update(result.url).digest('hex')}`),
+          content: contentToEmbed,
+          vector,
+          metadata: {
+            type: 'web',
+            storeId: store.id,
+            url: result.url,
+            title: result.title,
+            extracted: result.extracted !== undefined,
+            depth: result.depth,
+            indexedAt: new Date(),
+          },
+        });
+      }
+
+      // Index all documents (remaining 20%)
+      if (docs.length > 0) {
+        this.jobService.updateJob(job.id, {
+          message: 'Indexing crawled documents...',
+          progress: 85
+        });
+
+        await this.lanceStore.addDocuments(store.id, docs);
+      }
+
+      this.jobService.updateJob(job.id, {
+        message: `Crawled and indexed ${String(docs.length)} pages`,
+        progress: 100,
+        details: { pagesCrawled: docs.length }
+      });
+    } finally {
+      await crawler.stop();
+    }
   }
 }
