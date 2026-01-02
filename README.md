@@ -1,6 +1,6 @@
 # Bluera Knowledge
 
-![Version](https://img.shields.io/badge/version-0.7.0-blue)
+![Version](https://img.shields.io/badge/version-0.7.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
@@ -179,9 +179,12 @@ While bluera-knowledge indexes and searches code in any language, certain advanc
 - ✅ Import/export tracking
 - ✅ Class and method node creation in code graph
 
-**Python** (Partial Support):
-- ✅ Import analysis
-- ⚠️ Code graph analysis not yet implemented
+**Python** (Full Support):
+- ✅ Code graph analysis with method-level tracking
+- ✅ Function and class analysis with AST parsing
+- ✅ Import tracking (import and from...import)
+- ✅ Call relationship analysis
+- ✅ Method node creation in code graph
 
 **Other Languages** (Basic Support):
 - ✅ Full-text and semantic search

@@ -140,7 +140,7 @@ export class IndexService {
 
     // Build and save code graph if service is available and we have source files
     if (this.codeGraphService && sourceFiles.length > 0) {
-      const graph = this.codeGraphService.buildGraph(sourceFiles);
+      const graph = await this.codeGraphService.buildGraph(sourceFiles);
       await this.codeGraphService.saveGraph(store.id, graph);
     }
 

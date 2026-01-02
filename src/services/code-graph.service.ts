@@ -2,6 +2,8 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { CodeGraph, type GraphNode } from '../analysis/code-graph.js';
 import { ASTParser } from '../analysis/ast-parser.js';
+import { ParserFactory } from '../analysis/parser-factory.js';
+import type { PythonBridge } from '../crawl/bridge.js';
 import type { StoreId } from '../types/brands.js';
 
 interface SerializedGraph {
@@ -31,35 +33,37 @@ interface SerializedGraph {
 export class CodeGraphService {
   private readonly dataDir: string;
   private readonly parser: ASTParser;
+  private readonly parserFactory: ParserFactory;
   private readonly graphCache: Map<string, CodeGraph>;
 
-  constructor(dataDir: string) {
+  constructor(dataDir: string, pythonBridge?: PythonBridge) {
     this.dataDir = dataDir;
     this.parser = new ASTParser();
+    this.parserFactory = new ParserFactory(pythonBridge);
     this.graphCache = new Map();
   }
 
   /**
    * Build a code graph from source files.
    */
-  buildGraph(files: Array<{ path: string; content: string }>): CodeGraph {
+  async buildGraph(files: Array<{ path: string; content: string }>): Promise<CodeGraph> {
     const graph = new CodeGraph();
 
     for (const file of files) {
       const ext = file.path.split('.').pop() ?? '';
-      if (!['ts', 'tsx', 'js', 'jsx'].includes(ext)) continue;
+      if (!['ts', 'tsx', 'js', 'jsx', 'py'].includes(ext)) continue;
 
-      const language = ext === 'ts' || ext === 'tsx' ? 'typescript' : 'javascript';
-
-      // Parse nodes (functions, classes, etc.)
-      const nodes = this.parser.parse(file.content, language);
+      // Parse nodes (functions, classes, etc.) using the factory
+      const nodes = await this.parserFactory.parseFile(file.path, file.content);
       graph.addNodes(nodes, file.path);
 
-      // Parse imports and add edges
-      const imports = this.parser.extractImports(file.content);
-      for (const imp of imports) {
-        if (!imp.isType) {
-          graph.addImport(file.path, imp.source, imp.specifiers);
+      // Parse imports and add edges (skip for Python, handled by Python parser)
+      if (ext !== 'py') {
+        const imports = this.parser.extractImports(file.content);
+        for (const imp of imports) {
+          if (!imp.isType) {
+            graph.addImport(file.path, imp.source, imp.specifiers);
+          }
         }
       }
 

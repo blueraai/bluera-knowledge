@@ -1,0 +1,32 @@
+import path from 'node:path';
+import type { PythonBridge } from '../crawl/bridge.js';
+import { ASTParser, type CodeNode } from './ast-parser.js';
+import { PythonASTParser } from './python-ast-parser.js';
+
+export class ParserFactory {
+  constructor(private readonly pythonBridge?: PythonBridge) {}
+
+  async parseFile(filePath: string, code: string): Promise<CodeNode[]> {
+    const ext = path.extname(filePath);
+
+    if (['.ts', '.tsx'].includes(ext)) {
+      const parser = new ASTParser();
+      return parser.parse(code, 'typescript');
+    }
+
+    if (['.js', '.jsx'].includes(ext)) {
+      const parser = new ASTParser();
+      return parser.parse(code, 'javascript');
+    }
+
+    if (ext === '.py') {
+      if (!this.pythonBridge) {
+        throw new Error('Python bridge not available for parsing Python files');
+      }
+      const parser = new PythonASTParser(this.pythonBridge);
+      return await parser.parse(code, filePath);
+    }
+
+    return [];
+  }
+}
