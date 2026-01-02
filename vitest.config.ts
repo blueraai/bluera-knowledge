@@ -2,9 +2,49 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    globals: true,
-    environment: 'node',
-    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    // Separate unit and integration tests with different isolation settings
+    // Unit tests: fast parallel execution without isolation (use mocks only)
+    // Integration tests: safe execution with isolation (spawn processes, use filesystem)
+    projects: [
+      {
+        test: {
+          name: { label: 'unit', color: 'cyan' },
+          globals: true,
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+          // Exclude tests that spawn processes or have mock state conflicts
+          exclude: [
+            'src/crawl/bridge.test.ts',
+            'src/plugin/git-clone.test.ts',
+            'src/services/project-root.service.test.ts',
+          ],
+          // Use forks pool for onnxruntime-node compatibility
+          pool: 'forks',
+          maxWorkers: '75%',
+          // Fast: no isolation needed for unit tests (all use mocks)
+          isolate: false,
+        },
+      },
+      {
+        test: {
+          name: { label: 'integration', color: 'magenta' },
+          globals: true,
+          environment: 'node',
+          // Include all integration tests + tests that need isolation
+          include: [
+            'tests/**/*.test.ts',
+            'src/crawl/bridge.test.ts',
+            'src/plugin/git-clone.test.ts',
+            'src/services/project-root.service.test.ts',
+          ],
+          // Use forks pool for onnxruntime-node compatibility
+          pool: 'forks',
+          maxWorkers: '75%',
+          // Safe: isolation required (spawns processes, uses temp dirs)
+          isolate: true,
+        },
+      },
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
