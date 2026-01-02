@@ -62,7 +62,9 @@ async function main(): Promise<void> {
   const worker = new BackgroundWorker(
     jobService,
     services.store,
-    services.index
+    services.index,
+    services.lance,
+    services.embeddings
   );
 
   try {

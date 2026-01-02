@@ -3,6 +3,8 @@ import { BackgroundWorker } from './background-worker.js';
 import { JobService } from '../services/job.service.js';
 import { StoreService } from '../services/store.service.js';
 import { IndexService } from '../services/index.service.js';
+import type { LanceStore } from '../db/lance.js';
+import type { EmbeddingEngine } from '../db/embeddings.js';
 import { mkdtempSync, rmSync, existsSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -12,6 +14,8 @@ describe('BackgroundWorker', () => {
   let jobService: JobService;
   let storeService: StoreService;
   let indexService: IndexService;
+  let lanceStore: LanceStore;
+  let embeddingEngine: EmbeddingEngine;
   let worker: BackgroundWorker;
 
   beforeEach(async () => {
@@ -19,7 +23,15 @@ describe('BackgroundWorker', () => {
     jobService = new JobService(tempDir);
     storeService = new StoreService(tempDir);
     indexService = new IndexService(tempDir);
-    worker = new BackgroundWorker(jobService, storeService, indexService);
+    // Mock LanceStore and EmbeddingEngine for testing
+    lanceStore = {
+      initialize: vi.fn().mockResolvedValue(undefined),
+      addDocuments: vi.fn().mockResolvedValue(undefined),
+    } as unknown as LanceStore;
+    embeddingEngine = {
+      embed: vi.fn().mockResolvedValue(new Array(384).fill(0)),
+    } as unknown as EmbeddingEngine;
+    worker = new BackgroundWorker(jobService, storeService, indexService, lanceStore, embeddingEngine);
   });
 
   afterEach(() => {
@@ -49,14 +61,14 @@ describe('BackgroundWorker', () => {
 
     it('should set job to running status before execution', async () => {
       const job = jobService.createJob({
-        type: 'crawl', // Using crawl since it's not implemented
+        type: 'crawl',
         details: { storeId: 'test' }
       });
 
       try {
         await worker.executeJob(job.id);
       } catch {
-        // Expected to fail since crawl is not implemented
+        // Expected to fail since store doesn't exist
       }
 
       const updated = jobService.getJob(job.id);
@@ -66,17 +78,17 @@ describe('BackgroundWorker', () => {
 
     it('should update job to failed status on error', async () => {
       const job = jobService.createJob({
-        type: 'crawl', // Not implemented, will throw
-        details: { storeId: 'test' }
+        type: 'crawl',
+        details: { storeId: 'test', url: 'https://example.com' }
       });
 
       await expect(worker.executeJob(job.id)).rejects.toThrow(
-        'Crawl jobs not yet implemented'
+        'Web store test not found'
       );
 
       const updated = jobService.getJob(job.id);
       expect(updated?.status).toBe('failed');
-      expect(updated?.message).toBe('Crawl jobs not yet implemented');
+      expect(updated?.message).toBe('Web store test not found');
     });
   });
 
@@ -130,14 +142,36 @@ describe('BackgroundWorker', () => {
   });
 
   describe('executeCrawlJob', () => {
-    it('should throw error for unimplemented crawl job', async () => {
+    it('should throw error for job without storeId', async () => {
       const job = jobService.createJob({
         type: 'crawl',
         details: { url: 'https://example.com' }
       });
 
       await expect(worker.executeJob(job.id)).rejects.toThrow(
-        'Crawl jobs not yet implemented'
+        'Store ID required for crawl job'
+      );
+    });
+
+    it('should throw error for job without url', async () => {
+      const job = jobService.createJob({
+        type: 'crawl',
+        details: { storeId: 'test-store' }
+      });
+
+      await expect(worker.executeJob(job.id)).rejects.toThrow(
+        'URL required for crawl job'
+      );
+    });
+
+    it('should throw error for non-existent store', async () => {
+      const job = jobService.createJob({
+        type: 'crawl',
+        details: { storeId: 'non-existent-store', url: 'https://example.com' }
+      });
+
+      await expect(worker.executeJob(job.id)).rejects.toThrow(
+        'Web store non-existent-store not found'
       );
     });
   });

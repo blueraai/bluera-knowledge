@@ -12,6 +12,13 @@ export interface JobDetails {
   completedAt?: string;
   cancelledAt?: string;
   error?: string;
+  // Crawl-specific fields
+  crawlInstruction?: string;
+  extractInstruction?: string;
+  maxPages?: number;
+  simple?: boolean;
+  useHeadless?: boolean;
+  pagesCrawled?: number;
 }
 
 export interface Job {
