@@ -17,7 +17,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-crawl4ai
+          restore-keys: |
+            pip-${{ runner.os }}-
 
       - name: Install crawl4ai
         run: |
