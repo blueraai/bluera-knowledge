@@ -173,6 +173,45 @@ export function helper() {
       expect(parsed.edges).toBeDefined();
       expect(parsed.nodes.length).toBe(1);
     });
+
+    it('should save and load a graph with class methods', async () => {
+      const storeId = createStoreId('class-methods-store');
+      const files = [
+        {
+          path: '/src/calculator.ts',
+          content: `
+export class Calculator {
+  add(a: number, b: number): number {
+    return a + b;
+  }
+
+  subtract(a: number, b: number): number {
+    return a - b;
+  }
+}
+`
+        }
+      ];
+
+      const graph = await service.buildGraph(files);
+      await service.saveGraph(storeId, graph);
+
+      // Clear cache to force load from disk
+      service.clearCache();
+
+      const loadedGraph = await service.loadGraph(storeId);
+      expect(loadedGraph).not.toBeUndefined();
+
+      const nodes = loadedGraph!.getAllNodes();
+      // Should have class + 2 methods
+      const classNode = nodes.find(n => n.name === 'Calculator' && n.type === 'class');
+      const methodNodes = nodes.filter(n => n.type === 'method');
+
+      expect(classNode).toBeDefined();
+      expect(methodNodes.length).toBe(2);
+      expect(methodNodes.some(m => m.name === 'add')).toBe(true);
+      expect(methodNodes.some(m => m.name === 'subtract')).toBe(true);
+    });
   });
 
   describe('getUsageStats', () => {

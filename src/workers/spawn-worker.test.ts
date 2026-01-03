@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock child_process before importing spawn-worker
 const mockUnref = vi.fn();
@@ -17,6 +17,18 @@ describe('spawnBackgroundWorker', () => {
   beforeEach(() => {
     mockSpawn.mockClear();
     mockUnref.mockClear();
+  });
+
+  it('should use tsx in development mode (src folder)', () => {
+    spawnBackgroundWorker('test-job', '/test/data');
+
+    const callArgs = mockSpawn.mock.calls[0];
+    const command = callArgs?.[0];
+    const args = callArgs?.[1];
+
+    // In development (src folder), should use npx tsx
+    expect(command).toBe('npx');
+    expect(args?.[0]).toBe('tsx');
   });
 
   it('should spawn a background worker process', () => {
@@ -68,5 +80,49 @@ describe('spawnBackgroundWorker', () => {
     const options = callArgs?.[2];
 
     expect(options?.env?.BLUERA_DATA_DIR).toBe(testDataDir);
+  });
+});
+
+// Test production mode with separate import to get fresh module
+describe('spawnBackgroundWorker (production mode)', () => {
+  const mockUnrefProd = vi.fn();
+  const mockSpawnProd = vi.fn(() => ({
+    unref: mockUnrefProd
+  }));
+
+  beforeEach(() => {
+    vi.resetModules();
+    mockSpawnProd.mockClear();
+    mockUnrefProd.mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should use Node.js directly in production mode (dist folder)', async () => {
+    // Mock child_process
+    vi.doMock('child_process', () => ({
+      spawn: mockSpawnProd
+    }));
+
+    // Mock url module to return a path containing /dist/
+    vi.doMock('url', () => ({
+      fileURLToPath: () => '/app/dist/workers/spawn-worker.js'
+    }));
+
+    // Import fresh module with production path
+    const { spawnBackgroundWorker: spawnProd } = await import('./spawn-worker.js');
+
+    spawnProd('test-job', '/test/data');
+
+    const callArgs = mockSpawnProd.mock.calls[0];
+    const command = callArgs?.[0];
+    const args = callArgs?.[1];
+
+    // In production (dist folder), should use Node.js directly
+    expect(command).toBe(process.execPath);
+    expect(args?.[0]).toContain('background-worker-cli.js');
+    expect(args?.[1]).toBe('test-job');
   });
 });
