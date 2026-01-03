@@ -2,6 +2,8 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { CodeGraph, type GraphNode } from '../analysis/code-graph.js';
 import { ASTParser } from '../analysis/ast-parser.js';
+import { RustASTParser } from '../analysis/rust-ast-parser.js';
+import { GoASTParser } from '../analysis/go-ast-parser.js';
 import { ParserFactory } from '../analysis/parser-factory.js';
 import type { PythonBridge } from '../crawl/bridge.js';
 import type { StoreId } from '../types/brands.js';
@@ -51,14 +53,33 @@ export class CodeGraphService {
 
     for (const file of files) {
       const ext = file.path.split('.').pop() ?? '';
-      if (!['ts', 'tsx', 'js', 'jsx', 'py'].includes(ext)) continue;
+      if (!['ts', 'tsx', 'js', 'jsx', 'py', 'rs', 'go'].includes(ext)) continue;
 
       // Parse nodes (functions, classes, etc.) using the factory
       const nodes = await this.parserFactory.parseFile(file.path, file.content);
       graph.addNodes(nodes, file.path);
 
-      // Parse imports and add edges (skip for Python, handled by Python parser)
-      if (ext !== 'py') {
+      // Parse imports and add edges
+      if (ext === 'rs') {
+        // Use RustASTParser for Rust imports
+        const rustParser = new RustASTParser();
+        const imports = rustParser.extractImports(file.content);
+        for (const imp of imports) {
+          if (!imp.isType) {
+            graph.addImport(file.path, imp.source, imp.specifiers);
+          }
+        }
+      } else if (ext === 'go') {
+        // Use GoASTParser for Go imports
+        const goParser = new GoASTParser();
+        const imports = goParser.extractImports(file.content);
+        for (const imp of imports) {
+          if (!imp.isType) {
+            graph.addImport(file.path, imp.source, imp.specifiers);
+          }
+        }
+      } else if (ext !== 'py') {
+        // Use ASTParser for JS/TS imports (Python imports handled by Python parser)
         const imports = this.parser.extractImports(file.content);
         for (const imp of imports) {
           if (!imp.isType) {
