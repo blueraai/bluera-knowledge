@@ -1,6 +1,6 @@
 # 🧠 Bluera Knowledge
 
-![Version](https://img.shields.io/badge/version-0.7.1-blue)
+![Version](https://img.shields.io/badge/version-0.9.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
@@ -201,7 +201,7 @@ Background jobs include significant performance optimizations:
 ### 🗺️ Code Graph Analysis
 
 - **📊 Code Graph Analysis** - During indexing, builds a graph of code relationships (calls, imports, extends) to provide usage context in search results - shows how many callers/callees each function has
-- **🌐 Multi-Language Support** - Analyzes JavaScript, TypeScript, and Python imports; indexes code in any language
+- **🌐 Multi-Language Support** - Full AST parsing for JavaScript, TypeScript, Python, Rust, and Go; indexes code in any language
 - **🔌 MCP Integration** - Exposes all functionality as Model Context Protocol tools for AI coding agents
 
 ### 🌍 Language-Specific Features
@@ -212,6 +212,8 @@ While bluera-knowledge indexes and searches code in any language, certain advanc
 |----------|------------|---------------|-----------------|-----------------|
 | **TypeScript/JavaScript** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Class Methods |
 | **Python** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Class Methods |
+| **Rust** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Struct/Trait Methods |
+| **Go** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Struct/Interface Methods |
 | **Other Languages** | ⚠️ Basic Support | ❌ | ❌ | ❌ |
 
 > [!NOTE]
@@ -925,7 +927,7 @@ tests/
 
 - **🔌 Claude Code Plugin System** with MCP server
 - **✅ Runtime Validation** - Zod schemas for Python-TypeScript boundary
-- **🌳 AST Parsing** - @babel/parser, @babel/traverse for code analysis
+- **🌳 AST Parsing** - @babel/parser for JS/TS, Python AST module, tree-sitter for Rust and Go
 - **🗺️ Code Graph** - Static analysis of function calls, imports, and class relationships
 - **🧠 Semantic Search** - AI-powered vector embeddings
 - **📦 Git Operations** - Native git clone
