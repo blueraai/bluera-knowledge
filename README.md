@@ -1,5 +1,6 @@
 # 🧠 Bluera Knowledge
 
+[![CI](https://github.com/chris-bluera/bluera-knowledge/actions/workflows/ci.yml/badge.svg)](https://github.com/chris-bluera/bluera-knowledge/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-0.9.2-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
