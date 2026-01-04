@@ -899,7 +899,8 @@ var DependencyUsageAnalyzer = class {
                   usageMap,
                   packageName,
                   filePath,
-                  dep.isDev
+                  dep.isDev,
+                  dep.language
                 );
               }
             }
@@ -981,7 +982,7 @@ var DependencyUsageAnalyzer = class {
     }
     return imports;
   }
-  incrementUsage(usageMap, packageName, filePath, isDevDependency) {
+  incrementUsage(usageMap, packageName, filePath, isDevDependency, language) {
     const existing = usageMap.get(packageName);
     if (existing) {
       existing.importCount++;
@@ -995,7 +996,8 @@ var DependencyUsageAnalyzer = class {
         importCount: 1,
         fileCount: 1,
         files: [filePath],
-        isDevDependency
+        isDevDependency,
+        language
       });
     }
   }
@@ -1030,12 +1032,12 @@ var DependencyUsageAnalyzer = class {
         if (isRecord(parsed)) {
           if (isRecord(parsed["dependencies"])) {
             for (const name of Object.keys(parsed["dependencies"])) {
-              deps.set(name, { name, isDev: false });
+              deps.set(name, { name, isDev: false, language: "javascript" });
             }
           }
           if (isRecord(parsed["devDependencies"])) {
             for (const name of Object.keys(parsed["devDependencies"])) {
-              deps.set(name, { name, isDev: true });
+              deps.set(name, { name, isDev: true, language: "javascript" });
             }
           }
         }
@@ -1053,7 +1055,7 @@ var DependencyUsageAnalyzer = class {
           const match = /^([a-zA-Z0-9_-]+)/.exec(trimmed);
           if (match !== null && match[1] !== void 0) {
             const name = match[1].toLowerCase();
-            deps.set(name, { name, isDev: false });
+            deps.set(name, { name, isDev: false, language: "python" });
           }
         }
       } catch {
@@ -1067,7 +1069,49 @@ var DependencyUsageAnalyzer = class {
         for (const match of depMatches) {
           if (match[1] !== void 0) {
             const name = match[1].toLowerCase();
-            deps.set(name, { name, isDev: false });
+            deps.set(name, { name, isDev: false, language: "python" });
+          }
+        }
+      } catch {
+      }
+    }
+    const cargoPath = join3(projectRoot, "Cargo.toml");
+    if (existsSync2(cargoPath)) {
+      try {
+        const content = await readFile2(cargoPath, "utf-8");
+        const inDepsSection = /\[dependencies\]([\s\S]*?)(?=\n\[|$)/;
+        const depsMatch = inDepsSection.exec(content);
+        if (depsMatch !== null && depsMatch[1] !== void 0) {
+          const depsSection = depsMatch[1];
+          const cratePattern = /^([a-zA-Z0-9_-]+)\s*=/gm;
+          for (const match of depsSection.matchAll(cratePattern)) {
+            if (match[1] !== void 0) {
+              deps.set(match[1], { name: match[1], isDev: false, language: "rust" });
+            }
+          }
+        }
+        const inDevDepsSection = /\[dev-dependencies\]([\s\S]*?)(?=\n\[|$)/;
+        const devDepsMatch = inDevDepsSection.exec(content);
+        if (devDepsMatch !== null && devDepsMatch[1] !== void 0) {
+          const devDepsSection = devDepsMatch[1];
+          const cratePattern = /^([a-zA-Z0-9_-]+)\s*=/gm;
+          for (const match of devDepsSection.matchAll(cratePattern)) {
+            if (match[1] !== void 0) {
+              deps.set(match[1], { name: match[1], isDev: true, language: "rust" });
+            }
+          }
+        }
+      } catch {
+      }
+    }
+    const goModPath = join3(projectRoot, "go.mod");
+    if (existsSync2(goModPath)) {
+      try {
+        const content = await readFile2(goModPath, "utf-8");
+        const requirePattern = /^\s*([a-zA-Z0-9._/-]+)\s+v[\d.]+/gm;
+        for (const match of content.matchAll(requirePattern)) {
+          if (match[1] !== void 0 && !match[1].startsWith("//")) {
+            deps.set(match[1], { name: match[1], isDev: false, language: "go" });
           }
         }
       } catch {
@@ -1366,8 +1410,7 @@ async function handleSuggest() {
   for (const usage of topSuggestions) {
     const repoResult = await resolver.findRepoUrl(
       usage.packageName,
-      "javascript"
-      // TODO: detect language from project
+      usage.language
     );
     if (repoResult.url !== null) {
       console.log(`\u2714 ${usage.packageName}: ${repoResult.url}`);

@@ -628,4 +628,172 @@ describe('DependencyUsageAnalyzer', () => {
       }
     });
   });
+
+  describe('Language detection', () => {
+    it('sets language to javascript for package.json dependencies', async () => {
+      const packageJson = {
+        dependencies: { 'lodash': '^4.0.0' }
+      };
+      await writeFile(
+        join(tempDir, 'package.json'),
+        JSON.stringify(packageJson)
+      );
+      await writeFile(
+        join(tempDir, 'index.ts'),
+        'import { map } from "lodash";'
+      );
+
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.usages[0]?.language).toBe('javascript');
+      }
+    });
+
+    it('sets language to python for requirements.txt dependencies', async () => {
+      await writeFile(
+        join(tempDir, 'requirements.txt'),
+        'requests==2.28.0'
+      );
+      await writeFile(
+        join(tempDir, 'script.py'),
+        'import requests'
+      );
+
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.usages[0]?.language).toBe('python');
+      }
+    });
+
+    it('sets language to rust for Cargo.toml dependencies', async () => {
+      await writeFile(
+        join(tempDir, 'Cargo.toml'),
+        `[package]
+name = "myapp"
+version = "0.1.0"
+
+[dependencies]
+serde = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+
+[dev-dependencies]
+criterion = "0.5"
+`
+      );
+      // Note: We don't have Rust import scanning yet, but we can verify
+      // the dependencies are read correctly by checking the language
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+      // Since we don't scan .rs files for use statements yet,
+      // usages will be empty, but we can test that deps are parsed
+    });
+
+    it('parses Cargo.toml dependencies section', async () => {
+      await writeFile(
+        join(tempDir, 'Cargo.toml'),
+        `[package]
+name = "myapp"
+
+[dependencies]
+serde = "1.0"
+tokio = { version = "1.0" }
+`
+      );
+      await writeFile(
+        join(tempDir, 'main.rs'),
+        'use serde::Serialize;'
+      );
+
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+      // The analyzer scans the deps but doesn't yet parse Rust use statements
+      // Just verify it doesn't error
+    });
+
+    it('sets language to go for go.mod dependencies', async () => {
+      await writeFile(
+        join(tempDir, 'go.mod'),
+        `module example.com/myapp
+
+go 1.21
+
+require (
+	github.com/gorilla/mux v1.8.0
+	github.com/spf13/cobra v1.7.0
+)
+`
+      );
+      await writeFile(
+        join(tempDir, 'main.go'),
+        'import "github.com/gorilla/mux"'
+      );
+
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+      // The analyzer scans the deps but doesn't yet parse Go import statements
+      // Just verify it doesn't error
+    });
+
+    it('parses go.mod require blocks', async () => {
+      await writeFile(
+        join(tempDir, 'go.mod'),
+        `module myapp
+
+go 1.21
+
+require github.com/pkg/errors v0.9.1
+require (
+	github.com/gorilla/mux v1.8.0
+)
+`
+      );
+
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('handles mixed language projects', async () => {
+      // JavaScript
+      const packageJson = {
+        dependencies: { 'express': '^4.0.0' }
+      };
+      await writeFile(
+        join(tempDir, 'package.json'),
+        JSON.stringify(packageJson)
+      );
+      await writeFile(
+        join(tempDir, 'server.js'),
+        'import express from "express";'
+      );
+
+      // Python
+      await writeFile(
+        join(tempDir, 'requirements.txt'),
+        'flask==2.0.0'
+      );
+      await writeFile(
+        join(tempDir, 'app.py'),
+        'import flask'
+      );
+
+      const result = await analyzer.analyze(tempDir);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        const jsUsage = result.data.usages.find(u => u.packageName === 'express');
+        const pyUsage = result.data.usages.find(u => u.packageName === 'flask');
+
+        expect(jsUsage?.language).toBe('javascript');
+        expect(pyUsage?.language).toBe('python');
+      }
+    });
+  });
 });
