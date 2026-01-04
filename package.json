@@ -27,7 +27,8 @@
     "release:patch": "npm run version:patch && npm run release:finish",
     "release:minor": "npm run version:minor && npm run release:finish",
     "release:major": "npm run version:major && npm run release:finish",
-    "release:finish": "git commit -m \"chore: release v$(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push && git push --tags"
+    "release:finish": "git commit -m \"chore: release v$(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push && git push --tags",
+    "release:current": "git tag v$(node -p \"require('./package.json').version\") && git push --tags"
   },
   "keywords": [
     "knowledge",
