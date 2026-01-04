@@ -880,14 +880,23 @@ npm test
 
 ### 🔌 MCP Server for Development
 
-The MCP configuration lives in `.claude-plugin/.mcp.json` (for distribution via marketplace). For local development, a symlink at the repo root allows dogfooding:
+The plugin uses two separate `.mcp.json` files:
 
-```bash
-# Already set up in this repo:
-ln -s .claude-plugin/.mcp.json .mcp.json
-```
+**`.claude-plugin/.mcp.json`** (Plugin distribution)
+- Uses `${CLAUDE_PLUGIN_ROOT}` and points to compiled `dist/mcp/server.js`
+- This format is for when installed via marketplace in other projects
 
-After cloning, restart Claude Code to load the MCP server and enable the `mcp__bluera-knowledge__*` tools.
+**`.mcp.json`** (Local development/dogfooding)
+- Uses `npx tsx` and points to source `src/mcp/server.ts`
+- Enables live development without rebuilding after code changes
+- This file is in `.gitignore` and specific to local development
+
+After cloning:
+1. The root `.mcp.json` is already configured for development
+2. Run `npm install` to ensure dependencies are available
+3. Restart Claude Code to load the MCP server
+
+The development config uses TypeScript source directly via `tsx`, allowing you to iterate on MCP server changes without running `npm run build`.
 
 ### 📜 NPM Commands
 
