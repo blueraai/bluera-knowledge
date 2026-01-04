@@ -8,16 +8,15 @@
  * - Threshold filtering
  * - Query variations
  * - Edge cases
+ *
+ * REWRITTEN: Now uses SearchService API directly instead of CLI to avoid hanging issues.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { execSync } from 'node:child_process';
 import { rm, mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadByCategory, FixtureCategories } from '../helpers/fixture-loader';
 import {
-  parseSearchOutput,
   assertHasMatch,
   assertTopResultsMatch,
   assertProperOrdering,
@@ -25,187 +24,409 @@ import {
   calculateRelevanceMetrics,
   compareRelevance,
   CommonKeywords,
-} from '../helpers/search-relevance';
+  type SearchResult as TestSearchResult,
+} from '../helpers/search-relevance.js';
+import { StoreService } from '../../src/services/store.service.js';
+import { IndexService } from '../../src/services/index.service.js';
+import { SearchService } from '../../src/services/search.service.js';
+import { LanceStore } from '../../src/db/lance.js';
+import { EmbeddingEngine } from '../../src/db/embeddings.js';
+import type { SearchResult as APISearchResult } from '../../src/types/search.js';
+import type { StoreId } from '../../src/types/brands.js';
 
 /**
- * SKIPPED: This entire test suite is currently skipped to avoid 120s overhead.
- *
- * Why skipped:
- * - beforeAll() hook takes 120s (creates temp dirs, writes fixtures, creates store, indexes)
- * - All 29 tests are already individually skipped (never run)
- * - Total waste: 120s of beforeAll setup with 0s of actual test execution
- *
- * To re-enable:
- * 1. Remove .skip from describe.skip below
- * 2. Remove .skip from individual it.skip() tests you want to run
- * 3. Ensure fixtures are properly set up
+ * Adapter to convert API SearchResult[] to test helper format.
+ * API results don't have rank (position), so we add it based on array order.
  */
-describe.skip('Search Quality Tests', () => {
+function adaptApiResults(apiResults: readonly APISearchResult[]): TestSearchResult[] {
+  return apiResults.map((result, index) => ({
+    rank: index + 1, // 1-based ranking
+    score: result.score,
+    source: result.metadata.path ?? result.metadata.url ?? 'unknown',
+    content: result.content,
+  }));
+}
+
+describe('Search Quality Tests', () => {
   let tempDir: string;
   let fixturesDir: string;
+  let storeService: StoreService;
+  let indexService: IndexService;
+  let searchService: SearchService;
+  let lanceStore: LanceStore;
+  let embeddingEngine: EmbeddingEngine;
+  let storeId: StoreId;
 
   beforeAll(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'search-quality-test-'));
     fixturesDir = join(tempDir, 'fixtures');
 
-    // Set up code fixtures for testing
-    await mkdir(join(fixturesDir, 'auth'), { recursive: true });
-    await mkdir(join(fixturesDir, 'api'), { recursive: true });
-    await mkdir(join(fixturesDir, 'database'), { recursive: true });
+    // Initialize services
+    const dataDir = tempDir;
+    lanceStore = new LanceStore(dataDir);
+    embeddingEngine = new EmbeddingEngine();
+    await embeddingEngine.initialize();
 
-    const authFixtures = await loadByCategory(FixtureCategories.CODE_AUTH);
-    for (const fixture of authFixtures) {
-      await writeFile(join(fixturesDir, 'auth', fixture.filename), fixture.content);
+    storeService = new StoreService(dataDir);
+    await storeService.initialize(); // Must initialize StoreService!
+
+    indexService = new IndexService(lanceStore, embeddingEngine);
+    searchService = new SearchService(lanceStore, embeddingEngine);
+
+    // Create minimal test fixtures directly (no complex fixture loader)
+    await mkdir(fixturesDir, { recursive: true });
+
+    // Minimal auth file with JWT authentication keywords
+    await writeFile(
+      join(fixturesDir, 'jwt-auth.ts'),
+      `/**
+ * JWT Authentication Module
+ * Handles user authentication with JWT tokens
+ */
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  exp: number;
+}
+
+export class AuthService {
+  /**
+   * Authenticate user and generate JWT token
+   */
+  async authenticate(username: string, password: string): Promise<string> {
+    // Verify credentials
+    const user = await this.verifyCredentials(username, password);
+
+    // Generate JWT access token
+    return this.generateToken(user);
+  }
+
+  private generateToken(user: User): string {
+    const payload: JwtPayload = {
+      userId: user.id,
+      email: user.email,
+      exp: Date.now() + 3600000,
+    };
+    return jwt.sign(payload, process.env.JWT_SECRET);
+  }
+
+  /**
+   * Verify JWT token and extract payload
+   */
+  verifyAccessToken(token: string): JwtPayload {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  }
+}
+`
+    );
+
+    // Minimal OAuth file
+    await writeFile(
+      join(fixturesDir, 'oauth-flow.ts'),
+      `/**
+ * OAuth Flow Implementation
+ * Third party login with social providers
+ */
+export class OAuthProvider {
+  async authorizeUser(provider: string): Promise<string> {
+    // OAuth authorization flow
+    const authUrl = \`https://\${provider}.com/oauth/authorize\`;
+    return authUrl;
+  }
+
+  async handleCallback(code: string): Promise<User> {
+    // Exchange authorization code for access token
+    const token = await this.exchangeCode(code);
+    return this.getUserProfile(token);
+  }
+}
+`
+    );
+
+    // Minimal API error handling file
+    await writeFile(
+      join(fixturesDir, 'error-handler.ts'),
+      `/**
+ * API Error Handling
+ * Manages exception responses and HTTP status codes
+ */
+export class ErrorHandler {
+  handleError(error: Error, req: Request, res: Response) {
+    // Error handling and exception management
+    if (error instanceof AuthError) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized',
+      });
     }
 
-    const apiFixtures = await loadByCategory(FixtureCategories.CODE_API);
-    for (const fixture of apiFixtures) {
-      await writeFile(join(fixturesDir, 'api', fixture.filename), fixture.content);
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        status: 'error',
+        message: error.message,
+      });
     }
 
-    const dbFixtures = await loadByCategory(FixtureCategories.CODE_DATABASE);
-    for (const fixture of dbFixtures) {
-      await writeFile(join(fixturesDir, 'database', fixture.filename), fixture.content);
+    // HTTP 403 forbidden
+    if (error instanceof ForbiddenError) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden',
+      });
     }
 
-    // Create and index store
-    cli(`store create quality-store --type file --source "${fixturesDir}"`);
-    cli('index quality-store');
-  }, 120000);
+    // Catch all errors
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal Server Error',
+    });
+  }
+}
+`
+    );
+
+    // Minimal database file
+    await writeFile(
+      join(fixturesDir, 'database.ts'),
+      `/**
+ * Database Module
+ * Data persistence and storage operations
+ */
+export class DatabaseService {
+  /**
+   * Execute SQL query for data persistence
+   */
+  async query(sql: string, params?: unknown[]): Promise<QueryResult> {
+    // Database query execution
+    const connection = await this.getConnection();
+    return connection.execute(sql, params);
+  }
+
+  /**
+   * Store data in database
+   */
+  async save(table: string, data: Record<string, unknown>): Promise<void> {
+    // Data persistence layer
+    await this.query(\`INSERT INTO \${table} VALUES (?)\`, [data]);
+  }
+}
+`
+    );
+
+    // Minimal middleware file
+    await writeFile(
+      join(fixturesDir, 'auth-middleware.ts'),
+      `/**
+ * Authentication Middleware
+ * Protects API endpoints from unauthorized access
+ */
+export function authMiddleware(req: Request, res: Response, next: Next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const payload = verifyAccessToken(token);
+    req.user = payload;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+}
+`
+    );
+
+    // Create and index store using API
+    const storeResult = await storeService.create({
+      name: 'quality-store',
+      type: 'file',
+      path: fixturesDir,
+    });
+
+    if (!storeResult.success) {
+      throw storeResult.error;
+    }
+
+    const store = storeResult.data;
+    storeId = store.id;
+
+    // Initialize Lance table for this store
+    await lanceStore.initialize(storeId);
+
+    // Index the store (minimal fixtures should be very fast)
+    const indexResult = await indexService.indexStore(store);
+
+    if (!indexResult.success) {
+      throw indexResult.error;
+    }
+  }, 30000); // Reduced timeout - minimal fixtures should index in ~5-10 seconds
 
   afterAll(async () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  const cli = (args: string, timeout = 120000): string => {
-    return execSync(`node dist/index.js ${args} --data-dir "${tempDir}"`, {
-      encoding: 'utf-8',
-      timeout,
-    });
-  };
-
   describe('Semantic Relevance', () => {
-    it('finds auth code when searching for "user authentication"', () => {
-      const output = cli('search "user authentication login" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('finds auth code when searching for "user authentication"', async () => {
+      const response = await searchService.search({
+        query: 'user authentication login',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: CommonKeywords.AUTHENTICATION,
       });
-    }, 60000);
+    });
 
-    it('finds JWT code when searching for "token generation"', () => {
-      const output = cli('search "token generation verification" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('finds JWT code when searching for "token generation"', async () => {
+      const response = await searchService.search({
+        query: 'token generation verification',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['token', 'jwt', 'generate', 'verify'],
         sourceContains: 'jwt',
       });
-    }, 60000);
+    });
 
-    it('finds error handling when searching for "exception management"', () => {
-      const output = cli('search "exception management error responses" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('finds error handling when searching for "exception management"', async () => {
+      const response = await searchService.search({
+        query: 'exception management error responses',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: CommonKeywords.ERROR_HANDLING,
       });
-    }, 60000);
+    });
 
-    it('finds database code when searching for "data persistence"', () => {
-      const output = cli('search "data persistence storage" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('finds database code when searching for "data persistence"', async () => {
+      const response = await searchService.search({
+        query: 'data persistence storage',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: CommonKeywords.DATABASE,
       });
-    }, 60000);
+    });
 
-    it('finds OAuth when searching for "third party login"', () => {
-      const output = cli('search "third party login social auth" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('finds OAuth when searching for "third party login"', async () => {
+      const response = await searchService.search({
+        query: 'third party login social auth',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['oauth', 'authorization', 'provider'],
       });
-    }, 60000);
+    });
   });
 
   describe('Search Mode Comparison', () => {
-    it('vector search finds semantically related content', () => {
-      const output = cli('search "authentication security" --mode vector --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('vector search finds semantically related content', async () => {
+      const response = await searchService.search({
+        query: 'authentication security',
+        mode: 'vector',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       // Vector search should find auth-related code
       assertHasMatch(results, {
         keywords: ['auth', 'token', 'jwt', 'login', 'password', 'credential'],
       });
-    }, 60000);
+    });
 
-    it('hybrid search finds keyword matches', () => {
-      const output = cli('search "token authentication" --mode hybrid --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('hybrid search finds keyword matches', async () => {
+      const response = await searchService.search({
+        query: 'token authentication',
+        mode: 'hybrid',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       // Hybrid should find token-related content
       assertHasMatch(results, {
         keywords: ['token', 'auth'],
       });
-    }, 60000);
+    });
 
-    it('hybrid search combines both approaches', () => {
-      const output = cli('search "JWT authentication middleware" --mode hybrid --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('hybrid search combines both approaches', async () => {
+      const response = await searchService.search({
+        query: 'JWT authentication middleware',
+        mode: 'hybrid',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['jwt', 'auth', 'middleware'],
       });
-    }, 60000);
+    });
 
-    it('hybrid finds content with common terms', () => {
-      const output = cli('search "error response status" --mode hybrid --stores quality-store');
-      const hybridResults = parseSearchOutput(output);
+    it('hybrid finds content with common terms', async () => {
+      const response = await searchService.search({
+        query: 'error response status',
+        mode: 'hybrid',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
-      expect(hybridResults.length).toBeGreaterThan(0);
-      assertHasMatch(hybridResults, {
+      expect(results.length).toBeGreaterThan(0);
+      assertHasMatch(results, {
         keywords: ['error', 'response', 'status'],
       });
-    }, 60000);
+    });
 
-    it('search finds auth content with natural language', () => {
-      const output = cli(
-        'search "how to protect API endpoints from unauthorized access" --stores quality-store'
-      );
-      const results = parseSearchOutput(output);
+    it('search finds auth content with natural language', async () => {
+      const response = await searchService.search({
+        query: 'how to protect API endpoints from unauthorized access',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       // Should find auth/api-related code
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: [...CommonKeywords.AUTHENTICATION, ...CommonKeywords.API, 'error', 'forbidden'],
       });
-    }, 60000);
+    });
   });
 
   describe('Relevance Scoring', () => {
-    it('results are ordered by score descending', () => {
-      const output = cli('search "authentication token" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('results are ordered by score descending', async () => {
+      const response = await searchService.search({
+        query: 'authentication token',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(1);
       assertProperOrdering(results);
-    }, 60000);
+    });
 
-    it('exact matches have higher scores', () => {
-      const output = cli('search "JWT Authentication Module" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('exact matches have higher scores', async () => {
+      const response = await searchService.search({
+        query: 'JWT Authentication Module',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       // The file containing exact match should rank high
@@ -213,11 +434,14 @@ describe.skip('Search Quality Tests', () => {
         keywords: ['jwt', 'authentication', 'module'],
         maxRank: 3,
       });
-    }, 60000);
+    });
 
-    it('source file matches boost relevance', () => {
-      const output = cli('search "OAuth flow implementation" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('source file matches boost relevance', async () => {
+      const response = await searchService.search({
+        query: 'OAuth flow implementation',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       // oauth-flow.ts should be in top results
@@ -225,45 +449,60 @@ describe.skip('Search Quality Tests', () => {
         sourceContains: 'oauth',
         maxRank: 3,
       });
-    }, 60000);
+    });
   });
 
   describe('Threshold Filtering', () => {
-    it('high threshold returns fewer results', () => {
-      const lowThreshold = cli('search "authentication" --threshold 0.3 --stores quality-store');
-      const highThreshold = cli('search "authentication" --threshold 0.7 --stores quality-store');
+    it('high threshold returns fewer results', async () => {
+      const lowResponse = await searchService.search({
+        query: 'authentication',
+        threshold: 0.3,
+        stores: [storeId],
+      });
+      const highResponse = await searchService.search({
+        query: 'authentication',
+        threshold: 0.7,
+        stores: [storeId],
+      });
 
-      const lowResults = parseSearchOutput(lowThreshold);
-      const highResults = parseSearchOutput(highThreshold);
+      const lowResults = adaptApiResults(lowResponse.results);
+      const highResults = adaptApiResults(highResponse.results);
 
       // High threshold should return fewer or equal results
       expect(highResults.length).toBeLessThanOrEqual(lowResults.length);
-    }, 60000);
+    });
 
-    it('threshold 0.8 filters out low relevance matches', () => {
-      const output = cli('search "middleware" --threshold 0.8 --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('threshold 0.8 filters out low relevance matches', async () => {
+      const response = await searchService.search({
+        query: 'middleware',
+        threshold: 0.8,
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       // All results should meet the threshold
       if (results.length > 0) {
         assertMinimumScores(results, 0.8);
       }
-    }, 60000);
+    });
 
-    it('lower threshold includes more results', () => {
-      const output = cli('search "error handling" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('lower threshold includes more results', async () => {
+      const response = await searchService.search({
+        query: 'error handling',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       // Should find error handling content
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['error', 'handling', 'exception', 'catch'],
       });
-    }, 60000);
+    });
   });
 
   describe('Query Variations', () => {
-    it('different phrasings find same authentication content', () => {
+    it('different phrasings find same authentication content', async () => {
       const queries = [
         'user login authentication',
         'authenticate users securely',
@@ -272,22 +511,31 @@ describe.skip('Search Quality Tests', () => {
       ];
 
       for (const query of queries) {
-        const output = cli(`search "${query}" --stores quality-store`);
-        const results = parseSearchOutput(output);
+        const response = await searchService.search({
+          query,
+          stores: [storeId],
+        });
+        const results = adaptApiResults(response.results);
 
         expect(results.length).toBeGreaterThan(0);
         assertHasMatch(results, {
           keywords: CommonKeywords.AUTHENTICATION,
         });
       }
-    }, 120000);
+    });
 
-    it('singular and plural forms find same content', () => {
-      const singularOutput = cli('search "error handler" --stores quality-store');
-      const pluralOutput = cli('search "error handlers" --stores quality-store');
+    it('singular and plural forms find same content', async () => {
+      const singularResponse = await searchService.search({
+        query: 'error handler',
+        stores: [storeId],
+      });
+      const pluralResponse = await searchService.search({
+        query: 'error handlers',
+        stores: [storeId],
+      });
 
-      const singularResults = parseSearchOutput(singularOutput);
-      const pluralResults = parseSearchOutput(pluralOutput);
+      const singularResults = adaptApiResults(singularResponse.results);
+      const pluralResults = adaptApiResults(pluralResponse.results);
 
       // Both should find error handling content
       expect(singularResults.length).toBeGreaterThan(0);
@@ -295,80 +543,106 @@ describe.skip('Search Quality Tests', () => {
 
       assertHasMatch(singularResults, { keywords: ['error'] });
       assertHasMatch(pluralResults, { keywords: ['error'] });
-    }, 60000);
+    });
 
-    it('abbreviations find full terms', () => {
-      const output = cli('search "auth middleware JWT" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('abbreviations find full terms', async () => {
+      const response = await searchService.search({
+        query: 'auth middleware JWT',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['authentication', 'jwt', 'middleware'],
       });
-    }, 60000);
+    });
   });
 
   describe('Edge Cases', () => {
-    it('handles queries with no results gracefully', () => {
+    it('handles queries with no results gracefully', async () => {
       // Use high threshold to filter out low-relevance semantic matches
-      const output = cli('search "xyznonexistent123" --threshold 0.9 --stores quality-store');
-      const results = parseSearchOutput(output);
+      const response = await searchService.search({
+        query: 'xyznonexistent123',
+        threshold: 0.9,
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       // With high threshold, semantically unrelated queries should return no results
       expect(results.length).toBe(0);
-    }, 60000);
+    });
 
-    it('handles special characters in queries', () => {
-      const output = cli('search "async/await Promise<T>" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('handles special characters in queries', async () => {
+      const response = await searchService.search({
+        query: 'async/await Promise<T>',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       // Should not throw and may find async-related content
       expect(Array.isArray(results)).toBe(true);
-    }, 60000);
+    });
 
-    it('handles very short queries', () => {
-      const output = cli('search "api" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('handles very short queries', async () => {
+      const response = await searchService.search({
+        query: 'api',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
-    }, 60000);
+    });
 
-    it('handles long queries', () => {
+    it('handles long queries', async () => {
       const longQuery =
         'how to implement secure user authentication with JWT tokens including ' +
         'refresh token rotation and proper error handling for expired sessions';
 
-      const output = cli(`search "${longQuery}" --stores quality-store`);
-      const results = parseSearchOutput(output);
+      const response = await searchService.search({
+        query: longQuery,
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['jwt', 'token', 'auth'],
       });
-    }, 60000);
+    });
 
-    it('handles queries with numbers', () => {
-      const output = cli('search "HTTP 401 403 status codes" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('handles queries with numbers', async () => {
+      const response = await searchService.search({
+        query: 'HTTP 401 403 status codes',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
-    }, 60000);
+    });
 
-    it('handles mixed case queries', () => {
-      const output = cli('search "JwtPayload AccessToken" --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('handles mixed case queries', async () => {
+      const response = await searchService.search({
+        query: 'JwtPayload AccessToken',
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       expect(results.length).toBeGreaterThan(0);
       assertHasMatch(results, {
         keywords: ['jwt', 'payload', 'token'],
       });
-    }, 60000);
+    });
   });
 
   describe('Result Quality Metrics', () => {
-    it('calculates precision for authentication queries', () => {
-      const output = cli('search "user authentication" --stores quality-store --limit 10');
-      const results = parseSearchOutput(output);
+    it('calculates precision for authentication queries', async () => {
+      const response = await searchService.search({
+        query: 'user authentication',
+        limit: 10,
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       const metrics = calculateRelevanceMetrics(results, {
         keywords: CommonKeywords.AUTHENTICATION,
@@ -377,14 +651,22 @@ describe.skip('Search Quality Tests', () => {
       // At least 50% of results should be relevant to authentication
       expect(metrics.precision).toBeGreaterThanOrEqual(0.5);
       expect(metrics.topScore).toBeGreaterThan(0);
-    }, 60000);
+    });
 
-    it('compares relevance between search modes', () => {
-      const vectorOutput = cli('search "authentication token" --mode vector --stores quality-store');
-      const hybridOutput = cli('search "authentication token" --mode hybrid --stores quality-store');
+    it('compares relevance between search modes', async () => {
+      const vectorResponse = await searchService.search({
+        query: 'authentication token',
+        mode: 'vector',
+        stores: [storeId],
+      });
+      const hybridResponse = await searchService.search({
+        query: 'authentication token',
+        mode: 'hybrid',
+        stores: [storeId],
+      });
 
-      const vectorResults = parseSearchOutput(vectorOutput);
-      const hybridResults = parseSearchOutput(hybridOutput);
+      const vectorResults = adaptApiResults(vectorResponse.results);
+      const hybridResults = adaptApiResults(hybridResponse.results);
 
       // Both modes should return results
       expect(vectorResults.length).toBeGreaterThan(0);
@@ -397,28 +679,40 @@ describe.skip('Search Quality Tests', () => {
       // Both modes should produce some relevant results
       expect(comparison.baselineMetrics.totalCount).toBeGreaterThan(0);
       expect(comparison.comparisonMetrics.totalCount).toBeGreaterThan(0);
-    }, 60000);
+    });
   });
 
   describe('Limit Parameter', () => {
-    it('respects result limit', () => {
-      const output5 = cli('search "function" --limit 5 --stores quality-store');
-      const output10 = cli('search "function" --limit 10 --stores quality-store');
+    it('respects result limit', async () => {
+      const response5 = await searchService.search({
+        query: 'function',
+        limit: 5,
+        stores: [storeId],
+      });
+      const response10 = await searchService.search({
+        query: 'function',
+        limit: 10,
+        stores: [storeId],
+      });
 
-      const results5 = parseSearchOutput(output5);
-      const results10 = parseSearchOutput(output10);
+      const results5 = adaptApiResults(response5.results);
+      const results10 = adaptApiResults(response10.results);
 
       expect(results5.length).toBeLessThanOrEqual(5);
       expect(results10.length).toBeLessThanOrEqual(10);
-    }, 60000);
+    });
 
-    it('returns all results when limit exceeds matches', () => {
-      const output = cli('search "verifyAccessToken" --limit 100 --stores quality-store');
-      const results = parseSearchOutput(output);
+    it('returns all results when limit exceeds matches', async () => {
+      const response = await searchService.search({
+        query: 'verifyAccessToken',
+        limit: 100,
+        stores: [storeId],
+      });
+      const results = adaptApiResults(response.results);
 
       // Should return actual matches, not pad to limit
       expect(results.length).toBeGreaterThan(0);
       expect(results.length).toBeLessThan(100);
-    }, 60000);
+    });
   });
 });
