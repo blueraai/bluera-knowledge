@@ -8,7 +8,7 @@
 
 > 🚀 **A Claude Code plugin for providing canonical, definitive source information to AI coding agents.**
 
-Give your AI coding assistant **instant access** to **authoritative library source code**, **documentation**, and **reference materials**—all searchable locally with **semantic understanding**.
+Give your AI coding assistant **instant access** to **authoritative library source code** (full Git repos), **documentation** (local folders/web crawl), and **reference materials** (files/folders)—all searchable locally with **semantic understanding**.
 
 ## 📦 Installation
 
