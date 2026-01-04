@@ -10,6 +10,16 @@
 
 Give your AI coding assistant **instant access** to **authoritative library source code**, **documentation**, and **reference materials**—all searchable locally with **semantic understanding**.
 
+## 📦 Installation
+
+```bash
+# Add the Bluera marketplace (one-time setup)
+/plugin marketplace add blueraai/bluera-marketplace
+
+# Install the plugin
+/plugin install bluera-knowledge@bluera
+```
+
 ---
 
 ## ✨ Why Bluera Knowledge?
@@ -222,21 +232,7 @@ While bluera-knowledge indexes and searches code in any language, certain advanc
 
 ---
 
-## 📦 Installation
-
-Install the plugin from the Bluera marketplace in Claude Code:
-
-```bash
-# Add the Bluera marketplace (one-time setup)
-/plugin marketplace add blueraai/bluera-marketplace
-
-# Install the plugin
-/plugin install bluera-knowledge@bluera
-```
-
-The plugin is immediately available with the `/bluera-knowledge:` command prefix.
-
-### 🔧 Dependencies
+## 🔧 Dependencies
 
 The plugin automatically checks for and attempts to install Python dependencies on first use:
 
@@ -255,8 +251,7 @@ playwright install  # Install browser binaries for headless mode
 > [!WARNING]
 > The plugin will work without crawl4ai/playwright, but web crawling features (`/bluera-knowledge:crawl`) will be unavailable. For JavaScript-rendered sites (Next.js, React, Vue), use the `--headless` flag which requires playwright browser binaries.
 
-### 🔄 Update Plugin
-
+**Update Plugin:**
 ```bash
 /plugin update bluera-knowledge
 ```
