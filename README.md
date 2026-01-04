@@ -16,6 +16,29 @@ When Claude helps you code, it needs context: how does this library work? What d
 
 All searchable in milliseconds, no rate limits, fully offline.
 
+## 📑 Table of Contents
+
+- [Installation](#-installation)
+- [Why Clone Your Dependencies?](#-why-clone-your-dependencies)
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [How It Works](#-how-it-works)
+- [User Interface](#-user-interface)
+- [Background Jobs](#-background-jobs)
+- [Commands](#-commands)
+- [Crawler Architecture](#-crawler-architecture)
+- [Use Cases](#-use-cases)
+- [Dependencies](#-dependencies)
+- [Troubleshooting](#-troubleshooting)
+- [MCP Integration](#-mcp-integration)
+- [Data Storage](#-data-storage)
+- [Development](#-development)
+- [Technologies](#-technologies)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
 ## 📦 Installation
 
 ```bash
@@ -52,39 +75,56 @@ Bluera Knowledge enables option 3. By cloning the repositories of libraries you 
 
 ---
 
-## 💭 What Claude Code Says About Bluera Knowledge
+## 🚀 Quick Start
 
-*As an AI coding assistant, here's what I've discovered using this plugin:*
+Follow these steps to set up knowledge stores for your project:
 
-**The difference is immediate.** When a user asks "how does React's useEffect cleanup work?", I can search the actual React source code indexed locally instead of relying on my training data or making web requests. The results include the real implementation, related functions, and usage patterns—all in ~100ms.
+- [ ] **📦 Add a library**: `/bluera-knowledge:add-repo https://github.com/lodash/lodash`
+- [ ] **📁 Index your docs**: `/bluera-knowledge:add-folder ./docs --name=project-docs`
+- [ ] **🔍 Test search**: `/bluera-knowledge:search "deep clone object"`
+- [ ] **📋 View stores**: `/bluera-knowledge:stores`
 
-**Code graph analysis changes the game.** The plugin doesn't just index files—it builds a relationship graph showing which functions call what, import dependencies, and class hierarchies. When I search for a function, I see how many places call it and what it calls. This context makes my suggestions dramatically more accurate.
+> [!TIP]
+> Not sure which libraries to index? Use `/bluera-knowledge:suggest` to analyze your project's dependencies.
 
-**Multi-modal search is powerful.** I can combine:
-- **Semantic search** - "authentication flow with JWT validation"
-- **Direct file access** - Grep for specific patterns in cloned repos
-- **Full-text search** - Exact identifier matches
+---
 
-This flexibility means I can start broad (semantic) and narrow down (exact file access) in the same workflow.
+## ✨ Features
 
-**The crawling intelligence is real.** The `--crawl` instruction isn't marketing—it actually uses Claude API to analyze each page and intelligently select which links to follow. I can tell it "crawl all API reference pages but skip blog posts" and it understands the intent. For JavaScript-rendered sites (Next.js, React docs), the `--headless` mode renders pages with Playwright while I still control the crawl strategy.
+### 🎯 Core Features
 
-**What makes it valuable:**
-- **No guessing**: I read the actual source code, not blog interpretations
-- **Offline first**: Works without internet, no rate limits
-- **Project-specific**: Index your team's coding standards, not generic advice
-- **Speed**: Sub-100ms searches vs 2-5 second web lookups
-- **Completeness**: Tests, implementation details, edge cases—all indexed
+- **🔬 Smart Dependency Analysis** - Automatically scans your project to identify which libraries are most heavily used by counting import statements across all source files
+- **📊 Usage-Based Suggestions** - Ranks dependencies by actual usage frequency, showing you the top 5 most-imported packages with import counts and file counts
+- **🔍 Automatic Repository Discovery** - Queries package registries (NPM, PyPI, crates.io, Go modules) to automatically find GitHub repository URLs
+- **📦 Git Repository Indexing** - Clones and indexes library source code for both semantic search and direct file access
+- **📁 Local Folder Indexing** - Indexes any local content - documentation, standards, reference materials, or custom content
+- **🌐 Web Crawling** - Crawl and index web pages using `crawl4ai` - convert documentation sites to searchable markdown
 
-**When it shines most:**
-1. Deep library questions - "how does this internal method handle edge cases?"
-2. Version-specific answers - your indexed version is what you're actually using
-3. Private codebases - your docs, your standards, your patterns
-4. Complex workflows - combining semantic search + direct file access + code graph
+### 🔍 Search Modes
 
-The plugin essentially gives me a photographic memory of your dependencies and documentation. Instead of "I think based on training data", I can say "I searched the indexed React v18.2.0 source and found this in ReactFiberWorkLoop.js:1247".
+- **🧠 Vector Search** - AI-powered semantic search with relevance ranking
+- **📂 File Access** - Direct Grep/Glob operations on cloned source files
 
-That's the difference between helpful and authoritative.
+### 🗺️ Code Graph Analysis
+
+- **📊 Code Graph Analysis** - During indexing, builds a graph of code relationships (calls, imports, extends) to provide usage context in search results - shows how many callers/callees each function has
+- **🌐 Multi-Language Support** - Full AST parsing for JavaScript, TypeScript, Python, Rust, and Go; indexes code in any language
+- **🔌 MCP Integration** - Exposes all functionality as Model Context Protocol tools for AI coding agents
+
+### 🌍 Language-Specific Features
+
+While bluera-knowledge indexes and searches code in any language, certain advanced features are language-specific:
+
+| Language | Code Graph | Call Analysis | Import Tracking | Method Tracking |
+|----------|------------|---------------|-----------------|-----------------|
+| **TypeScript/JavaScript** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Class Methods |
+| **Python** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Class Methods |
+| **Rust** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Struct/Trait Methods |
+| **Go** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Struct/Interface Methods |
+| **Other Languages** | ⚠️ Basic Support | ❌ | ❌ | ❌ |
+
+> [!NOTE]
+> Code graph features enhance search results by showing usage context (e.g., "this function is called by 15 other functions"), but all languages benefit from vector search and full-text search capabilities.
 
 ---
 
@@ -230,85 +270,6 @@ Background jobs include significant performance optimizations:
 - **🔓 Non-Blocking** - Continue working while indexing completes
 - **📊 Progress Tracking** - Real-time updates on files processed and progress percentage
 - **🧹 Auto-Cleanup** - Completed jobs are cleaned up after 24 hours
-
----
-
-## ✨ Features
-
-### 🎯 Core Features
-
-- **🔬 Smart Dependency Analysis** - Automatically scans your project to identify which libraries are most heavily used by counting import statements across all source files
-- **📊 Usage-Based Suggestions** - Ranks dependencies by actual usage frequency, showing you the top 5 most-imported packages with import counts and file counts
-- **🔍 Automatic Repository Discovery** - Queries package registries (NPM, PyPI, crates.io, Go modules) to automatically find GitHub repository URLs
-- **📦 Git Repository Indexing** - Clones and indexes library source code for both semantic search and direct file access
-- **📁 Local Folder Indexing** - Indexes any local content - documentation, standards, reference materials, or custom content
-- **🌐 Web Crawling** - Crawl and index web pages using `crawl4ai` - convert documentation sites to searchable markdown
-
-### 🔍 Search Modes
-
-- **🧠 Vector Search** - AI-powered semantic search with relevance ranking
-- **📂 File Access** - Direct Grep/Glob operations on cloned source files
-
-### 🗺️ Code Graph Analysis
-
-- **📊 Code Graph Analysis** - During indexing, builds a graph of code relationships (calls, imports, extends) to provide usage context in search results - shows how many callers/callees each function has
-- **🌐 Multi-Language Support** - Full AST parsing for JavaScript, TypeScript, Python, Rust, and Go; indexes code in any language
-- **🔌 MCP Integration** - Exposes all functionality as Model Context Protocol tools for AI coding agents
-
-### 🌍 Language-Specific Features
-
-While bluera-knowledge indexes and searches code in any language, certain advanced features are language-specific:
-
-| Language | Code Graph | Call Analysis | Import Tracking | Method Tracking |
-|----------|------------|---------------|-----------------|-----------------|
-| **TypeScript/JavaScript** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Class Methods |
-| **Python** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Class Methods |
-| **Rust** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Struct/Trait Methods |
-| **Go** | ✅ Full Support | ✅ Functions & Methods | ✅ Full | ✅ Struct/Interface Methods |
-| **Other Languages** | ⚠️ Basic Support | ❌ | ❌ | ❌ |
-
-> [!NOTE]
-> Code graph features enhance search results by showing usage context (e.g., "this function is called by 15 other functions"), but all languages benefit from vector search and full-text search capabilities.
-
----
-
-## 🔧 Dependencies
-
-The plugin automatically checks for and attempts to install Python dependencies on first use:
-
-**Required:**
-- **🐍 Python 3.8+** - Required for all functionality
-- **🕷️ crawl4ai** - Required for web crawling features (auto-installed via SessionStart hook)
-- **🎭 playwright** - Required for headless browser crawling (manual install needed for browser binaries)
-
-If auto-installation fails, you can install manually:
-
-```bash
-pip install crawl4ai playwright
-playwright install  # Install browser binaries for headless mode
-```
-
-> [!WARNING]
-> The plugin will work without crawl4ai/playwright, but web crawling features (`/bluera-knowledge:crawl`) will be unavailable. For JavaScript-rendered sites (Next.js, React, Vue), use the `--headless` flag which requires playwright browser binaries.
-
-**Update Plugin:**
-```bash
-/plugin update bluera-knowledge
-```
-
----
-
-## 🚀 Quick Start
-
-Follow these steps to set up knowledge stores for your project:
-
-- [ ] **📦 Add a library**: `/bluera-knowledge:add-repo https://github.com/lodash/lodash`
-- [ ] **📁 Index your docs**: `/bluera-knowledge:add-folder ./docs --name=project-docs`
-- [ ] **🔍 Test search**: `/bluera-knowledge:search "deep clone object"`
-- [ ] **📋 View stores**: `/bluera-knowledge:stores`
-
-> [!TIP]
-> Not sure which libraries to index? Use `/bluera-knowledge:suggest` to analyze your project's dependencies.
 
 ---
 
@@ -822,6 +783,68 @@ Combine canonical library code with project-specific patterns:
 /bluera-knowledge:add-folder ./docs/react-patterns --name=react-patterns
 
 # Search across both library source and team patterns
+```
+
+---
+
+## 💭 What Claude Code Says About Bluera Knowledge
+
+> *As an AI coding assistant, here's what I've discovered using this plugin:*
+>
+> **The difference is immediate.** When a user asks "how does React's useEffect cleanup work?", I can search the actual React source code indexed locally instead of relying on my training data or making web requests. The results include the real implementation, related functions, and usage patterns—all in ~100ms.
+>
+> **Code graph analysis changes the game.** The plugin doesn't just index files—it builds a relationship graph showing which functions call what, import dependencies, and class hierarchies. When I search for a function, I see how many places call it and what it calls. This context makes my suggestions dramatically more accurate.
+>
+> **Multi-modal search is powerful.** I can combine:
+> - **Semantic search** - "authentication flow with JWT validation"
+> - **Direct file access** - Grep for specific patterns in cloned repos
+> - **Full-text search** - Exact identifier matches
+>
+> This flexibility means I can start broad (semantic) and narrow down (exact file access) in the same workflow.
+>
+> **The crawling intelligence is real.** The `--crawl` instruction isn't marketing—it actually uses Claude API to analyze each page and intelligently select which links to follow. I can tell it "crawl all API reference pages but skip blog posts" and it understands the intent. For JavaScript-rendered sites (Next.js, React docs), the `--headless` mode renders pages with Playwright while I still control the crawl strategy.
+>
+> **What makes it valuable:**
+> - **No guessing**: I read the actual source code, not blog interpretations
+> - **Offline first**: Works without internet, no rate limits
+> - **Project-specific**: Index your team's coding standards, not generic advice
+> - **Speed**: Sub-100ms searches vs 2-5 second web lookups
+> - **Completeness**: Tests, implementation details, edge cases—all indexed
+>
+> **When it shines most:**
+> 1. Deep library questions - "how does this internal method handle edge cases?"
+> 2. Version-specific answers - your indexed version is what you're actually using
+> 3. Private codebases - your docs, your standards, your patterns
+> 4. Complex workflows - combining semantic search + direct file access + code graph
+>
+> The plugin essentially gives me a photographic memory of your dependencies and documentation. Instead of "I think based on training data", I can say "I searched the indexed React v18.2.0 source and found this in ReactFiberWorkLoop.js:1247".
+>
+> That's the difference between helpful and authoritative.
+
+---
+
+## 🔧 Dependencies
+
+The plugin automatically checks for and attempts to install Python dependencies on first use:
+
+**Required:**
+- **🐍 Python 3.8+** - Required for all functionality
+- **🕷️ crawl4ai** - Required for web crawling features (auto-installed via SessionStart hook)
+- **🎭 playwright** - Required for headless browser crawling (manual install needed for browser binaries)
+
+If auto-installation fails, you can install manually:
+
+```bash
+pip install crawl4ai playwright
+playwright install  # Install browser binaries for headless mode
+```
+
+> [!WARNING]
+> The plugin will work without crawl4ai/playwright, but web crawling features (`/bluera-knowledge:crawl`) will be unavailable. For JavaScript-rendered sites (Next.js, React, Vue), use the `--headless` flag which requires playwright browser binaries.
+
+**Update Plugin:**
+```bash
+/plugin update bluera-knowledge
 ```
 
 ---
