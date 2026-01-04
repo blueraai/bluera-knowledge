@@ -34,7 +34,7 @@ function getVersion() {
 var version = getVersion();
 function createProgram() {
   const program2 = new Command();
-  program2.name("bkb").description("CLI tool for managing knowledge stores with semantic search").version(version);
+  program2.name("bluera-knowledge").description("CLI tool for managing knowledge stores with semantic search").version(version);
   program2.option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", "Data directory").option("-p, --project-root <path>", "Project root directory (for resolving relative paths)").option("-f, --format <format>", "Output format: json | table | plain", "table").option("-q, --quiet", "Suppress non-essential output").option("-v, --verbose", "Enable verbose logging");
   return program2;
 }
@@ -809,7 +809,7 @@ Setting up ${String(repos.length)} repositories...
         spinner.fail(`${repo.name}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    console.log('\nSetup complete! Use "bkb search <query>" to search.\n');
+    console.log('\nSetup complete! Use "bluera-knowledge search <query>" to search.\n');
   });
   return setup;
 }
@@ -1475,7 +1475,7 @@ function formatCommandHelp(cmd, indent = "") {
   return lines;
 }
 function printFullHelp(program2) {
-  console.log("bkb - CLI tool for managing knowledge stores with semantic search\n");
+  console.log("bluera-knowledge - CLI tool for managing knowledge stores with semantic search\n");
   console.log("Paths:");
   console.log(`  data        ${DEFAULT_DATA_DIR}`);
   console.log(`  config      ${DEFAULT_CONFIG}`);
