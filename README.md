@@ -966,29 +966,23 @@ npm run build
 npm test
 ```
 
-### 🔌 MCP Server for Development
+### 🔌 MCP Server
 
-The plugin uses two separate `.mcp.json` files:
-
-**`.claude-plugin/.mcp.json`** (Plugin distribution)
+**`.mcp.json`** (Plugin distribution)
+- Located at plugin root (auto-discovered by Claude Code)
 - Uses `${CLAUDE_PLUGIN_ROOT}` and points to compiled `dist/mcp/server.js`
-- This format is for when installed via marketplace in other projects
+- Committed to git and distributed with the plugin
 
-**`.mcp.json`** (Local development/dogfooding)
-- Uses `npx tsx` and points to source `src/mcp/server.ts`
-- Enables live development without rebuilding after code changes
-- This file is in `.gitignore` and must be created manually for local development
+**For local development/dogfooding:**
 
-**To enable MCP server for local development/dogfooding:**
-
-1. Create `.mcp.json` in the repo root (this file is gitignored):
+To enable live development without rebuilding, add a user-level MCP server config to `~/.claude.json`:
 
 ```json
 {
   "mcpServers": {
-    "bluera-knowledge": {
+    "bluera-knowledge-dev": {
       "command": "npx",
-      "args": ["tsx", "./src/mcp/server.ts"],
+      "args": ["tsx", "/Users/yourname/repos/bluera-knowledge/src/mcp/server.ts"],
       "env": {
         "PWD": "${PWD}",
         "DATA_DIR": "${PWD}/.bluera/bluera-knowledge/data",
@@ -999,10 +993,10 @@ The plugin uses two separate `.mcp.json` files:
 }
 ```
 
-2. Run `npm install` to ensure `tsx` is available
-3. Restart Claude Code to load the MCP server
-
-This enables live development - changes to MCP server code take effect without rebuilding.
+Replace the path with your actual repo location. This creates a separate `bluera-knowledge-dev` MCP server that:
+- Runs the source TypeScript directly via `tsx`
+- Updates immediately when you modify MCP server code
+- Doesn't interfere with the production plugin version
 
 ### 📜 NPM Commands
 
