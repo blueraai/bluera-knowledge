@@ -901,6 +901,25 @@ The `.mcp.json` file at the repository root configures the MCP server. After clo
 | `npm run version:minor` | 🔢 Bump minor version (0.x.0) | New features, backwards compatible |
 | `npm run version:major` | 🔢 Bump major version (x.0.0) | Breaking changes |
 
+### 🚀 Releasing
+
+Use npm scripts to create releases:
+
+```bash
+# Bump version, commit, tag, and push (triggers GitHub Actions release)
+npm run release:patch   # Bug fixes (0.0.x)
+npm run release:minor   # New features (0.x.0)
+npm run release:major   # Breaking changes (x.0.0)
+
+# If version already bumped but not tagged
+npm run release:current
+```
+
+**Workflow:**
+1. Make changes and commit normally
+2. When ready to release: `npm run release:patch` (or minor/major)
+3. GitHub Actions creates the Release with auto-generated notes
+
 ### 🧪 Testing Locally
 
 ```bash
