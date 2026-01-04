@@ -6,11 +6,11 @@
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
 
-> 🚀 **Build a local knowledge base for your AI coding agent—library source code, crawled docs, and your own files, all instantly searchable.**
+> 🚀 **Build a local knowledge base for your AI coding agent—dependency source code, crawled docs, and your own files, all instantly searchable.**
 
 When Claude Code helps you code, it needs context: how does this library work? What does that API do? Instead of slow web searches or outdated training data, Bluera Knowledge gives your agent instant local access to:
 
-- **Library source code** — Clone and search the repos of dependencies you actually use
+- **Dependency source code** — Clone and search the repos of dependencies you actually use
 - **Documentation** — Crawl, index, and search any docs site
 - **Your files** — Index and search local folders for project-specific knowledge
 
@@ -97,7 +97,7 @@ Follow these steps to set up knowledge stores for your project:
 - **🔬 Smart Dependency Analysis** - Automatically scans your project to identify which libraries are most heavily used by counting import statements across all source files
 - **📊 Usage-Based Suggestions** - Ranks dependencies by actual usage frequency, showing you the top 5 most-imported packages with import counts and file counts
 - **🔍 Automatic Repository Discovery** - Queries package registries (NPM, PyPI, crates.io, Go modules) to automatically find GitHub repository URLs
-- **📦 Git Repository Indexing** - Clones and indexes library source code for both semantic search and direct file access
+- **📦 Git Repository Indexing** - Clones and indexes dependency source code for both semantic search and direct file access
 - **📁 Local Folder Indexing** - Indexes any local content - documentation, standards, reference materials, or custom content
 - **🌐 Web Crawling** - Crawl and index web pages using `crawl4ai` - convert documentation sites to searchable markdown
 
@@ -196,7 +196,7 @@ This architecture means commands provide a clean user interface while MCP tools 
 **You manage knowledge stores through `/bluera-knowledge:` commands:**
 
 - 🔬 Analyze your project to find important dependencies
-- 📦 Add Git repositories (library source code)
+- 📦 Add Git repositories (dependency source code)
 - 📁 Add local folders (documentation, standards, etc.)
 - 🌐 Crawl web pages and documentation
 - 🔍 Search across all indexed content
@@ -760,9 +760,9 @@ Large repositories (10,000+ files) take longer to index. If indexing fails:
 
 ## 🎯 Use Cases
 
-### 📦 Library Source Code
+### 📦 Dependency Source Code
 
-Provide AI agents with canonical library implementation details:
+Provide AI agents with canonical dependency implementation details:
 
 ```bash
 /bluera-knowledge:suggest
@@ -803,7 +803,7 @@ Combine canonical library code with project-specific patterns:
 /bluera-knowledge:add-repo https://github.com/facebook/react --name=react
 /bluera-knowledge:add-folder ./docs/react-patterns --name=react-patterns
 
-# Search across both library source and team patterns
+# Search across both dependency source and team patterns
 ```
 
 ---
@@ -927,7 +927,7 @@ The plugin includes a Model Context Protocol server that exposes search tools. T
 ### 🛠️ Available MCP Tools
 
 #### `search`
-🔍 Semantic vector search across all indexed stores. Returns structured code units with relevance ranking.
+🔍 Semantic vector search across all indexed stores or a specific subset. Returns structured code units with relevance ranking.
 
 **Parameters:**
 - `query` - Search query (natural language, patterns, or type signatures)
@@ -968,7 +968,7 @@ Bluera Knowledge includes built-in Skills that teach Claude Code how to use the 
 ### 📚 Available Skills
 
 #### `knowledge-search`
-Teaches the two approaches for accessing library sources:
+Teaches the two approaches for accessing dependency sources:
 - Vector search via MCP/slash commands for discovery
 - Direct Grep/Read access to cloned repos for precision
 
@@ -1185,7 +1185,7 @@ claude --plugin-dir /path/to/bluera-knowledge
 .mcp.json                # MCP server configuration (auto-discovered)
 commands/                # Slash commands (auto-discovered)
 skills/                  # Agent Skills (auto-discovered)
-├── knowledge-search/    # How to access library sources
+├── knowledge-search/    # How to access dependency sources
 │   └── SKILL.md
 ├── when-to-query/       # When to query BK vs project files
 │   └── SKILL.md
