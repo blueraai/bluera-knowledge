@@ -241,7 +241,7 @@ export async function handleSuggest(): Promise<void> {
   for (const usage of topSuggestions) {
     const repoResult = await resolver.findRepoUrl(
       usage.packageName,
-      'javascript' // TODO: detect language from project
+      usage.language
     );
 
     if (repoResult.url !== null) {

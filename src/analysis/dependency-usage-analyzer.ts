@@ -4,6 +4,7 @@ import { join, extname } from 'node:path';
 import { ASTParser } from './ast-parser.js';
 import type { Result } from '../types/result.js';
 import { ok, err } from '../types/result.js';
+import type { SupportedLanguage } from './repo-url-resolver.js';
 
 const TEXT_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
@@ -17,6 +18,7 @@ export interface PackageUsage {
   fileCount: number;
   files: string[];
   isDevDependency: boolean;
+  language: SupportedLanguage;
 }
 
 export interface DependencyAnalysisResult {
@@ -29,6 +31,7 @@ export interface DependencyAnalysisResult {
 interface DeclaredDependency {
   name: string;
   isDev: boolean;
+  language: SupportedLanguage;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -93,7 +96,8 @@ export class DependencyUsageAnalyzer {
                   usageMap,
                   packageName,
                   filePath,
-                  dep.isDev
+                  dep.isDev,
+                  dep.language
                 );
               }
             }
@@ -212,7 +216,8 @@ export class DependencyUsageAnalyzer {
     usageMap: Map<string, PackageUsage>,
     packageName: string,
     filePath: string,
-    isDevDependency: boolean
+    isDevDependency: boolean,
+    language: SupportedLanguage
   ): void {
     const existing = usageMap.get(packageName);
 
@@ -228,7 +233,8 @@ export class DependencyUsageAnalyzer {
         importCount: 1,
         fileCount: 1,
         files: [filePath],
-        isDevDependency
+        isDevDependency,
+        language
       });
     }
   }
@@ -277,14 +283,14 @@ export class DependencyUsageAnalyzer {
           // Regular dependencies
           if (isRecord(parsed['dependencies'])) {
             for (const name of Object.keys(parsed['dependencies'])) {
-              deps.set(name, { name, isDev: false });
+              deps.set(name, { name, isDev: false, language: 'javascript' });
             }
           }
 
           // Dev dependencies
           if (isRecord(parsed['devDependencies'])) {
             for (const name of Object.keys(parsed['devDependencies'])) {
-              deps.set(name, { name, isDev: true });
+              deps.set(name, { name, isDev: true, language: 'javascript' });
             }
           }
         }
@@ -308,7 +314,7 @@ export class DependencyUsageAnalyzer {
           const match = /^([a-zA-Z0-9_-]+)/.exec(trimmed);
           if (match !== null && match[1] !== undefined) {
             const name = match[1].toLowerCase();
-            deps.set(name, { name, isDev: false });
+            deps.set(name, { name, isDev: false, language: 'python' });
           }
         }
       } catch {
@@ -327,7 +333,66 @@ export class DependencyUsageAnalyzer {
         for (const match of depMatches) {
           if (match[1] !== undefined) {
             const name = match[1].toLowerCase();
-            deps.set(name, { name, isDev: false });
+            deps.set(name, { name, isDev: false, language: 'python' });
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    // Read Cargo.toml (Rust)
+    const cargoPath = join(projectRoot, 'Cargo.toml');
+    if (existsSync(cargoPath)) {
+      try {
+        const content = await readFile(cargoPath, 'utf-8');
+        // Match [dependencies] section entries like: serde = "1.0"
+        // or serde = { version = "1.0", features = [...] }
+        const inDepsSection = /\[dependencies\]([\s\S]*?)(?=\n\[|$)/;
+        const depsMatch = inDepsSection.exec(content);
+        if (depsMatch !== null && depsMatch[1] !== undefined) {
+          const depsSection = depsMatch[1];
+          // Match crate names at start of lines
+          const cratePattern = /^([a-zA-Z0-9_-]+)\s*=/gm;
+          for (const match of depsSection.matchAll(cratePattern)) {
+            if (match[1] !== undefined) {
+              deps.set(match[1], { name: match[1], isDev: false, language: 'rust' });
+            }
+          }
+        }
+
+        // Also check [dev-dependencies]
+        const inDevDepsSection = /\[dev-dependencies\]([\s\S]*?)(?=\n\[|$)/;
+        const devDepsMatch = inDevDepsSection.exec(content);
+        if (devDepsMatch !== null && devDepsMatch[1] !== undefined) {
+          const devDepsSection = devDepsMatch[1];
+          const cratePattern = /^([a-zA-Z0-9_-]+)\s*=/gm;
+          for (const match of devDepsSection.matchAll(cratePattern)) {
+            if (match[1] !== undefined) {
+              deps.set(match[1], { name: match[1], isDev: true, language: 'rust' });
+            }
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    // Read go.mod (Go)
+    const goModPath = join(projectRoot, 'go.mod');
+    if (existsSync(goModPath)) {
+      try {
+        const content = await readFile(goModPath, 'utf-8');
+        // Match require blocks and single requires
+        // require github.com/gorilla/mux v1.8.0
+        // require (
+        //   github.com/gorilla/mux v1.8.0
+        // )
+        const requirePattern = /^\s*([a-zA-Z0-9._/-]+)\s+v[\d.]+/gm;
+        for (const match of content.matchAll(requirePattern)) {
+          if (match[1] !== undefined && !match[1].startsWith('//')) {
+            // Go modules use the full path as the name
+            deps.set(match[1], { name: match[1], isDev: false, language: 'go' });
           }
         }
       } catch {
