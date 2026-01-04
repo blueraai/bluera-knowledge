@@ -977,14 +977,32 @@ The plugin uses two separate `.mcp.json` files:
 **`.mcp.json`** (Local development/dogfooding)
 - Uses `npx tsx` and points to source `src/mcp/server.ts`
 - Enables live development without rebuilding after code changes
-- This file is in `.gitignore` and specific to local development
+- This file is in `.gitignore` and must be created manually for local development
 
-After cloning:
-1. The root `.mcp.json` is already configured for development
-2. Run `npm install` to ensure dependencies are available
+**To enable MCP server for local development/dogfooding:**
+
+1. Create `.mcp.json` in the repo root (this file is gitignored):
+
+```json
+{
+  "mcpServers": {
+    "bluera-knowledge": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp/server.ts"],
+      "env": {
+        "PWD": "${PWD}",
+        "DATA_DIR": "${PWD}/.bluera/bluera-knowledge/data",
+        "CONFIG_PATH": "${PWD}/.bluera/bluera-knowledge/config.json"
+      }
+    }
+  }
+}
+```
+
+2. Run `npm install` to ensure `tsx` is available
 3. Restart Claude Code to load the MCP server
 
-The development config uses TypeScript source directly via `tsx`, allowing you to iterate on MCP server changes without running `npm run build`.
+This enables live development - changes to MCP server code take effect without rebuilding.
 
 ### 📜 NPM Commands
 
