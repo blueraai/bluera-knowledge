@@ -1064,10 +1064,28 @@ claude plugin update bluera-knowledge
 
 **Why this matters**: The `.mcp.json` file uses `${CLAUDE_PLUGIN_ROOT}` which only exists when loaded as a **plugin**, not as a **project config**. Working inside the repo causes Claude Code to load it as a project config where this variable is undefined.
 
-**Alternative - Testing with `--plugin-dir`**: The `--plugin-dir` flag has [documented issues](https://github.com/anthropics/claude-code/issues/9354) with `${CLAUDE_PLUGIN_ROOT}` expansion in `.mcp.json`. While it works for commands/agents, MCP servers may fail:
+**If you must work inside the plugin repository:**
 
 ```bash
-# Works for commands/agents, may fail for MCP servers
+# Temporarily rename .mcp.json so Claude Code doesn't auto-discover it
+mv .mcp.json .mcp.json.plugin-dist
+
+# Work normally...
+# (MCP server won't be available, but that's expected - it requires proper installation)
+
+# When done, restore it
+mv .mcp.json.plugin-dist .mcp.json
+```
+
+This is necessary because of known limitations in Claude Code:
+- **[Issue #9354](https://github.com/anthropics/claude-code/issues/9354)**: `${CLAUDE_PLUGIN_ROOT}` expansion fails in project-scoped configs
+- **[Issue #14689](https://github.com/anthropics/claude-code/issues/14689)**: `--plugin-dir` flag has visibility bugs - plugins visible in `/plugins` list but not available to Claude
+- **[Issue #12541](https://github.com/anthropics/claude-code/issues/12541)**: Feature request for plugin environment variables (not yet implemented)
+
+**Alternative - Testing with `--plugin-dir`**: Not recommended due to the above issues:
+
+```bash
+# ⚠️ Known to have visibility bugs
 cd ~/your-project  # Use from outside the plugin repo
 claude --plugin-dir /path/to/bluera-knowledge
 ```
