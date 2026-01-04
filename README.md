@@ -877,15 +877,19 @@ Combine canonical library code with project-specific patterns:
 The plugin automatically checks for and attempts to install Python dependencies on first use:
 
 **Required:**
-- **🐍 Python 3.8+** - Required for all functionality
-- **🕷️ crawl4ai** - Required for web crawling features (auto-installed via SessionStart hook)
-- **🎭 playwright** - Required for headless browser crawling (manual install needed for browser binaries)
+- **🐍 Python 3.8+** - Required for web crawling functionality
+- **🕷️ crawl4ai** - Required for web crawling (auto-installed via SessionStart hook, includes playwright)
+- **🎭 Playwright browser binaries** - Required for `--headless` mode on JavaScript-rendered sites (**manual install required**)
 
-If auto-installation fails, you can install manually:
+**What the SessionStart hook installs:**
+- ✅ crawl4ai Python package (includes playwright as dependency)
+- ❌ Playwright browser binaries (you must run `playwright install` manually)
+
+If auto-installation of crawl4ai fails, install manually:
 
 ```bash
-pip install crawl4ai playwright
-playwright install  # Install browser binaries for headless mode
+pip install crawl4ai
+playwright install  # Required for --headless mode (Next.js, React, Vue sites)
 ```
 
 > [!WARNING]
