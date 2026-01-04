@@ -488,8 +488,8 @@ describe('DependencyUsageAnalyzer', () => {
         JSON.stringify(packageJson)
       );
 
-      // Create multiple files to trigger progress
-      for (let i = 0; i < 15; i++) {
+      // Create multiple files to trigger progress (fires every 10 files)
+      for (let i = 0; i < 25; i++) {
         await writeFile(
           join(tempDir, `file${i}.ts`),
           'import { x } from "pkg";'
