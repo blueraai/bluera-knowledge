@@ -1,0 +1,72 @@
+name: Update Marketplace
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-marketplace:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Wait for CI to complete successfully
+      - name: Wait for CI to complete
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          check-name: 'test'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+          allowed-conclusions: success
+
+      # Extract version from tag (v0.9.9 -> 0.9.9)
+      - name: Extract version
+        id: version
+        run: |
+          TAG_NAME=${{ github.event.release.tag_name }}
+          VERSION=${TAG_NAME#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION}"
+
+      # Checkout marketplace repo
+      - name: Checkout marketplace repo
+        uses: actions/checkout@v4
+        with:
+          repository: blueraai/bluera-marketplace
+          token: ${{ secrets.MARKETPLACE_PAT }}
+          path: marketplace
+
+      # Update marketplace.json
+      - name: Update marketplace version
+        working-directory: marketplace
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          jq --arg version "$VERSION" \
+            '(.plugins[] | select(.name == "bluera-knowledge") | .version) = $version' \
+            .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
+
+          mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
+
+          echo "Updated marketplace.json to version $VERSION"
+
+      # Commit and push
+      - name: Commit and push marketplace update
+        working-directory: marketplace
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add .claude-plugin/marketplace.json
+
+          if git diff --staged --quiet; then
+            echo "No changes - marketplace already up to date"
+            exit 0
+          fi
+
+          git commit -m "chore: update bluera-knowledge to v$VERSION"
+          git push
+
+          echo "✅ Successfully updated marketplace to v$VERSION"

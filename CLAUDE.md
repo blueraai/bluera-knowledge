@@ -16,10 +16,32 @@
 - `npm run release:major` - Same for major version
 - `npm run release:current` - Tag + push current version (if version already bumped)
 
-**After releasing this repo, also update the marketplace:**
-1. Update version in `blueraai/bluera-marketplace` → `.claude-plugin/marketplace.json`
-2. Run `npm run release:patch` in the marketplace repo
-   (https://github.com/blueraai/bluera-marketplace)
+**After releasing this repo:**
+- Marketplace update is **automated** via GitHub Actions
+- The `update-marketplace` workflow triggers when a release is published
+- It waits for CI to pass, then updates `blueraai/bluera-marketplace`
+- Check the Actions tab to verify marketplace was updated successfully
+- If automation fails, manually update as fallback:
+  1. Update version in `blueraai/bluera-marketplace` → `.claude-plugin/marketplace.json`
+  2. Run `npm run release:patch` in the marketplace repo
+     (https://github.com/blueraai/bluera-marketplace)
+
+## GitHub Actions Workflows
+
+**CI Workflow** (`.github/workflows/ci.yml`)
+- Triggers: Push to main, pull requests
+- Runs: Lint, typecheck, tests, build
+- Required to pass before marketplace updates
+
+**Release Workflow** (`.github/workflows/release.yml`)
+- Triggers: Tag push (v*)
+- Creates: GitHub release with auto-generated notes
+
+**Update Marketplace Workflow** (`.github/workflows/update-marketplace.yml`)
+- Triggers: Release published
+- Waits for: CI workflow success
+- Updates: `blueraai/bluera-marketplace` version automatically
+- Requires: `MARKETPLACE_PAT` secret configured
 
 ## ALWAYS
 

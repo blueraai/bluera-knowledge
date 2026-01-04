@@ -1032,7 +1032,8 @@ npm run release:current
 **Workflow:**
 1. Make changes and commit normally
 2. When ready to release: `npm run release:patch` (or minor/major)
-3. GitHub Actions creates the Release with auto-generated notes
+3. GitHub Actions creates the release **and automatically updates the marketplace**
+4. Verify in Actions tab: CI passes → Release created → Marketplace updated
 
 ### 🧪 Testing Locally
 
