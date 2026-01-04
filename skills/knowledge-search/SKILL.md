@@ -1,3 +1,8 @@
+---
+name: knowledge-search
+description: Teaches how to use Bluera Knowledge for accessing library sources and reference material. Explains two approaches - vector search via MCP/slash commands for discovery, or direct Grep/Read access to cloned repos for precision. Shows when to use each method and example workflows for querying library internals.
+---
+
 # Using Bluera Knowledge (BK)
 
 BK provides access to **definitive library sources** for your project dependencies.

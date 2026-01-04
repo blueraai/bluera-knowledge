@@ -1,3 +1,8 @@
+---
+name: when-to-query
+description: Decision guide for when to query Bluera Knowledge stores vs using Grep/Read on current project. Query BK for library/dependency questions and reference material. Use Grep/Read for current project code, debugging, and implementation details. Includes setup instructions and mental model.
+---
+
 # When to Query BK vs Current Project
 
 ## Query BK When:
