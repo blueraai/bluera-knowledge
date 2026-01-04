@@ -6,9 +6,15 @@
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)
 
-> 🚀 **Clone repos, crawl docs, search locally—give your AI coding agent fast, authoritative answers without web lookups.**
+> 🚀 **Build a local knowledge base for your AI coding agent—library source code, crawled docs, and your own files, all instantly searchable.**
 
-Index **full Git repositories**, **crawled documentation**, and **local files** into searchable knowledge stores. Your AI coding agent gets **instant semantic search** over authoritative sources—no rate limits, no network delays.
+When Claude helps you code, it needs context: how does this library work? What does that API do? Instead of slow web searches or outdated training data, Bluera Knowledge gives your agent instant local access to:
+
+- **Library source code** — Clone the repos of dependencies you actually use
+- **Documentation** — Crawl and index any docs site
+- **Your files** — Index local folders for project-specific knowledge
+
+All searchable in milliseconds, no rate limits, fully offline.
 
 ## 📦 Installation
 
@@ -25,21 +31,24 @@ Index **full Git repositories**, **crawled documentation**, and **local files** 
 
 ---
 
-## ✨ Why Bluera Knowledge?
+## ✨ Why Clone Your Dependencies?
 
-Stop relying on outdated or incomplete information. Instead of:
+When you ask Claude "how do I handle errors in Express middleware?", it can:
 
-- ❌ **Outdated training data** - Claude's knowledge cutoff may be months or years old
-- ❌ **Web search** - Slow, rate-limited, and incomplete
-- ❌ **Web fetch** - Slow, rate-limited, often blocked or paywalled
+1. **Guess from training data** — might be outdated or wrong
+2. **Search the web** — slow, rate-limited, often returns blog posts instead of source
+3. **Read the actual Express source code** — authoritative, complete, instant ✅
 
-Get instant, authoritative answers with:
+Bluera Knowledge enables option 3. By cloning the repositories of libraries you actually use, your AI agent has:
 
-- ✅ **Instant local access** - All content indexed and ready
-- ✅ **Complete source code** - Full repository clones, not just documentation
-- ✅ **Web crawling** - Crawl and index web documentation automatically
-- ✅ **Fast vector search** - Semantic search with relevance ranking
-- ✅ **Direct file access** - Grep/Glob operations on complete source trees
+| Capability | Without | With Bluera Knowledge |
+|------------|---------|----------------------|
+| Response time | 2-5 seconds (web) | ~100ms (local) |
+| Accuracy | Uncertain | Authoritative (source code) |
+| Completeness | Partial docs | Full implementation + tests |
+| Rate limits | Yes | None |
+
+**Plus:** Crawl any documentation site and index your own project files for a complete local knowledge base.
 
 ---
 
