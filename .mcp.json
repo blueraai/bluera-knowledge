@@ -1,1 +1,13 @@
-.claude-plugin/.mcp.json
+{
+  "mcpServers": {
+    "bluera-knowledge": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp/server.ts"],
+      "env": {
+        "PWD": "${PWD}",
+        "DATA_DIR": "${PWD}/.bluera/bluera-knowledge/data",
+        "CONFIG_PATH": "${PWD}/.bluera/bluera-knowledge/config.json"
+      }
+    }
+  }
+}
