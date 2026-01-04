@@ -31,6 +31,7 @@ All searchable in milliseconds, no rate limits, fully offline.
 - [Dependencies](#-dependencies)
 - [Troubleshooting](#-troubleshooting)
 - [MCP Integration](#-mcp-integration)
+- [CLI Tool](#️-cli-tool)
 - [Skills for Claude Code](#-skills-for-claude-code)
 - [Data Storage](#-data-storage)
 - [Development](#-development)
@@ -961,6 +962,105 @@ The plugin includes a Model Context Protocol server that exposes search tools. T
 
 ---
 
+## 🖥️ CLI Tool
+
+While Bluera Knowledge works seamlessly as a Claude Code plugin, it's also available as a standalone CLI tool for use outside Claude Code.
+
+### Installation
+
+Install globally via npm:
+
+```bash
+npm install -g @blueraai/bluera-knowledge
+```
+
+Or use in a project:
+
+```bash
+npm install --save-dev @blueraai/bluera-knowledge
+```
+
+### Usage
+
+#### Create a Store
+
+```bash
+# Add a Git repository
+bluera-knowledge store create react --type repo --source https://github.com/facebook/react
+
+# Add a local folder
+bluera-knowledge store create my-docs --type file --source ./docs
+
+# Add a web crawl
+bluera-knowledge store create fastapi-docs --type web --source https://fastapi.tiangolo.com
+```
+
+#### Index a Store
+
+```bash
+bluera-knowledge index react
+```
+
+#### Search
+
+```bash
+# Search across all stores
+bluera-knowledge search "how does useEffect work"
+
+# Search specific stores
+bluera-knowledge search "routing" --stores react,vue
+
+# Get more results with full content
+bluera-knowledge search "middleware" --limit 20 --include-content
+```
+
+#### List Stores
+
+```bash
+bluera-knowledge store list
+bluera-knowledge store list --type repo  # Filter by type
+```
+
+#### Store Info
+
+```bash
+bluera-knowledge store info react
+```
+
+#### Delete a Store
+
+```bash
+bluera-knowledge store delete old-store
+```
+
+### Global Options
+
+```bash
+--config <path>      # Custom config file
+--data-dir <path>    # Custom data directory
+--format <format>    # Output format: json | table | plain
+--quiet              # Suppress non-essential output
+--verbose            # Enable verbose logging
+```
+
+### When to Use CLI vs Plugin
+
+**Use CLI when:**
+- Using an editor other than Claude Code (VSCode, Cursor, etc.)
+- Integrating into CI/CD pipelines
+- Scripting or automation
+- Pre-indexing dependencies for teams
+
+**Use Plugin when:**
+- Working within Claude Code
+- Want slash commands (`/bluera-knowledge:search`)
+- Need Claude to automatically query your knowledge base
+- Want Skills to guide optimal usage
+
+Both interfaces use the same underlying services, so you can switch between them seamlessly.
+
+---
+
 ## 🎓 Skills for Claude Code
 
 Bluera Knowledge includes built-in Skills that teach Claude Code how to use the plugin effectively. Skills provide procedural knowledge that complements the MCP tools.
@@ -1140,9 +1240,9 @@ cd /path/to/bluera-knowledge
 npm run build
 npm link
 
-# Now 'bkb' command is available globally
+# Now 'bluera-knowledge' command is available globally
 cd ~/your-project
-bkb search "test query" my-store
+bluera-knowledge search "test query" my-store
 ```
 
 **For testing as an installed plugin:**

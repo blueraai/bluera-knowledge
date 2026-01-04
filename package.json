@@ -1,11 +1,11 @@
 {
-  "name": "bluera-knowledge",
+  "name": "@blueraai/bluera-knowledge",
   "version": "0.9.14",
   "description": "CLI tool for managing knowledge stores with semantic search",
   "type": "module",
   "bin": {
-    "bkb": "./dist/index.js",
-    "bkb-worker": "./dist/workers/background-worker-cli.js"
+    "bluera-knowledge": "./dist/index.js",
+    "bluera-knowledge-worker": "./dist/workers/background-worker-cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -40,6 +40,13 @@
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blueraai/bluera-knowledge.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

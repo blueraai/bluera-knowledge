@@ -22,7 +22,7 @@ export function createProgram(): Command {
   const program = new Command();
 
   program
-    .name('bkb')
+    .name('bluera-knowledge')
     .description('CLI tool for managing knowledge stores with semantic search')
     .version(version);
 

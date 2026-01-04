@@ -789,7 +789,7 @@ describe('Setup Command - Execution Tests', () => {
       await actionHandler([]);
 
       expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Setup complete'));
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('bkb search'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('bluera-knowledge search'));
     });
   });
 });
