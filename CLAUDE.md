@@ -40,7 +40,9 @@
 - Waits for: CI workflow to pass
 - Checks: If version in package.json has no matching tag
 - Creates: Tag and pushes it (triggers Release workflow)
+- Uses: `MARKETPLACE_PAT` for checkout/push (GITHUB_TOKEN can't trigger other workflows)
 - **This is what makes releases fully automated**
+- **Important:** Must use PAT, not GITHUB_TOKEN, to allow tag push to trigger Release workflow
 
 **Release Workflow** (`.github/workflows/release.yml`)
 - Triggers: Tag push (v*)
