@@ -1,0 +1,47 @@
+Bluera Knowledge
+Copyright (c) 2024-2025 Bluera Inc
+
+This product includes software developed by third parties:
+
+---
+
+Crawl4AI
+https://github.com/unclecode/crawl4ai
+Licensed under Apache License 2.0
+
+This product includes software developed by UncleCode
+(https://x.com/unclecode) as part of the Crawl4AI project
+(https://github.com/unclecode/crawl4ai).
+
+---
+
+Playwright
+https://github.com/microsoft/playwright-python
+Licensed under Apache License 2.0
+Copyright (c) Microsoft Corporation
+
+---
+
+sharp / libvips
+https://github.com/lovell/sharp
+https://github.com/libvips/libvips
+sharp is licensed under Apache License 2.0
+libvips is licensed under LGPL-3.0-or-later
+
+---
+
+@huggingface/transformers
+https://github.com/huggingface/transformers.js
+Licensed under Apache License 2.0
+Copyright (c) Hugging Face
+
+---
+
+LanceDB
+https://github.com/lancedb/lancedb
+Licensed under Apache License 2.0
+Copyright (c) LanceDB Inc
+
+---
+
+For complete license texts, see the respective project repositories.

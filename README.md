@@ -947,7 +947,17 @@ Contributions welcome! Please:
 
 ## 📄 License
 
-MIT
+MIT - See [LICENSE](./LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+This project includes software developed by third parties. See [NOTICE](./NOTICE) for full attribution.
+
+Key dependencies:
+- **[Crawl4AI](https://github.com/unclecode/crawl4ai)** - Web crawling (Apache-2.0). *This product includes software developed by UncleCode ([@unclecode](https://x.com/unclecode)) as part of the Crawl4AI project.*
+- **[LanceDB](https://github.com/lancedb/lancedb)** - Vector database (Apache-2.0)
+- **[Hugging Face Transformers](https://github.com/huggingface/transformers.js)** - Embeddings (Apache-2.0)
+- **[Playwright](https://github.com/microsoft/playwright)** - Browser automation (Apache-2.0)
 
 ---
 
