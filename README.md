@@ -322,7 +322,7 @@ Scanned 342 source files and found 24 dependencies.
    Repository: https://github.com/facebook/react
 
    Add with:
-   ```
+   ```bash
    /bluera-knowledge:add-repo https://github.com/facebook/react --name=react
    ```
 
@@ -330,7 +330,7 @@ Scanned 342 source files and found 24 dependencies.
    Repository: https://github.com/vitest-dev/vitest
 
    Add with:
-   ```
+   ```bash
    /bluera-knowledge:add-repo https://github.com/vitest-dev/vitest --name=vitest
    ```
 
@@ -338,7 +338,7 @@ Scanned 342 source files and found 24 dependencies.
    Repository: https://github.com/lodash/lodash
 
    Add with:
-   ```
+   ```bash
    /bluera-knowledge:add-repo https://github.com/lodash/lodash --name=lodash
    ```
 
@@ -448,6 +448,8 @@ Store is ready for searching!
 
 ```
 ## Search Results for "button component"
+
+**Searched**: react (using hybrid search: vector + full-text)
 
 | Score | Store        | File                                          | Purpose                                            |
 |------:|--------------|-----------------------------------------------|---------------------------------------------------|
