@@ -31,6 +31,7 @@ All searchable in milliseconds, no rate limits, fully offline.
 - [Dependencies](#-dependencies)
 - [Troubleshooting](#-troubleshooting)
 - [MCP Integration](#-mcp-integration)
+- [Skills for Claude Code](#-skills-for-claude-code)
 - [Data Storage](#-data-storage)
 - [Development](#-development)
 - [Technologies](#-technologies)
@@ -960,6 +961,55 @@ The plugin includes a Model Context Protocol server that exposes search tools. T
 
 ---
 
+## 🎓 Skills for Claude Code
+
+Bluera Knowledge includes built-in Skills that teach Claude Code how to use the plugin effectively. Skills provide procedural knowledge that complements the MCP tools.
+
+### 📚 Available Skills
+
+#### `knowledge-search`
+Teaches the two approaches for accessing library sources:
+- Vector search via MCP/slash commands for discovery
+- Direct Grep/Read access to cloned repos for precision
+
+**When to use:** Understanding how to query indexed libraries
+
+#### `when-to-query`
+Decision guide for when to query BK stores vs using Grep/Read on current project.
+
+**When to use:** Deciding whether a question is about libraries or your project code
+
+#### `advanced-workflows`
+Multi-tool orchestration patterns for complex operations.
+
+**When to use:** Progressive library exploration, adding libraries, handling large results
+
+#### `search-optimization`
+Guide on search parameters and progressive detail strategies.
+
+**When to use:** Optimizing search results, choosing the right intent and detail level
+
+#### `store-lifecycle`
+Best practices for creating, indexing, and managing stores.
+
+**When to use:** Adding new stores, understanding when to use repo/folder/crawl
+
+### 🔄 MCP + Skills Working Together
+
+Skills teach **how** to use the MCP tools effectively:
+- MCP provides the **capabilities** (search, create_store, index_store, etc.)
+- Skills provide **procedural knowledge** (when to use which tool, best practices, workflows)
+
+This hybrid approach reduces unnecessary tool calls and context usage while maintaining universal MCP compatibility.
+
+**Example:**
+- MCP tool: `search(query, intent, detail, limit, stores)`
+- Skill teaches: Which `intent` for your question type, when to use `detail='minimal'` vs `'full'`, how to narrow with `stores`
+
+Result: Fewer tool calls, more accurate results, less context consumed.
+
+---
+
 ## 💾 Data Storage
 
 Knowledge stores are stored in your project root:
@@ -1134,7 +1184,17 @@ claude --plugin-dir /path/to/bluera-knowledge
 
 .mcp.json                # MCP server configuration (auto-discovered)
 commands/                # Slash commands (auto-discovered)
-skills/                  # Agent skills (auto-discovered)
+skills/                  # Agent Skills (auto-discovered)
+├── knowledge-search/    # How to access library sources
+│   └── SKILL.md
+├── when-to-query/       # When to query BK vs project files
+│   └── SKILL.md
+├── advanced-workflows/  # Multi-tool orchestration patterns
+│   └── SKILL.md
+├── search-optimization/ # Search parameter optimization
+│   └── SKILL.md
+└── store-lifecycle/     # Store management best practices
+    └── SKILL.md
 dist/                    # Built MCP server (committed for distribution)
 
 src/
