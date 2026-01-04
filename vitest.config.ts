@@ -1,8 +1,12 @@
 import { defineConfig } from 'vitest/config';
 
-// Lower thresholds in CI where IndexService tests are skipped (requires ONNX model download)
+// Lower thresholds in CI where embedding-related tests are skipped
+// (IndexService, EmbeddingEngine, WatchService - require 90MB ONNX model download)
+// Still skipped (require CLI subprocess fix - see plan Phase 2):
+// - tests/integration/cli.test.ts (6 tests)
+// - tests/integration/cli-consistency.test.ts (8 tests)
 const isCI = process.env.CI === 'true';
-const coverageThreshold = isCI ? 76 : 80;
+const coverageThreshold = isCI ? 80 : 81;
 
 export default defineConfig({
   test: {
@@ -56,9 +60,19 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.ts',
         'src/index.ts',
-        'src/types/index.ts', // Barrel exports
+        // Barrel exports
+        'src/types/index.ts',
         'src/services/index.ts',
         'src/db/index.ts',
+        // Type-only files
+        'src/types/document.ts',
+        'src/types/job.ts',
+        'src/types/progress.ts',
+        'src/types/search.ts',
+        'src/mcp/types.ts',
+        // Entry points (CLI executables)
+        'src/server/index.ts',
+        'src/workers/background-worker-cli.ts',
       ],
       thresholds: {
         lines: coverageThreshold,
