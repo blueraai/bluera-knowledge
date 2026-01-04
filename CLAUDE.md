@@ -6,7 +6,7 @@
 - `npm run precommit` - Full validation (lint, typecheck, tests, build)
 
 **Versioning (after code changes):**
-- `npm run version:patch` - Bump patch version (updates package.json, plugin.json, marketplace.json, README badge)
+- `npm run version:patch` - Bump patch version (updates package.json, plugin.json, README badge)
 - `npm run version:minor` - Bump minor version
 - `npm run version:major` - Bump major version
 
@@ -15,6 +15,11 @@
 - `npm run release:minor` - Same for minor version
 - `npm run release:major` - Same for major version
 - `npm run release:current` - Tag + push current version (if version already bumped)
+
+**After releasing this repo, also update the marketplace:**
+1. Update version in `blueraai/bluera-marketplace` → `.claude-plugin/marketplace.json`
+2. Run `npm run release:patch` in the marketplace repo
+   (https://github.com/blueraai/bluera-marketplace)
 
 ## ALWAYS
 
