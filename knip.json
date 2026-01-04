@@ -1,0 +1,43 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/**/*.test.ts",
+    "tests/**/*.test.ts"
+  ],
+  "project": [
+    "src/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "ignore": [
+    "dist/**",
+    "coverage/**",
+    "node_modules/**",
+    ".husky/**",
+    "tests/fixtures/**",
+    "tests/helpers/**",
+    "src/cli/index.ts",
+    "src/db/index.ts",
+    "src/types/index.ts"
+  ],
+  "ignoreDependencies": [
+    "@types/*",
+    "husky",
+    "tsup",
+    "tsx",
+    "chalk",
+    "cli-table3",
+    "ora",
+    "commander",
+    "node-addon-api",
+    "slurp-ai",
+    "node-gyp"
+  ],
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  },
+  "vitest": {
+    "config": ["vitest.config.ts"],
+    "entry": ["vitest.config.ts"]
+  }
+}
