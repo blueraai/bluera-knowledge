@@ -19,7 +19,7 @@ All searchable in milliseconds, no rate limits, fully offline.
 ## 📑 Table of Contents
 
 - [Installation](#-installation)
-- [Why Clone Your Dependencies?](#-why-clone-your-dependencies)
+- [Why Bluera Knowledge?](#-why-bluera-knowledge)
 - [Quick Start](#-quick-start)
 - [Features](#-features)
 - [How It Works](#-how-it-works)
@@ -56,24 +56,30 @@ All searchable in milliseconds, no rate limits, fully offline.
 
 ---
 
-## ✨ Why Clone Your Dependencies?
+## ✨ Why Bluera Knowledge?
 
 When you ask Claude Code "how do I handle errors in Express middleware?", it can:
 
 1. **Guess from training data** — might be outdated or wrong
 2. **Search the web** — slow, rate-limited, often returns blog posts instead of source
-3. **Read the actual Express source code** — authoritative, complete, instant ✅
+3. **Read your local knowledge base** — authoritative, complete, instant ✅
 
-Bluera Knowledge enables option 3. By cloning the repositories of libraries you actually use, your AI agent has:
+Bluera Knowledge enables option 3 by building a searchable knowledge base from **three types of sources**:
+
+| Source Type | What It Does | Example |
+|------------|--------------|---------|
+| **📦 Dependency Source Code** | Clone & search library repos you actually use | Express, React, Lodash |
+| **🌐 Documentation Sites** | Crawl & index any docs site | Next.js docs, FastAPI guides |
+| **📁 Local Files** | Index project-specific content | Your docs, standards, API specs |
+
+**The result:** Your AI agent has local, instant access to authoritative information with zero rate limits:
 
 | Capability | Without | With Bluera Knowledge |
 |------------|---------|----------------------|
 | Response time | 2-5 seconds (web) | ~100ms (local) |
-| Accuracy | Uncertain | Authoritative (source code) |
-| Completeness | Partial docs | Full implementation + tests |
+| Accuracy | Uncertain | Authoritative (source code + docs) |
+| Completeness | Partial docs | Full implementation + tests + your content |
 | Rate limits | Yes | None |
-
-**Plus:** Crawl any documentation site and index your own project files for a complete local knowledge base.
 
 ---
 
