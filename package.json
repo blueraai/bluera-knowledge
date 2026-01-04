@@ -53,6 +53,7 @@
     "husky": "^9.1.7",
     "node-gyp": "^12.1.0",
     "tsup": "^8.5.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.0",
     "vitest": "^4.0.16"
@@ -66,6 +67,7 @@
     "@huggingface/transformers": "^3.8.1",
     "@lancedb/lancedb": "^0.23.0",
     "@modelcontextprotocol/sdk": "^1.25.1",
+    "apache-arrow": "^21.1.0",
     "axios": "^1.13.2",
     "chalk": "^5.6.2",
     "cheerio": "^1.1.2",
