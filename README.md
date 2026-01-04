@@ -16,14 +16,12 @@ Index **full Git repositories**, **crawled documentation**, and **local files** 
 # Add the Bluera marketplace (one-time setup)
 /plugin marketplace add blueraai/bluera-marketplace
 
-# Install the plugin
+# Install the plugin (or use /plugin to browse the UI)
 /plugin install bluera-knowledge@bluera
 ```
 
-Or use `/plugin` to open the Claude Code plugin UI and browse/install from there.
-
 > [!NOTE]
-> **First launch may take 30+ seconds** while the plugin checks and installs Python dependencies (crawl4ai). This is normal—subsequent launches are instant.
+> **First launch may appear to hang** while the plugin installs Python dependencies (crawl4ai). This is normal—subsequent launches are instant.
 
 ---
 
