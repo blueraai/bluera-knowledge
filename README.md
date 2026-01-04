@@ -933,13 +933,13 @@ tests/
 ## 🔬 Technologies
 
 - **🔌 Claude Code Plugin System** with MCP server
-- **✅ Runtime Validation** - Zod schemas for Python-TypeScript boundary
-- **🌳 AST Parsing** - @babel/parser for JS/TS, Python AST module, tree-sitter for Rust and Go
+- **✅ Runtime Validation** - [Zod](https://github.com/colinhacks/zod) schemas for Python-TypeScript boundary
+- **🌳 AST Parsing** - [@babel/parser](https://github.com/babel/babel) for JS/TS, Python AST module, [tree-sitter](https://github.com/tree-sitter/tree-sitter) for Rust and Go
 - **🗺️ Code Graph** - Static analysis of function calls, imports, and class relationships
-- **🧠 Semantic Search** - AI-powered vector embeddings
+- **🧠 Semantic Search** - AI-powered vector embeddings with [LanceDB](https://github.com/lancedb/lancedb)
 - **📦 Git Operations** - Native git clone
-- **💻 CLI** - Commander.js
-- **🕷️ Web Crawling** - crawl4ai with Playwright (headless browser)
+- **💻 CLI** - [Commander.js](https://github.com/tj/commander.js)
+- **🕷️ Web Crawling** - [crawl4ai](https://github.com/unclecode/crawl4ai) with [Playwright](https://github.com/microsoft/playwright) (headless browser)
 
 ---
 
