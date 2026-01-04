@@ -1035,6 +1035,7 @@ Replace the path with your actual repo location. This creates a separate `bluera
 | `npm run lint` | 🔍 Run ESLint | Check code style issues |
 | `npm run typecheck` | 🔒 Run TypeScript type checking | Verify type safety |
 | `npm run precommit` | ✨ Full validation suite | Before committing (runs automatically via husky) |
+| `npm run prepush` | 📊 Run coverage tests | Runs automatically before `git push` (via husky) |
 | `npm run version:patch` | 🔢 Bump patch version (0.0.x) | Bug fixes, minor updates |
 | `npm run version:minor` | 🔢 Bump minor version (0.x.0) | New features, backwards compatible |
 | `npm run version:major` | 🔢 Bump major version (x.0.0) | Breaking changes |
@@ -1073,18 +1074,29 @@ npm run release:current
 
 **Recommended approach per [official Anthropic plugin-dev documentation](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/plugin-dev/skills/mcp-integration)**:
 
+Use the local development MCP server (see "MCP Server" section above) which runs your source code directly via `tsx`:
+
+1. Set up dev MCP server in `~/.claude.json` (see lines 1002-1018 above)
+2. Work from OUTSIDE the plugin repository:
+   ```bash
+   cd ~/your-project  # NOT inside bluera-knowledge/
+   ```
+3. Test your changes - MCP server updates automatically as you edit code
+
+**For testing the CLI tool directly:**
 ```bash
-# 1. Install from the bluera marketplace
-claude plugin install bluera-knowledge@bluera
-
-# 2. Work from OUTSIDE the plugin repository
-cd ~/your-project  # NOT inside bluera-knowledge/
-
-# 3. After making code changes, bump version and update
+# Build and link
 cd /path/to/bluera-knowledge
-npm run version:patch
-claude plugin update bluera-knowledge
+npm run build
+npm link
+
+# Now 'bkb' command is available globally
+cd ~/your-project
+bkb search "test query" my-store
 ```
+
+**For testing as an installed plugin:**
+This requires publishing a new version to the marketplace. Local plugin testing via `/plugin install` is not supported for development workflows.
 
 **Why this matters**: The `.mcp.json` file uses `${CLAUDE_PLUGIN_ROOT}` which only exists when loaded as a **plugin**, not as a **project config**. Working inside the repo causes Claude Code to load it as a project config where this variable is undefined.
 
