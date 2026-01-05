@@ -3261,7 +3261,10 @@ var LanceStore = class {
 };
 
 // src/db/embeddings.ts
-import { pipeline } from "@huggingface/transformers";
+import { pipeline, env } from "@huggingface/transformers";
+import { homedir as homedir2 } from "os";
+import { join as join5 } from "path";
+env.cacheDir = join5(homedir2(), ".cache", "huggingface-transformers");
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
@@ -3600,4 +3603,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-EUE4BKMA.js.map
+//# sourceMappingURL=chunk-US7GXA6U.js.map
