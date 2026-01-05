@@ -8,5 +8,6 @@
   },
   "homepage": "https://github.com/blueraai/bluera-knowledge",
   "repository": "https://github.com/blueraai/bluera-knowledge",
-  "license": "MIT"
+  "license": "MIT",
+  "mcpServers": "./mcp.plugin.json"
 }
