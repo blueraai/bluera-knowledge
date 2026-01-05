@@ -20,3 +20,4 @@ fix_*.pl
 *-status.txt
 *-output.txt
 coverage-*.json
+package-lock.json
