@@ -41,19 +41,19 @@ describe('CLI Integration', () => {
     expect(output).toContain('CLI tool for managing knowledge stores');
     expect(output).toContain('search');
     expect(output).toContain('index');
-  });
+  }, 30000);
 
   it('creates and lists stores', () => {
     cli(`store create test-store --type file --source "${testFilesDir}"`);
     const listOutput = cli('store list');
     expect(listOutput).toContain('test-store');
-  });
+  }, 30000);
 
   it('shows store info', () => {
     const output = cli('store info test-store');
     expect(output).toContain('test-store');
     expect(output).toContain('file');
-  });
+  }, 30000);
 
   it('indexes a store', () => {
     const output = cli('index test-store');

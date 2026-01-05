@@ -1,4 +1,10 @@
-import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
+import { pipeline, env, type FeatureExtractionPipeline } from '@huggingface/transformers';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+// Set cache directory to ~/.cache/huggingface-transformers (outside node_modules)
+// This allows CI caching and prevents model re-downloads on each npm install
+env.cacheDir = join(homedir(), '.cache', 'huggingface-transformers');
 
 export class EmbeddingEngine {
   private extractor: FeatureExtractionPipeline | null = null;
