@@ -55,6 +55,20 @@
 - Requires: `MARKETPLACE_PAT` secret (repo-scoped PAT with write access to marketplace repo)
 - Note: Uses `workflow_run` trigger because GitHub prevents `GITHUB_TOKEN` workflows from triggering other workflows
 
+## Distribution Requirements
+
+**`dist/` MUST be committed to git** - This is intentional, not an oversight:
+
+1. **Claude Code plugins are copied to a cache during installation** - no build step runs
+   - Plugins need pre-built files ready to execute immediately
+   - Source: https://code.claude.com/docs/en/discover-plugins
+
+2. **npm publishing also uses committed dist/** - No `files` array in package.json, so npm includes whatever isn't in `.gitignore`
+
+**After any code change:**
+1. Run `npm run build` (or `npm run precommit` which includes build)
+2. Commit both source AND dist/ changes together
+
 ## ALWAYS
 
 * use the `npm run version:*` commands after changes
