@@ -4,9 +4,8 @@
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
       "env": {
-        "PWD": "${PWD}",
-        "DATA_DIR": "${PWD}/.bluera/bluera-knowledge/data",
-        "CONFIG_PATH": "${PWD}/.bluera/bluera-knowledge/config.json"
+        "DATA_DIR": ".bluera/bluera-knowledge/data",
+        "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
       }
     }
   }
