@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - `destroyServices()` function for proper CLI resource cleanup
 - CLI tests now enabled (previously skipped due to hanging subprocess)
 - 26 re-enabled CLI integration tests verifying exit codes, JSON format, quiet mode
+- Pre-commit hook auto-stages `dist/` after build (no manual staging needed)
 
 ### Removed
 - Export/import CLI commands (`bkb export`, `bkb import`) - unused functionality

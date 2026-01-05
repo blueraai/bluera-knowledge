@@ -1272,6 +1272,25 @@ Replace the path with your actual repo location. This creates a separate `bluera
 | `bun run typecheck` | 🔒 Run TypeScript type checking | Verify type safety |
 | `bun run precommit` | ✨ Full validation suite | Before committing (runs automatically via husky) |
 | `bun run prepush` | 📊 Run coverage tests | Runs automatically before `git push` (via husky) |
+
+### 🔄 Automatic Build & Dist Commit
+
+The `dist/` directory **must be committed** because Claude Code plugins are installed by copying files—there's no build step during installation.
+
+**Good news: This is fully automatic!**
+
+1. **On every commit**, the pre-commit hook runs `bun run precommit` which includes `bun run build`
+2. **After the build**, the hook automatically stages `dist/` via `git add dist/`
+3. **You never need to manually build or stage dist** — just commit your source changes
+
+**For live rebuilding during development:**
+
+```bash
+bun run dev  # Watches for changes and rebuilds instantly
+```
+
+This is useful when testing CLI commands locally, but not required for committing — the hook handles everything.
+
 | `bun run version:patch` | 🔢 Bump patch version (0.0.x) | Bug fixes, minor updates |
 | `bun run version:minor` | 🔢 Bump minor version (0.x.0) | New features, backwards compatible |
 | `bun run version:major` | 🔢 Bump major version (x.0.0) | Breaking changes |
