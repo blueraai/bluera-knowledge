@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Removed
+- Export/import CLI commands (`bkb export`, `bkb import`) - unused functionality
+
+### Fixed
+- Flaky stress tests: removed relative timing comparisons, made thresholds generous (10-30s)
+- README rendering on GitHub: fixed nested code blocks breaking markdown parser
+
+### Changed
+- Integration tests rewritten to use service APIs instead of CLI (60+ tests, 120s faster)
+- Added dead code linting (knip) to precommit checks
+- Removed Vue fixture tests (third-party code not relevant to our test suite)
+- Documented `dist/` commit requirement for Claude Code plugin distribution
+
 ## [0.9.11] - 2026-01-04
 
 ### Fixed
