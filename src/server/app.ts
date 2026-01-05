@@ -1,8 +1,37 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { z } from 'zod';
 import type { ServiceContainer } from '../services/index.js';
-import type { CreateStoreInput } from '../services/store.service.js';
 import type { SearchQuery } from '../types/search.js';
+import { createStoreId } from '../types/brands.js';
+
+// HTTP API validation schemas (consistent with MCP schemas)
+const CreateStoreBodySchema = z.object({
+  name: z.string().min(1, 'Store name must be a non-empty string'),
+  type: z.enum(['file', 'repo', 'web']),
+  path: z.string().min(1).optional(),
+  url: z.string().min(1).optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  branch: z.string().optional(),
+  depth: z.number().int().positive().optional(),
+}).refine(
+  (data) => {
+    switch (data.type) {
+      case 'file': return data.path !== undefined;
+      case 'web': return data.url !== undefined;
+      case 'repo': return data.path !== undefined || data.url !== undefined;
+    }
+  },
+  { message: 'Missing required field: file stores need path, web stores need url, repo stores need path or url' }
+);
+
+const SearchBodySchema = z.object({
+  query: z.string().min(1, 'Query must be a non-empty string'),
+  detail: z.enum(['minimal', 'contextual', 'full']).optional(),
+  limit: z.number().int().positive().optional(),
+  stores: z.array(z.string()).optional(),
+});
 
 export function createApp(services: ServiceContainer): Hono {
   const app = new Hono();
@@ -20,9 +49,11 @@ export function createApp(services: ServiceContainer): Hono {
 
   app.post('/api/stores', async (c) => {
     const jsonData: unknown = await c.req.json();
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const body = jsonData as CreateStoreInput;
-    const result = await services.store.create(body);
+    const parseResult = CreateStoreBodySchema.safeParse(jsonData);
+    if (!parseResult.success) {
+      return c.json({ error: parseResult.error.issues[0]?.message ?? 'Invalid request body' }, 400);
+    }
+    const result = await services.store.create(parseResult.data);
     if (result.success) {
       return c.json(result.data, 201);
     }
@@ -45,18 +76,28 @@ export function createApp(services: ServiceContainer): Hono {
 
   // Search
   app.post('/api/search', async (c) => {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const body = await c.req.json() as unknown as Partial<SearchQuery>;
+    const jsonData: unknown = await c.req.json();
+    const parseResult = SearchBodySchema.safeParse(jsonData);
+    if (!parseResult.success) {
+      return c.json({ error: parseResult.error.issues[0]?.message ?? 'Invalid request body' }, 400);
+    }
+
     const storeIds = (await services.store.list()).map(s => s.id);
 
     for (const id of storeIds) {
       await services.lance.initialize(id);
     }
 
+    // Convert user-provided store strings to StoreIds, or use all stores
+    const requestedStores = parseResult.data.stores !== undefined
+      ? parseResult.data.stores.map(s => createStoreId(s))
+      : storeIds;
+
     const query: SearchQuery = {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      ...(body as SearchQuery),
-      stores: (body.stores !== undefined ? body.stores : storeIds),
+      query: parseResult.data.query,
+      detail: parseResult.data.detail ?? 'minimal',
+      limit: parseResult.data.limit ?? 10,
+      stores: requestedStores,
     };
     const results = await services.search.search(query);
     return c.json(results);

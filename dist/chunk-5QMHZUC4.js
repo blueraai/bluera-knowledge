@@ -358,8 +358,8 @@ var ConfigService = class {
 };
 
 // src/services/store.service.ts
-import { readFile as readFile2, writeFile as writeFile2, mkdir as mkdir3 } from "fs/promises";
-import { join as join2 } from "path";
+import { readFile as readFile2, writeFile as writeFile2, mkdir as mkdir3, stat } from "fs/promises";
+import { join as join2, resolve as resolve2 } from "path";
 import { randomUUID as randomUUID2 } from "crypto";
 
 // src/types/brands.ts
@@ -394,7 +394,7 @@ async function cloneRepository(options) {
     args.push("--branch", branch);
   }
   args.push(url, targetDir);
-  return new Promise((resolve2) => {
+  return new Promise((resolve3) => {
     const git = spawn("git", args, { stdio: ["ignore", "pipe", "pipe"] });
     let stderr = "";
     git.stderr.on("data", (data) => {
@@ -402,9 +402,9 @@ async function cloneRepository(options) {
     });
     git.on("close", (code) => {
       if (code === 0) {
-        resolve2(ok(targetDir));
+        resolve3(ok(targetDir));
       } else {
-        resolve2(err(new Error(`Git clone failed: ${stderr}`)));
+        resolve3(err(new Error(`Git clone failed: ${stderr}`)));
       }
     });
   });
@@ -438,15 +438,24 @@ var StoreService = class {
     const now = /* @__PURE__ */ new Date();
     let store;
     switch (input.type) {
-      case "file":
+      case "file": {
         if (input.path === void 0) {
           return err(new Error("Path is required for file stores"));
+        }
+        const normalizedPath = resolve2(input.path);
+        try {
+          const stats = await stat(normalizedPath);
+          if (!stats.isDirectory()) {
+            return err(new Error(`Path is not a directory: ${normalizedPath}`));
+          }
+        } catch {
+          return err(new Error(`Directory does not exist: ${normalizedPath}`));
         }
         store = {
           type: "file",
           id,
           name: input.name,
-          path: input.path,
+          path: normalizedPath,
           description: input.description,
           tags: input.tags,
           status: "ready",
@@ -454,6 +463,7 @@ var StoreService = class {
           updatedAt: now
         };
         break;
+      }
       case "repo": {
         let repoPath = input.path;
         if (input.url !== void 0) {
@@ -472,11 +482,12 @@ var StoreService = class {
         if (repoPath === void 0) {
           return err(new Error("Path or URL required for repo stores"));
         }
+        const normalizedRepoPath = resolve2(repoPath);
         store = {
           type: "repo",
           id,
           name: input.name,
-          path: repoPath,
+          path: normalizedRepoPath,
           url: input.url,
           branch: input.branch,
           description: input.description,
@@ -3303,7 +3314,7 @@ var EmbeddingEngine = class {
       );
       results.push(...batchResults);
       if (i + BATCH_SIZE < texts.length) {
-        await new Promise((resolve2) => setTimeout(resolve2, 100));
+        await new Promise((resolve3) => setTimeout(resolve3, 100));
       }
     }
     return results;
@@ -3474,7 +3485,7 @@ var PythonBridge = class {
       method: "crawl",
       params: { url }
     };
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const timeout = setTimeout(() => {
         const pending = this.pending.get(id);
         if (pending) {
@@ -3482,7 +3493,7 @@ var PythonBridge = class {
           reject(new Error(`Crawl timeout after ${String(timeoutMs)}ms for URL: ${url}`));
         }
       }, timeoutMs);
-      this.pending.set(id, { resolve: resolve2, reject, timeout, method: "crawl" });
+      this.pending.set(id, { resolve: resolve3, reject, timeout, method: "crawl" });
       if (this.process === null || this.process.stdin === null) {
         reject(new Error("Python bridge process not available"));
         return;
@@ -3499,7 +3510,7 @@ var PythonBridge = class {
       method: "fetch_headless",
       params: { url }
     };
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const timeout = setTimeout(() => {
         const pending = this.pending.get(id);
         if (pending) {
@@ -3507,7 +3518,7 @@ var PythonBridge = class {
           reject(new Error(`Headless fetch timeout after ${String(timeoutMs)}ms for URL: ${url}`));
         }
       }, timeoutMs);
-      this.pending.set(id, { resolve: resolve2, reject, timeout, method: "fetch_headless" });
+      this.pending.set(id, { resolve: resolve3, reject, timeout, method: "fetch_headless" });
       if (this.process === null || this.process.stdin === null) {
         reject(new Error("Python bridge process not available"));
         return;
@@ -3524,7 +3535,7 @@ var PythonBridge = class {
       method: "parse_python",
       params: { code, filePath }
     };
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const timeout = setTimeout(() => {
         const pending = this.pending.get(id);
         if (pending) {
@@ -3532,7 +3543,7 @@ var PythonBridge = class {
           reject(new Error(`Python parsing timeout after ${String(timeoutMs)}ms for file: ${filePath}`));
         }
       }, timeoutMs);
-      this.pending.set(id, { resolve: resolve2, reject, timeout, method: "parse_python" });
+      this.pending.set(id, { resolve: resolve3, reject, timeout, method: "parse_python" });
       if (this.process === null || this.process.stdin === null) {
         reject(new Error("Python bridge process not available"));
         return;
@@ -3603,4 +3614,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-US7GXA6U.js.map
+//# sourceMappingURL=chunk-5QMHZUC4.js.map

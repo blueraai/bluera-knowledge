@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 import {
   runMCPServer
-} from "./chunk-RZ53WPCB.js";
+} from "./chunk-AIKC6ROY.js";
 import {
   IntelligentCrawler
-} from "./chunk-NABJBHTA.js";
+} from "./chunk-65AP7AF4.js";
 import {
   ASTParser,
   createDocumentId,
   createServices,
+  createStoreId,
   destroyServices,
   err,
   extractRepoName,
   ok
-} from "./chunk-US7GXA6U.js";
+} from "./chunk-5QMHZUC4.js";
 import "./chunk-L2YVNC63.js";
 
 // src/index.ts
@@ -349,6 +350,35 @@ import { serve } from "@hono/node-server";
 // src/server/app.ts
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { z } from "zod";
+var CreateStoreBodySchema = z.object({
+  name: z.string().min(1, "Store name must be a non-empty string"),
+  type: z.enum(["file", "repo", "web"]),
+  path: z.string().min(1).optional(),
+  url: z.string().min(1).optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  branch: z.string().optional(),
+  depth: z.number().int().positive().optional()
+}).refine(
+  (data) => {
+    switch (data.type) {
+      case "file":
+        return data.path !== void 0;
+      case "web":
+        return data.url !== void 0;
+      case "repo":
+        return data.path !== void 0 || data.url !== void 0;
+    }
+  },
+  { message: "Missing required field: file stores need path, web stores need url, repo stores need path or url" }
+);
+var SearchBodySchema = z.object({
+  query: z.string().min(1, "Query must be a non-empty string"),
+  detail: z.enum(["minimal", "contextual", "full"]).optional(),
+  limit: z.number().int().positive().optional(),
+  stores: z.array(z.string()).optional()
+});
 function createApp(services) {
   const app = new Hono();
   app.use("*", cors());
@@ -359,8 +389,11 @@ function createApp(services) {
   });
   app.post("/api/stores", async (c) => {
     const jsonData = await c.req.json();
-    const body = jsonData;
-    const result = await services.store.create(body);
+    const parseResult = CreateStoreBodySchema.safeParse(jsonData);
+    if (!parseResult.success) {
+      return c.json({ error: parseResult.error.issues[0]?.message ?? "Invalid request body" }, 400);
+    }
+    const result = await services.store.create(parseResult.data);
     if (result.success) {
       return c.json(result.data, 201);
     }
@@ -379,15 +412,21 @@ function createApp(services) {
     return c.json({ error: result.error.message }, 400);
   });
   app.post("/api/search", async (c) => {
-    const body = await c.req.json();
+    const jsonData = await c.req.json();
+    const parseResult = SearchBodySchema.safeParse(jsonData);
+    if (!parseResult.success) {
+      return c.json({ error: parseResult.error.issues[0]?.message ?? "Invalid request body" }, 400);
+    }
     const storeIds = (await services.store.list()).map((s) => s.id);
     for (const id of storeIds) {
       await services.lance.initialize(id);
     }
+    const requestedStores = parseResult.data.stores !== void 0 ? parseResult.data.stores.map((s) => createStoreId(s)) : storeIds;
     const query = {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      ...body,
-      stores: body.stores !== void 0 ? body.stores : storeIds
+      query: parseResult.data.query,
+      detail: parseResult.data.detail ?? "minimal",
+      limit: parseResult.data.limit ?? 10,
+      stores: requestedStores
     };
     const results = await services.search.search(query);
     return c.json(results);
@@ -526,7 +565,7 @@ function createCrawlCommand(getOptions) {
 
 // src/cli/commands/setup.ts
 import { Command as Command7 } from "commander";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import { existsSync } from "fs";
 import { mkdir } from "fs/promises";
 import { join as join2 } from "path";
@@ -627,14 +666,17 @@ Setting up ${String(repos.length)} repositories...
           if (options.skipClone !== true) {
             if (existsSync(repoPath)) {
               spinner.text = `${repo.name}: Already cloned, pulling latest...`;
-              try {
-                execSync("git pull --ff-only", { cwd: repoPath, stdio: "pipe" });
-              } catch {
+              const pullResult = spawnSync("git", ["pull", "--ff-only"], { cwd: repoPath, stdio: "pipe" });
+              if (pullResult.status !== 0) {
                 spinner.text = `${repo.name}: Pull skipped (local changes)`;
               }
             } else {
               spinner.text = `${repo.name}: Cloning...`;
-              execSync(`git clone ${repo.url} "${repoPath}"`, { stdio: "pipe" });
+              const cloneResult = spawnSync("git", ["clone", repo.url, repoPath], { stdio: "pipe" });
+              if (cloneResult.status !== 0) {
+                const errorMessage = cloneResult.stderr.length > 0 ? cloneResult.stderr.toString() : "Git clone failed";
+                throw new Error(errorMessage);
+              }
             }
           }
           spinner.text = `${repo.name}: Creating store...`;

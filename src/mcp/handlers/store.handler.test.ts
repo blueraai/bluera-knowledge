@@ -266,18 +266,17 @@ describe('store.handler', () => {
       ).rejects.toThrow(/Git clone failed/);
     });
 
-    it('should create store even with nonexistent path', async () => {
-      // File store creation doesn't validate path existence
+    it('should reject store with nonexistent path', async () => {
+      // File store creation validates path existence for security
       const args: CreateStoreArgs = {
         name: 'bad-store',
         type: 'file',
         source: '/nonexistent/path/that/does/not/exist'
       };
 
-      const result = await handleCreateStore(args, mockContext);
-      const data = JSON.parse(result.content[0].text);
-      expect(data.store.name).toBe('bad-store');
-      expect(data.job.id).toBeDefined();
+      await expect(handleCreateStore(args, mockContext)).rejects.toThrow(
+        /Directory does not exist/
+      );
     });
   });
 
