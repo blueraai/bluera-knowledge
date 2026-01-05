@@ -331,6 +331,33 @@ describe('Setup Command - Execution Tests', () => {
       expect(mockServices.store.create).toHaveBeenCalled();
     });
 
+    it('handles clone failure with empty stderr', async () => {
+      const { existsSync } = await import('node:fs');
+      const { mkdir } = await import('node:fs/promises');
+      const { spawnSync } = await import('node:child_process');
+
+      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(mkdir).mockResolvedValue(undefined);
+
+      // Clone fails with empty stderr - should use fallback message
+      vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: Buffer.from(''), stderr: Buffer.from('') });
+
+      vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
+
+      const command = createSetupCommand(getOptions);
+      const reposCmd = command.commands.find(c => c.name() === 'repos');
+
+      const actionHandler = (reposCmd as any)._actionHandler;
+      reposCmd.parseOptions(['--only', 'claude-code-docs']);
+      await actionHandler([]);
+
+      // Should fail and show spinner.fail
+      const ora = (await import('ora')).default;
+      expect(ora).toHaveBeenCalled();
+      const spinnerInstance = vi.mocked(ora).mock.results[0]?.value;
+      expect(spinnerInstance.fail).toHaveBeenCalled();
+    });
+
     it('skips cloning when --skip-clone flag is set', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');

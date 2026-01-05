@@ -241,6 +241,87 @@ describe('Server App - POST /api/stores', () => {
       error: 'Invalid path'
     });
   });
+
+  it('returns 400 when file store missing path', async () => {
+    const app = createApp(mockServices);
+    const res = await app.request('/api/stores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'bad-file-store',
+        type: 'file'
+        // missing path
+      })
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain('Missing required field');
+  });
+
+  it('returns 400 when web store missing url', async () => {
+    const app = createApp(mockServices);
+    const res = await app.request('/api/stores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'bad-web-store',
+        type: 'web'
+        // missing url
+      })
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain('Missing required field');
+  });
+
+  it('returns 400 when repo store missing both path and url', async () => {
+    const app = createApp(mockServices);
+    const res = await app.request('/api/stores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'bad-repo-store',
+        type: 'repo'
+        // missing both path and url
+      })
+    });
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toContain('Missing required field');
+  });
+
+  it('creates web store successfully', async () => {
+    const newStore: Store = {
+      id: createStoreId('web-store'),
+      name: 'web-store',
+      type: 'web',
+      url: 'https://example.com',
+      depth: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    vi.mocked(mockServices.store.create).mockResolvedValue({
+      success: true,
+      data: newStore
+    });
+
+    const app = createApp(mockServices);
+    const res = await app.request('/api/stores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'web-store',
+        type: 'web',
+        url: 'https://example.com'
+      })
+    });
+
+    expect(res.status).toBe(201);
+  });
 });
 
 describe('Server App - GET /api/stores/:id', () => {
