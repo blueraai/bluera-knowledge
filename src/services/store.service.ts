@@ -1,5 +1,5 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Store, FileStore, RepoStore, WebStore, StoreType } from '../types/store.js';
 import type { StoreId } from '../types/brands.js';
@@ -48,15 +48,26 @@ export class StoreService {
     let store: Store;
 
     switch (input.type) {
-      case 'file':
+      case 'file': {
         if (input.path === undefined) {
           return err(new Error('Path is required for file stores'));
+        }
+        // Normalize path to absolute path (security: prevents path confusion)
+        const normalizedPath = resolve(input.path);
+        // Validate directory exists
+        try {
+          const stats = await stat(normalizedPath);
+          if (!stats.isDirectory()) {
+            return err(new Error(`Path is not a directory: ${normalizedPath}`));
+          }
+        } catch {
+          return err(new Error(`Directory does not exist: ${normalizedPath}`));
         }
         store = {
           type: 'file',
           id,
           name: input.name,
-          path: input.path,
+          path: normalizedPath,
           description: input.description,
           tags: input.tags,
           status: 'ready',
@@ -64,6 +75,7 @@ export class StoreService {
           updatedAt: now,
         } satisfies FileStore;
         break;
+      }
 
       case 'repo': {
         let repoPath = input.path;
@@ -88,11 +100,14 @@ export class StoreService {
           return err(new Error('Path or URL required for repo stores'));
         }
 
+        // Normalize path to absolute path (security: prevents path confusion)
+        const normalizedRepoPath = resolve(repoPath);
+
         store = {
           type: 'repo',
           id,
           name: input.name,
-          path: repoPath,
+          path: normalizedRepoPath,
           url: input.url,
           branch: input.branch,
           description: input.description,

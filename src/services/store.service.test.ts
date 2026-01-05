@@ -22,7 +22,7 @@ describe('StoreService', () => {
     const result = await storeService.create({
       name: 'My Files',
       type: 'file',
-      path: '/path/to/files',
+      path: tempDir,
     });
 
     expect(result.success).toBe(true);
@@ -33,18 +33,23 @@ describe('StoreService', () => {
   });
 
   it('lists all stores', async () => {
-    await storeService.create({ name: 'Store 1', type: 'file', path: '/path/1' });
-    await storeService.create({ name: 'Store 2', type: 'repo', path: '/path/2' });
+    const dir1 = await mkdtemp(join(tmpdir(), 'store1-'));
+    const dir2 = await mkdtemp(join(tmpdir(), 'store2-'));
+    await storeService.create({ name: 'Store 1', type: 'file', path: dir1 });
+    await storeService.create({ name: 'Store 2', type: 'file', path: dir2 });
 
     const stores = await storeService.list();
     expect(stores).toHaveLength(2);
+
+    await rm(dir1, { recursive: true, force: true });
+    await rm(dir2, { recursive: true, force: true });
   });
 
   it('gets store by ID', async () => {
     const createResult = await storeService.create({
       name: 'Test Store',
       type: 'file',
-      path: '/path/test',
+      path: tempDir,
     });
 
     if (!createResult.success) throw new Error('Create failed');
@@ -57,7 +62,7 @@ describe('StoreService', () => {
     await storeService.create({
       name: 'Named Store',
       type: 'file',
-      path: '/path/named',
+      path: tempDir,
     });
 
     const store = await storeService.getByName('Named Store');
@@ -68,7 +73,7 @@ describe('StoreService', () => {
     const createResult = await storeService.create({
       name: 'To Delete',
       type: 'file',
-      path: '/path/delete',
+      path: tempDir,
     });
 
     if (!createResult.success) throw new Error('Create failed');
@@ -85,7 +90,7 @@ describe('StoreService', () => {
       const result = await storeService.create({
         name: 'Described Files',
         type: 'file',
-        path: '/path/to/files',
+        path: tempDir,
         description: 'My file collection'
       });
 
@@ -99,7 +104,7 @@ describe('StoreService', () => {
       const result = await storeService.create({
         name: 'Tagged Files',
         type: 'file',
-        path: '/path/to/files',
+        path: tempDir,
         tags: ['important', 'work']
       });
 
@@ -120,6 +125,19 @@ describe('StoreService', () => {
         expect(result.error.message).toContain('Path is required');
       }
     });
+
+    it('returns error when path does not exist', async () => {
+      const result = await storeService.create({
+        name: 'Bad Path',
+        type: 'file',
+        path: '/nonexistent/path'
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Directory does not exist');
+      }
+    });
   });
 
   describe('create repo store', () => {
@@ -127,13 +145,13 @@ describe('StoreService', () => {
       const result = await storeService.create({
         name: 'My Repo',
         type: 'repo',
-        path: '/path/to/repo'
+        path: tempDir
       });
 
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.type).toBe('repo');
-        expect(result.data.path).toBe('/path/to/repo');
+        expect(result.data.path).toBe(tempDir);
       }
     });
 
@@ -141,7 +159,7 @@ describe('StoreService', () => {
       const result = await storeService.create({
         name: 'Branched Repo',
         type: 'repo',
-        path: '/path/to/repo',
+        path: tempDir,
         branch: 'develop'
       });
 
@@ -221,54 +239,75 @@ describe('StoreService', () => {
 
   describe('duplicate name handling', () => {
     it('returns error when creating store with duplicate name', async () => {
+      const dir1 = await mkdtemp(join(tmpdir(), 'dup1-'));
+      const dir2 = await mkdtemp(join(tmpdir(), 'dup2-'));
+
       await storeService.create({
         name: 'Duplicate',
         type: 'file',
-        path: '/path/1'
+        path: dir1
       });
 
       const result = await storeService.create({
         name: 'Duplicate',
         type: 'file',
-        path: '/path/2'
+        path: dir2
       });
 
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.message).toContain('already exists');
       }
+
+      await rm(dir1, { recursive: true, force: true });
+      await rm(dir2, { recursive: true, force: true });
     });
   });
 
   describe('list with filter', () => {
     it('lists only file stores when type filter is file', async () => {
-      await storeService.create({ name: 'File 1', type: 'file', path: '/path/1' });
-      await storeService.create({ name: 'Repo 1', type: 'repo', path: '/path/2' });
+      const fileDir = await mkdtemp(join(tmpdir(), 'file1-'));
+      const repoDir = await mkdtemp(join(tmpdir(), 'repo1-'));
+      await storeService.create({ name: 'File 1', type: 'file', path: fileDir });
+      await storeService.create({ name: 'Repo 1', type: 'repo', path: repoDir });
       await storeService.create({ name: 'Web 1', type: 'web', url: 'https://example.com' });
 
       const stores = await storeService.list('file');
       expect(stores).toHaveLength(1);
       expect(stores[0].type).toBe('file');
+
+      await rm(fileDir, { recursive: true, force: true });
+      await rm(repoDir, { recursive: true, force: true });
     });
 
     it('lists only repo stores when type filter is repo', async () => {
-      await storeService.create({ name: 'File 1', type: 'file', path: '/path/1' });
-      await storeService.create({ name: 'Repo 1', type: 'repo', path: '/path/2' });
+      const fileDir = await mkdtemp(join(tmpdir(), 'file1-'));
+      const repoDir = await mkdtemp(join(tmpdir(), 'repo1-'));
+      await storeService.create({ name: 'File 1', type: 'file', path: fileDir });
+      await storeService.create({ name: 'Repo 1', type: 'repo', path: repoDir });
       await storeService.create({ name: 'Web 1', type: 'web', url: 'https://example.com' });
 
       const stores = await storeService.list('repo');
       expect(stores).toHaveLength(1);
       expect(stores[0].type).toBe('repo');
+
+      await rm(fileDir, { recursive: true, force: true });
+      await rm(repoDir, { recursive: true, force: true });
     });
 
     it('lists only web stores when type filter is web', async () => {
-      await storeService.create({ name: 'File 1', type: 'file', path: '/path/1' });
-      await storeService.create({ name: 'Repo 1', type: 'repo', path: '/path/2' });
+      const fileDir = await mkdtemp(join(tmpdir(), 'file1-'));
+      const repoDir = await mkdtemp(join(tmpdir(), 'repo1-'));
+      await storeService.create({ name: 'File 1', type: 'file', path: fileDir });
+      await storeService.create({ name: 'Repo 1', type: 'repo', path: repoDir });
       await storeService.create({ name: 'Web 1', type: 'web', url: 'https://example.com' });
 
       const stores = await storeService.list('web');
       expect(stores).toHaveLength(1);
       expect(stores[0].type).toBe('web');
+
+      await rm(fileDir, { recursive: true, force: true });
+      await rm(repoDir, { recursive: true, force: true });
     });
   });
 
@@ -277,7 +316,7 @@ describe('StoreService', () => {
       const createResult = await storeService.create({
         name: 'Test Store',
         type: 'file',
-        path: '/path/test'
+        path: tempDir
       });
 
       if (!createResult.success) throw new Error('Create failed');
@@ -290,7 +329,7 @@ describe('StoreService', () => {
       await storeService.create({
         name: 'Test Store',
         type: 'file',
-        path: '/path/test'
+        path: tempDir
       });
 
       const store = await storeService.getByIdOrName('Test Store');
@@ -308,7 +347,7 @@ describe('StoreService', () => {
       const createResult = await storeService.create({
         name: 'Original Name',
         type: 'file',
-        path: '/path/test'
+        path: tempDir
       });
 
       if (!createResult.success) throw new Error('Create failed');
@@ -327,7 +366,7 @@ describe('StoreService', () => {
       const createResult = await storeService.create({
         name: 'Test Store',
         type: 'file',
-        path: '/path/test'
+        path: tempDir
       });
 
       if (!createResult.success) throw new Error('Create failed');
@@ -346,7 +385,7 @@ describe('StoreService', () => {
       const createResult = await storeService.create({
         name: 'Test Store',
         type: 'file',
-        path: '/path/test'
+        path: tempDir
       });
 
       if (!createResult.success) throw new Error('Create failed');
@@ -365,7 +404,7 @@ describe('StoreService', () => {
       const createResult = await storeService.create({
         name: 'Test Store',
         type: 'file',
-        path: '/path/test'
+        path: tempDir
       });
 
       if (!createResult.success) throw new Error('Create failed');
@@ -409,10 +448,11 @@ describe('StoreService', () => {
 
   describe('persistence', () => {
     it('persists stores across service instances', async () => {
+      const storeDir = await mkdtemp(join(tmpdir(), 'persist-'));
       await storeService.create({
         name: 'Persistent Store',
         type: 'file',
-        path: '/path/test'
+        path: storeDir
       });
 
       // Create new service instance with same data dir
@@ -422,6 +462,8 @@ describe('StoreService', () => {
       const stores = await newService.list();
       expect(stores).toHaveLength(1);
       expect(stores[0].name).toBe('Persistent Store');
+
+      await rm(storeDir, { recursive: true, force: true });
     });
 
     it('initializes with empty stores when no registry file exists', async () => {

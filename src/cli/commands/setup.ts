@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -75,15 +75,20 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
             if (options.skipClone !== true) {
               if (existsSync(repoPath)) {
                 spinner.text = `${repo.name}: Already cloned, pulling latest...`;
-                try {
-                  execSync('git pull --ff-only', { cwd: repoPath, stdio: 'pipe' });
-                } catch {
+                const pullResult = spawnSync('git', ['pull', '--ff-only'], { cwd: repoPath, stdio: 'pipe' });
+                if (pullResult.status !== 0) {
                   // Pull failed (maybe diverged), that's okay
                   spinner.text = `${repo.name}: Pull skipped (local changes)`;
                 }
               } else {
                 spinner.text = `${repo.name}: Cloning...`;
-                execSync(`git clone ${repo.url} "${repoPath}"`, { stdio: 'pipe' });
+                const cloneResult = spawnSync('git', ['clone', repo.url, repoPath], { stdio: 'pipe' });
+                if (cloneResult.status !== 0) {
+                  const errorMessage = cloneResult.stderr.length > 0
+                    ? cloneResult.stderr.toString()
+                    : 'Git clone failed';
+                  throw new Error(errorMessage);
+                }
               }
             }
 

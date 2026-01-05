@@ -11,7 +11,7 @@ vi.mock('../../services/index.js', () => ({
 }));
 
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn()
+  spawnSync: vi.fn(() => ({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') }))
 }));
 
 vi.mock('node:fs', () => ({
@@ -119,11 +119,11 @@ describe('Setup Command - Execution Tests', () => {
     it('filters repos by partial name match', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -172,11 +172,11 @@ describe('Setup Command - Execution Tests', () => {
     it('handles comma-separated filter values', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -212,11 +212,11 @@ describe('Setup Command - Execution Tests', () => {
     it('clones new repos successfully', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -243,8 +243,9 @@ describe('Setup Command - Execution Tests', () => {
       await actionHandler([]);
 
       expect(mkdir).toHaveBeenCalled();
-      expect(execSync).toHaveBeenCalledWith(
-        expect.stringContaining('git clone'),
+      expect(spawnSync).toHaveBeenCalledWith(
+        'git',
+        expect.arrayContaining(['clone']),
         expect.anything()
       );
     });
@@ -252,11 +253,11 @@ describe('Setup Command - Execution Tests', () => {
     it('pulls latest changes for existing repos', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -282,8 +283,9 @@ describe('Setup Command - Execution Tests', () => {
       reposCmd.parseOptions(['--only', 'claude-code-docs']);
       await actionHandler([]);
 
-      expect(execSync).toHaveBeenCalledWith(
-        'git pull --ff-only',
+      expect(spawnSync).toHaveBeenCalledWith(
+        'git',
+        ['pull', '--ff-only'],
         expect.objectContaining({
           stdio: 'pipe'
         })
@@ -293,18 +295,13 @@ describe('Setup Command - Execution Tests', () => {
     it('handles pull failures gracefully', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(mkdir).mockResolvedValue(undefined);
 
-      // Pull fails but shouldn't stop execution
-      vi.mocked(execSync).mockImplementation((cmd) => {
-        if (typeof cmd === 'string' && cmd.includes('git pull')) {
-          throw new Error('Pull failed');
-        }
-        return Buffer.from('');
-      });
+      // Pull fails (non-zero status) but shouldn't stop execution
+      vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: Buffer.from(''), stderr: Buffer.from('Pull failed') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -337,11 +334,11 @@ describe('Setup Command - Execution Tests', () => {
     it('skips cloning when --skip-clone flag is set', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -367,7 +364,7 @@ describe('Setup Command - Execution Tests', () => {
       reposCmd.parseOptions(['--only', 'claude-code-docs', '--skip-clone']);
       await actionHandler([]);
 
-      expect(execSync).not.toHaveBeenCalled();
+      expect(spawnSync).not.toHaveBeenCalled();
       expect(mockServices.store.create).toHaveBeenCalled();
     });
   });
@@ -376,11 +373,11 @@ describe('Setup Command - Execution Tests', () => {
     it('creates new stores with correct metadata', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -419,11 +416,11 @@ describe('Setup Command - Execution Tests', () => {
     it('skips creating store if already exists', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue({
         id: 'existing-store',
@@ -453,11 +450,11 @@ describe('Setup Command - Execution Tests', () => {
     it('handles store creation failure', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -484,11 +481,11 @@ describe('Setup Command - Execution Tests', () => {
     it('indexes stores successfully', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName)
         .mockResolvedValueOnce(undefined) // First call - check if store exists
@@ -532,11 +529,11 @@ describe('Setup Command - Execution Tests', () => {
     it('skips indexing when --skip-index flag is set', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -569,11 +566,11 @@ describe('Setup Command - Execution Tests', () => {
     it('handles indexing failure', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName)
         .mockResolvedValueOnce(undefined)
@@ -619,11 +616,11 @@ describe('Setup Command - Execution Tests', () => {
     it('reports progress during indexing', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName)
         .mockResolvedValueOnce(undefined)
@@ -681,11 +678,11 @@ describe('Setup Command - Execution Tests', () => {
     it('creates repos directory if it does not exist', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -717,11 +714,11 @@ describe('Setup Command - Execution Tests', () => {
     it('uses custom repos directory when specified', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
@@ -759,11 +756,11 @@ describe('Setup Command - Execution Tests', () => {
     it('displays completion message after successful setup', async () => {
       const { existsSync } = await import('node:fs');
       const { mkdir } = await import('node:fs/promises');
-      const { execSync } = await import('node:child_process');
+      const { spawnSync } = await import('node:child_process');
 
       vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(mkdir).mockResolvedValue(undefined);
-      vi.mocked(execSync).mockReturnValue(Buffer.from(''));
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: Buffer.from(''), stderr: Buffer.from('') });
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
       vi.mocked(mockServices.store.create).mockResolvedValue({
