@@ -498,169 +498,14 @@ function createCrawlCommand(getOptions) {
   });
 }
 
-// src/cli/commands/export.ts
-import { Command as Command7 } from "commander";
-import { writeFile } from "fs/promises";
-function createExportCommand(getOptions) {
-  return new Command7("export").description("Dump store documents + metadata to JSON file for backup/transfer").argument("<store>", "Store ID or name").argument("<output>", "Output file path").action(async (storeIdOrName, outputPath) => {
-    const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
-    const store = await services.store.getByIdOrName(storeIdOrName);
-    if (!store) {
-      console.error(`Error: Store not found: ${storeIdOrName}`);
-      process.exit(3);
-    }
-    await services.lance.initialize(store.id);
-    const dummyVector = new Array(384).fill(0);
-    const docs = await services.lance.search(store.id, dummyVector, 1e4);
-    const exportData = {
-      version: 1,
-      store,
-      documents: docs,
-      exportedAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    await writeFile(outputPath, JSON.stringify(exportData, null, 2));
-    const result = {
-      success: true,
-      store: store.name,
-      documentsExported: docs.length,
-      outputPath
-    };
-    if (globalOpts.format === "json") {
-      console.log(JSON.stringify(result, null, 2));
-    } else if (globalOpts.quiet !== true) {
-      console.log(`Exported ${String(docs.length)} documents to ${outputPath}`);
-    }
-  });
-}
-
-// src/cli/commands/import.ts
-import { Command as Command8 } from "commander";
-import { readFile } from "fs/promises";
-import ora3 from "ora";
-function createImportCommand(getOptions) {
-  return new Command8("import").description("Load exported JSON, re-embed documents, create new store").argument("<path>", "Import file path").argument("<name>", "Name for the new store").action(async (path, storeName) => {
-    const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
-    const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true;
-    let spinner;
-    const updateStatus = (text) => {
-      if (spinner !== void 0) {
-        spinner.text = text;
-      } else if (globalOpts.quiet !== true && globalOpts.format !== "json") {
-        console.log(text);
-      }
-    };
-    const failStatus = (text) => {
-      if (spinner !== void 0) {
-        spinner.fail(text);
-      } else if (globalOpts.format !== "json") {
-        console.error(text);
-      }
-    };
-    if (isInteractive) {
-      spinner = ora3("Reading import file...").start();
-    }
-    let data;
-    try {
-      const content = await readFile(path, "utf-8");
-      const parsed = JSON.parse(content);
-      if (typeof parsed !== "object" || parsed === null || !("store" in parsed) || !("documents" in parsed) || // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      !Array.isArray(parsed.documents)) {
-        throw new Error("Invalid format");
-      }
-      data = parsed;
-    } catch (error) {
-      failStatus("Failed to read import file");
-      if (error instanceof Error) {
-        if (error.message.includes("ENOENT")) {
-          console.error(`Error: File not found: ${path}`);
-        } else if (error.message.includes("JSON") || error.message === "Invalid format") {
-          console.error("Error: Invalid JSON format in import file");
-        } else {
-          console.error(`Error: ${error.message}`);
-        }
-      } else {
-        console.error("Error: Unknown error reading file");
-      }
-      process.exit(1);
-    }
-    updateStatus("Creating store...");
-    const result = await services.store.create({
-      name: storeName,
-      type: data.store.type,
-      path: data.store.path,
-      url: data.store.url,
-      description: data.store.description ?? `Imported from ${path}`,
-      tags: data.store.tags,
-      branch: data.store.branch,
-      depth: data.store.depth
-    });
-    if (!result.success) {
-      failStatus("Failed to create store");
-      console.error(`Error: ${result.error.message}`);
-      process.exit(1);
-    }
-    const store = result.data;
-    await services.lance.initialize(store.id);
-    try {
-      updateStatus(`Re-embedding ${String(data.documents.length)} documents...`);
-      const documents = [];
-      let processed = 0;
-      for (const doc of data.documents) {
-        const vector = await services.embeddings.embed(doc.content);
-        documents.push({
-          id: createDocumentId(doc.id),
-          content: doc.content,
-          vector,
-          metadata: {
-            ...doc.metadata,
-            storeId: store.id,
-            indexedAt: /* @__PURE__ */ new Date()
-          }
-        });
-        processed++;
-        updateStatus(`Re-embedding documents... (${String(processed)}/${String(data.documents.length)})`);
-      }
-      if (documents.length > 0) {
-        updateStatus("Adding documents to store...");
-        await services.lance.addDocuments(store.id, documents);
-      }
-      const importResult = {
-        success: true,
-        store: storeName,
-        storeId: store.id,
-        documentsImported: data.documents.length
-      };
-      if (globalOpts.format === "json") {
-        if (spinner !== void 0) spinner.stop();
-        console.log(JSON.stringify(importResult, null, 2));
-      } else if (spinner !== void 0) {
-        spinner.succeed(`Imported ${String(data.documents.length)} documents as "${storeName}"`);
-      } else if (globalOpts.quiet !== true) {
-        console.log(`Imported ${String(data.documents.length)} documents as "${storeName}"`);
-      }
-    } catch (error) {
-      failStatus("Failed to import documents");
-      if (error instanceof Error) {
-        console.error(`Error: ${error.message}`);
-      } else {
-        console.error("Error: Unknown error during import");
-      }
-      console.error("Note: Store was created but documents may not have been imported");
-      process.exit(1);
-    }
-  });
-}
-
 // src/cli/commands/setup.ts
-import { Command as Command9 } from "commander";
+import { Command as Command7 } from "commander";
 import { execSync } from "child_process";
 import { existsSync } from "fs";
 import { mkdir } from "fs/promises";
 import { join as join2 } from "path";
 import { homedir } from "os";
-import ora4 from "ora";
+import ora3 from "ora";
 
 // src/defaults/repos.ts
 var DEFAULT_REPOS = [
@@ -717,7 +562,7 @@ var DEFAULT_REPOS = [
 // src/cli/commands/setup.ts
 var DEFAULT_REPOS_DIR = join2(homedir(), ".bluera", "bluera-knowledge", "repos");
 function createSetupCommand(getOptions) {
-  const setup = new Command9("setup").description("Quick-start with pre-configured Claude/Anthropic documentation repos");
+  const setup = new Command7("setup").description("Quick-start with pre-configured Claude/Anthropic documentation repos");
   setup.command("repos").description("Clone repos to ~/.bluera/bluera-knowledge/repos/, create stores, index all content").option("--repos-dir <path>", "Clone destination (default: ~/.bluera/bluera-knowledge/repos/)", DEFAULT_REPOS_DIR).option("--skip-clone", "Don't clone; assume repos already exist locally").option("--skip-index", "Clone and create stores but don't index yet").option("--only <names>", "Only process matching repos (comma-separated, partial match)").option("--list", "Print available repos without cloning/indexing").action(async (options) => {
     const globalOpts = getOptions();
     if (options.list === true) {
@@ -750,7 +595,7 @@ Setting up ${String(repos.length)} repositories...
     await mkdir(options.reposDir, { recursive: true });
     for (const repo of repos) {
       const repoPath = join2(options.reposDir, repo.name);
-      const spinner = ora4(`Processing ${repo.name}`).start();
+      const spinner = ora3(`Processing ${repo.name}`).start();
       try {
         if (options.skipClone !== true) {
           if (existsSync(repoPath)) {
@@ -815,9 +660,9 @@ Setting up ${String(repos.length)} repositories...
 }
 
 // src/cli/commands/mcp.ts
-import { Command as Command10 } from "commander";
+import { Command as Command8 } from "commander";
 function createMCPCommand(getOptions) {
-  const mcp = new Command10("mcp").description("Start MCP (Model Context Protocol) server for AI agent integration").action(async () => {
+  const mcp = new Command8("mcp").description("Start MCP (Model Context Protocol) server for AI agent integration").action(async () => {
     const opts = getOptions();
     await runMCPServer({
       dataDir: opts.dataDir,
@@ -828,10 +673,10 @@ function createMCPCommand(getOptions) {
 }
 
 // src/cli/commands/plugin-api.ts
-import { Command as Command11 } from "commander";
+import { Command as Command9 } from "commander";
 
 // src/analysis/dependency-usage-analyzer.ts
-import { readFile as readFile2, readdir } from "fs/promises";
+import { readFile, readdir } from "fs/promises";
 import { existsSync as existsSync2 } from "fs";
 import { join as join3, extname } from "path";
 var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([
@@ -888,7 +733,7 @@ var DependencyUsageAnalyzer = class {
       let skippedCount = 0;
       for (const filePath of files) {
         try {
-          const content = await readFile2(filePath, "utf-8");
+          const content = await readFile(filePath, "utf-8");
           const imports = this.extractImportsForFile(filePath, content);
           for (const importInfo of imports) {
             const packageName = this.extractPackageName(importInfo.source);
@@ -1027,7 +872,7 @@ var DependencyUsageAnalyzer = class {
     const packageJsonPath = join3(projectRoot, "package.json");
     if (existsSync2(packageJsonPath)) {
       try {
-        const content = await readFile2(packageJsonPath, "utf-8");
+        const content = await readFile(packageJsonPath, "utf-8");
         const parsed = JSON.parse(content);
         if (isRecord(parsed)) {
           if (isRecord(parsed["dependencies"])) {
@@ -1047,7 +892,7 @@ var DependencyUsageAnalyzer = class {
     const reqPath = join3(projectRoot, "requirements.txt");
     if (existsSync2(reqPath)) {
       try {
-        const content = await readFile2(reqPath, "utf-8");
+        const content = await readFile(reqPath, "utf-8");
         const lines = content.split("\n");
         for (const line of lines) {
           const trimmed = line.trim();
@@ -1064,7 +909,7 @@ var DependencyUsageAnalyzer = class {
     const pyprojectPath = join3(projectRoot, "pyproject.toml");
     if (existsSync2(pyprojectPath)) {
       try {
-        const content = await readFile2(pyprojectPath, "utf-8");
+        const content = await readFile(pyprojectPath, "utf-8");
         const depMatches = content.matchAll(/"([a-zA-Z0-9_-]+)"/g);
         for (const match of depMatches) {
           if (match[1] !== void 0) {
@@ -1078,7 +923,7 @@ var DependencyUsageAnalyzer = class {
     const cargoPath = join3(projectRoot, "Cargo.toml");
     if (existsSync2(cargoPath)) {
       try {
-        const content = await readFile2(cargoPath, "utf-8");
+        const content = await readFile(cargoPath, "utf-8");
         const inDepsSection = /\[dependencies\]([\s\S]*?)(?=\n\[|$)/;
         const depsMatch = inDepsSection.exec(content);
         if (depsMatch !== null && depsMatch[1] !== void 0) {
@@ -1107,7 +952,7 @@ var DependencyUsageAnalyzer = class {
     const goModPath = join3(projectRoot, "go.mod");
     if (existsSync2(goModPath)) {
       try {
-        const content = await readFile2(goModPath, "utf-8");
+        const content = await readFile(goModPath, "utf-8");
         const requirePattern = /^\s*([a-zA-Z0-9._/-]+)\s+v[\d.]+/gm;
         for (const match of content.matchAll(requirePattern)) {
           if (match[1] !== void 0 && !match[1].startsWith("//")) {
@@ -1291,7 +1136,7 @@ var RepoUrlResolver = class {
 };
 
 // src/plugin/commands.ts
-import ora5 from "ora";
+import ora4 from "ora";
 async function handleAddRepo(args) {
   const services = await createServices(void 0, void 0, process.env["PWD"]);
   const storeName = args.name ?? extractRepoName(args.url);
@@ -1375,7 +1220,7 @@ async function handleSuggest() {
   const services = await createServices(void 0, void 0, projectRoot);
   const analyzer = new DependencyUsageAnalyzer();
   const resolver = new RepoUrlResolver();
-  const spinner = ora5("Scanning source files...").start();
+  const spinner = ora4("Scanning source files...").start();
   const result = await analyzer.analyze(projectRoot, (current, total, message) => {
     spinner.text = `${message} (${String(current)}/${String(total)})`;
   });
@@ -1427,22 +1272,22 @@ async function handleSuggest() {
 
 // src/cli/commands/plugin-api.ts
 function createAddRepoCommand(_getOptions) {
-  return new Command11("add-repo").description("Clone and index a library source repository").argument("<url>", "Git repository URL").option("--name <name>", "Store name (defaults to repo name)").option("--branch <branch>", "Git branch to clone").action(async (url, options) => {
+  return new Command9("add-repo").description("Clone and index a library source repository").argument("<url>", "Git repository URL").option("--name <name>", "Store name (defaults to repo name)").option("--branch <branch>", "Git branch to clone").action(async (url, options) => {
     await handleAddRepo({ url, ...options });
   });
 }
 function createAddFolderCommand(_getOptions) {
-  return new Command11("add-folder").description("Index a local folder of reference material").argument("<path>", "Folder path to index").option("--name <name>", "Store name (defaults to folder name)").action(async (path, options) => {
+  return new Command9("add-folder").description("Index a local folder of reference material").argument("<path>", "Folder path to index").option("--name <name>", "Store name (defaults to folder name)").action(async (path, options) => {
     await handleAddFolder({ path, ...options });
   });
 }
 function createStoresCommand(_getOptions) {
-  return new Command11("stores").description("List all indexed library stores").action(async () => {
+  return new Command9("stores").description("List all indexed library stores").action(async () => {
     await handleStores();
   });
 }
 function createSuggestCommand(_getOptions) {
-  return new Command11("suggest").description("Suggest important dependencies to add to knowledge stores").action(async () => {
+  return new Command9("suggest").description("Suggest important dependencies to add to knowledge stores").action(async () => {
     await handleSuggest();
   });
 }
@@ -1502,8 +1347,6 @@ program.addCommand(createSearchCommand(() => getGlobalOptions(program)));
 program.addCommand(createIndexCommand(() => getGlobalOptions(program)));
 program.addCommand(createServeCommand(() => getGlobalOptions(program)));
 program.addCommand(createCrawlCommand(() => getGlobalOptions(program)));
-program.addCommand(createExportCommand(() => getGlobalOptions(program)));
-program.addCommand(createImportCommand(() => getGlobalOptions(program)));
 program.addCommand(createSetupCommand(() => getGlobalOptions(program)));
 program.addCommand(createMCPCommand(() => getGlobalOptions(program)));
 if (process.argv.length <= 2) {

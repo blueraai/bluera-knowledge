@@ -565,15 +565,6 @@ metadata:
     });
   });
 
-  // Export/Import tests would require export/import service methods
-  // Skipping for now as they involve more complex CLI interactions
-  describe.skip('Export/Import Workflow', () => {
-    it.todo('exports a store');
-    it.todo('export file contains valid data');
-    it.todo('imports to a new store');
-    it.todo('imported store is searchable');
-  });
-
   describe('Workflow Performance', () => {
     it('completes full workflow within acceptable time', async () => {
       const workflowDir = join(fixturesWorkDir, 'perf-test');

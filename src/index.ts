@@ -9,8 +9,6 @@ import { createSearchCommand } from './cli/commands/search.js';
 import { createIndexCommand } from './cli/commands/index-cmd.js';
 import { createServeCommand } from './cli/commands/serve.js';
 import { createCrawlCommand } from './cli/commands/crawl.js';
-import { createExportCommand } from './cli/commands/export.js';
-import { createImportCommand } from './cli/commands/import.js';
 import { createSetupCommand } from './cli/commands/setup.js';
 import { createMCPCommand } from './cli/commands/mcp.js';
 import { createAddRepoCommand, createAddFolderCommand, createStoresCommand, createSuggestCommand } from './cli/commands/plugin-api.js';
@@ -97,8 +95,6 @@ program.addCommand(createSearchCommand(() => getGlobalOptions(program)));
 program.addCommand(createIndexCommand(() => getGlobalOptions(program)));
 program.addCommand(createServeCommand(() => getGlobalOptions(program)));
 program.addCommand(createCrawlCommand(() => getGlobalOptions(program)));
-program.addCommand(createExportCommand(() => getGlobalOptions(program)));
-program.addCommand(createImportCommand(() => getGlobalOptions(program)));
 program.addCommand(createSetupCommand(() => getGlobalOptions(program)));
 program.addCommand(createMCPCommand(() => getGlobalOptions(program)));
 
