@@ -1,0 +1,53 @@
+# Atomic Commits with Documentation Awareness
+
+Guidelines for creating well-organized commits with README.md and CLAUDE.md awareness.
+
+## Documentation Check
+
+Before committing, evaluate if changes need documentation updates.
+
+### README.md (User-facing documentation)
+
+| Change Type | README Section to Update |
+|-------------|-------------------------|
+| MCP tools added/removed/renamed | MCP Tools table, MCP Integration section |
+| New commands or skills | Commands/Skills documentation |
+| CLI interface changes | Usage examples |
+| Configuration changes | Configuration/Environment sections |
+| Breaking API changes | Upgrade/migration notes |
+| New features | Feature documentation |
+| Installation changes | Installation section |
+
+**Trigger files → check README.md:**
+- `src/mcp/server.ts` - MCP tool surface
+- `plugin.json` - Plugin metadata
+- `commands/*.md` - Command documentation
+
+### CLAUDE.md (Claude Code memory - hierarchical)
+
+CLAUDE.md stores context that helps future sessions "do the right thing". Update when:
+- You struggled with something and the insight would prevent future mistakes
+- Important patterns or conventions that aren't obvious from code alone
+- Workflows or commands that are non-trivial to discover
+
+CLAUDE.md is hierarchical - use the directory level matching the changed files. Use `@path/to/file` includes to stay DRY.
+
+| Change Scope | Which CLAUDE.md |
+|--------------|-----------------|
+| Project-wide (scripts, CI/CD, build) | Root CLAUDE.md |
+| Directory-specific patterns | Subdirectory CLAUDE.md (create if needed) |
+
+## Grouping Rules
+
+Identify logical features by grouping related files:
+- Same feature = same commit
+- Infrastructure/config = separate commit
+- Tests = with their implementation OR separate if test-only
+
+## Commit Message Format
+
+```
+<type>(<scope>): <description>
+```
+
+Types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`
