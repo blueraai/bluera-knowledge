@@ -229,13 +229,40 @@ export class PythonBridge {
   }
 
   stop(): Promise<void> {
-    if (this.process) {
+    if (!this.process) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
       this.stoppingIntentionally = true;
       this.rejectAllPending(new Error('Python bridge stopped'));
-      this.process.kill();
-      this.process = null;
-    }
-    return Promise.resolve();
+
+      // Wait for process to actually exit before resolving
+      const proc = this.process;
+      if (proc === null) {
+        resolve();
+        return;
+      }
+
+      // Set up exit handler to resolve when process terminates
+      const onExit = (): void => {
+        resolve();
+      };
+      proc.once('exit', onExit);
+
+      // Send SIGTERM to gracefully stop
+      proc.kill();
+
+      // Safety timeout in case process doesn't exit within 5 seconds
+      setTimeout(() => {
+        proc.removeListener('exit', onExit);
+        if (this.process === proc) {
+          proc.kill('SIGKILL'); // Force kill
+          this.process = null;
+        }
+        resolve();
+      }, 5000);
+    });
   }
 
   private rejectAllPending(error: Error): void {
