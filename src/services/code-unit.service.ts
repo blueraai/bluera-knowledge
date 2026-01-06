@@ -43,17 +43,83 @@ export class CodeUnitService {
 
     if (startLine === -1) return undefined;
 
-    // Find end line (naive: next empty line or next top-level declaration)
+    // Find end line using state machine that tracks strings and comments
     let endLine = startLine;
     let braceCount = 0;
     let foundFirstBrace = false;
 
-    // NOTE: This brace counting does not handle braces inside strings or comments.
-    // It may incorrectly determine boundaries if code contains braces in string literals.
+    // State machine for tracking context
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let inTemplateLiteral = false;
+    let inMultiLineComment = false;
+
     for (let i = startLine - 1; i < lines.length; i++) {
       const line = lines[i] ?? '';
+      let inSingleLineComment = false;
 
-      for (const char of line) {
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        const prevChar = j > 0 ? line[j - 1] : '';
+        const nextChar = j < line.length - 1 ? line[j + 1] : '';
+
+        // Skip escaped characters within strings
+        if (prevChar === '\\' && (inSingleQuote || inDoubleQuote || inTemplateLiteral)) {
+          continue;
+        }
+
+        // Inside multi-line comment - only look for end marker
+        if (inMultiLineComment) {
+          if (char === '*' && nextChar === '/') {
+            inMultiLineComment = false;
+            j++; // Skip the /
+          }
+          continue;
+        }
+
+        // Inside single-line comment - skip rest of line
+        if (inSingleLineComment) {
+          continue;
+        }
+
+        // Inside a string - only look for closing delimiter
+        if (inSingleQuote) {
+          if (char === "'") inSingleQuote = false;
+          continue;
+        }
+        if (inDoubleQuote) {
+          if (char === '"') inDoubleQuote = false;
+          continue;
+        }
+        if (inTemplateLiteral) {
+          if (char === '`') inTemplateLiteral = false;
+          continue;
+        }
+
+        // Not inside any special context - check for context starters
+        if (char === '/' && nextChar === '*') {
+          inMultiLineComment = true;
+          j++; // Skip the *
+          continue;
+        }
+        if (char === '/' && nextChar === '/') {
+          inSingleLineComment = true;
+          continue;
+        }
+        if (char === "'") {
+          inSingleQuote = true;
+          continue;
+        }
+        if (char === '"') {
+          inDoubleQuote = true;
+          continue;
+        }
+        if (char === '`') {
+          inTemplateLiteral = true;
+          continue;
+        }
+
+        // Count braces (we're not inside any string or comment)
         if (char === '{') {
           braceCount++;
           foundFirstBrace = true;
