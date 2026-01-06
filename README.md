@@ -1270,8 +1270,13 @@ Replace the path with your actual repo location. This creates a separate `bluera
 | `bun run test:coverage` | 📊 Run tests with coverage | Before committing, CI checks |
 | `bun run lint` | 🔍 Run ESLint | Check code style issues |
 | `bun run typecheck` | 🔒 Run TypeScript type checking | Verify type safety |
-| `bun run precommit` | ✨ Full validation suite | Before committing (runs automatically via husky) |
-| `bun run prepush` | 📊 Run coverage tests | Runs automatically before `git push` (via husky) |
+| `bun run precommit` | ✨ Full validation suite (verbose) | Manual testing with full output |
+| `bun run prepush` | 📊 Run coverage tests (verbose) | Manual testing with full output |
+| `bun run lint:quiet` | 🔇 ESLint (minimal output) | Used by git hooks |
+| `bun run typecheck:quiet` | 🔇 Type check (minimal output) | Used by git hooks |
+| `bun run test:changed:quiet` | 🔇 Test changed files (minimal) | Used by git hooks |
+| `bun run test:coverage:quiet` | 🔇 Coverage (minimal output) | Used by git hooks |
+| `bun run build:quiet` | 🔇 Build (minimal output) | Used by git hooks |
 
 ### 🔄 Automatic Build & Dist Commit
 
