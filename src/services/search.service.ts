@@ -12,9 +12,17 @@ const logger = createLogger('search-service');
 
 /**
  * Query intent classification for context-aware ranking.
- * Phase 1: Different intents prioritize different content types.
+ * Different intents prioritize different content types.
  */
 export type QueryIntent = 'how-to' | 'implementation' | 'conceptual' | 'comparison' | 'debugging';
+
+/**
+ * Classified intent with confidence score for multi-intent queries.
+ */
+export interface ClassifiedIntent {
+  intent: QueryIntent;
+  confidence: number;
+}
 
 /**
  * Intent-based file type multipliers - CONSERVATIVE version.
@@ -87,101 +95,120 @@ const FRAMEWORK_PATTERNS: Array<{ pattern: RegExp; terms: string[] }> = [
   { pattern: /\bjwt\b/i, terms: ['jwt', 'jsonwebtoken', 'json-web-token'] },
 ];
 
+// Pattern definitions for intent classification
+const HOW_TO_PATTERNS = [
+  /how (do|can|should|would) (i|you|we)/i,
+  /how to\b/i,
+  /what('s| is) the (best |right |correct )?(way|approach) to/i,
+  /i (need|want|have) to/i,
+  /show me how/i,
+  /\bwhat's the syntax\b/i,
+  /\bhow do i (use|create|make|set up|configure|implement|add|get)\b/i,
+  /\bi'm (trying|building|creating|making)\b/i,
+];
+
+const IMPLEMENTATION_PATTERNS = [
+  /how (does|is) .* (implemented|work internally)/i,
+  /\binternal(ly)?\b/i,
+  /\bsource code\b/i,
+  /\bunder the hood\b/i,
+  /\bimplementation (of|details?)\b/i,
+];
+
+const COMPARISON_PATTERNS = [
+  /\b(vs\.?|versus)\b/i,
+  /\bdifference(s)? between\b/i,
+  /\bcompare\b/i,
+  /\bshould (i|we) use .* or\b/i,
+  /\bwhat's the difference\b/i,
+  /\bwhich (one|is better)\b/i,
+  /\bwhen (should|to) use\b/i,
+];
+
+const DEBUGGING_PATTERNS = [
+  /\b(error|bug|issue|problem|crash|fail|broken|wrong)\b/i,
+  /\bdoesn't (work|compile|run)\b/i,
+  /\bisn't (working|updating|rendering)\b/i,
+  /\bwhy (is|does|doesn't|isn't)\b/i,
+  /\bwhat('s| is) (wrong|happening|going on)\b/i,
+  /\bwhat am i doing wrong\b/i,
+  /\bnot (working|updating|showing)\b/i,
+  /\bhow do i (fix|debug|solve|resolve)\b/i,
+];
+
+const CONCEPTUAL_PATTERNS = [
+  /\bwhat (is|are)\b/i,
+  /\bexplain\b/i,
+  /\bwhat does .* (mean|do)\b/i,
+  /\bhow does .* work\b/i,
+  /\bwhat('s| is) the (purpose|point|idea)\b/i,
+];
+
 /**
- * Classify the intent of a search query.
- * This helps adjust ranking based on what kind of answer the user wants.
+ * Classify query intents with confidence scores.
+ * Returns all matching intents, allowing queries to have multiple intents.
  */
-function classifyQueryIntent(query: string): QueryIntent {
+function classifyQueryIntents(query: string): ClassifiedIntent[] {
   const q = query.toLowerCase();
+  const intents: ClassifiedIntent[] = [];
 
-  // How-to patterns: user wants to learn how to use/do something
-  const howToPatterns = [
-    /how (do|can|should|would) (i|you|we)/i,
-    /how to\b/i,
-    /what('s| is) the (best |right |correct )?(way|approach) to/i,
-    /i (need|want|have) to/i,
-    /show me how/i,
-    /\bwhat's the syntax\b/i,
-    /\bhow do i (use|create|make|set up|configure|implement|add|get)\b/i,
-    /\bi'm (trying|building|creating|making)\b/i,
-  ];
-
-  // Implementation patterns: user wants to understand internals
-  const implementationPatterns = [
-    /how (does|is) .* (implemented|work internally)/i,
-    /\binternal(ly)?\b/i,
-    /\bsource code\b/i,
-    /\bunder the hood\b/i,
-    /\bimplementation (of|details?)\b/i,
-  ];
-
-  // Comparison patterns: user is deciding between options
-  const comparisonPatterns = [
-    /\b(vs\.?|versus)\b/i,
-    /\bdifference(s)? between\b/i,
-    /\bcompare\b/i,
-    /\bshould (i|we) use .* or\b/i,
-    /\bwhat's the difference\b/i,
-    /\bwhich (one|is better)\b/i,
-    /\bwhen (should|to) use\b/i,
-  ];
-
-  // Debugging patterns: user is troubleshooting a problem
-  const debuggingPatterns = [
-    /\b(error|bug|issue|problem|crash|fail|broken|wrong)\b/i,
-    /\bdoesn't (work|compile|run)\b/i,
-    /\bisn't (working|updating|rendering)\b/i,
-    /\bwhy (is|does|doesn't|isn't)\b/i,
-    /\bwhat('s| is) (wrong|happening|going on)\b/i,
-    /\bwhat am i doing wrong\b/i,
-    /\bnot (working|updating|showing)\b/i,
-    /\bhow do i (fix|debug|solve|resolve)\b/i,
-  ];
-
-  // Conceptual patterns: user wants to understand a concept
-  const conceptualPatterns = [
-    /\bwhat (is|are)\b/i,
-    /\bexplain\b/i,
-    /\bwhat does .* (mean|do)\b/i,
-    /\bhow does .* work\b/i,
-    /\bwhat('s| is) the (purpose|point|idea)\b/i,
-  ];
-
-  // Check patterns in order of specificity
-  if (implementationPatterns.some(p => p.test(q))) {
-    return 'implementation';
+  // Check all pattern groups and add matching intents with confidence
+  if (IMPLEMENTATION_PATTERNS.some(p => p.test(q))) {
+    intents.push({ intent: 'implementation', confidence: 0.9 });
   }
 
-  if (debuggingPatterns.some(p => p.test(q))) {
-    return 'debugging';
+  if (DEBUGGING_PATTERNS.some(p => p.test(q))) {
+    intents.push({ intent: 'debugging', confidence: 0.85 });
   }
 
-  if (comparisonPatterns.some(p => p.test(q))) {
-    return 'comparison';
+  if (COMPARISON_PATTERNS.some(p => p.test(q))) {
+    intents.push({ intent: 'comparison', confidence: 0.8 });
   }
 
-  if (howToPatterns.some(p => p.test(q))) {
-    return 'how-to';
+  if (HOW_TO_PATTERNS.some(p => p.test(q))) {
+    intents.push({ intent: 'how-to', confidence: 0.75 });
   }
 
-  if (conceptualPatterns.some(p => p.test(q))) {
-    return 'conceptual';
+  if (CONCEPTUAL_PATTERNS.some(p => p.test(q))) {
+    intents.push({ intent: 'conceptual', confidence: 0.7 });
   }
 
-  // Default to how-to as most queries are seeking practical usage
-  return 'how-to';
+  // If no patterns match, use how-to as the baseline intent
+  if (intents.length === 0) {
+    intents.push({ intent: 'how-to', confidence: 0.5 });
+  }
+
+  // Sort by confidence descending
+  return intents.sort((a, b) => b.confidence - a.confidence);
 }
 
-interface RRFConfig {
-  k: number;
-  vectorWeight: number;
-  ftsWeight: number;
+/**
+ * Get primary intent for logging/display purposes.
+ */
+function getPrimaryIntent(intents: ClassifiedIntent[]): QueryIntent {
+  return intents[0]?.intent ?? 'how-to';
+}
+
+/**
+ * RRF presets for different content types.
+ * Web/docs content uses higher k to reduce noise from repetitive structure.
+ */
+const RRF_PRESETS = {
+  code: { k: 20, vectorWeight: 0.6, ftsWeight: 0.4 },
+  web: { k: 30, vectorWeight: 0.55, ftsWeight: 0.45 },
+} as const;
+
+/**
+ * Detect if results are primarily web content (have urls vs file paths).
+ */
+function detectContentType(results: SearchResult[]): 'web' | 'code' {
+  const webCount = results.filter(r => 'url' in r.metadata).length;
+  return webCount > results.length / 2 ? 'web' : 'code';
 }
 
 export class SearchService {
   private readonly lanceStore: LanceStore;
   private readonly embeddingEngine: EmbeddingEngine;
-  private readonly rrfConfig: RRFConfig;
   private readonly codeUnitService: CodeUnitService;
   private readonly codeGraphService: CodeGraphService | undefined;
   private readonly graphCache: Map<string, CodeGraph | null>;
@@ -189,13 +216,10 @@ export class SearchService {
   constructor(
     lanceStore: LanceStore,
     embeddingEngine: EmbeddingEngine,
-    // Lower k value (20 vs 60) produces more differentiated scores for top results
-    rrfConfig: RRFConfig = { k: 20, vectorWeight: 0.6, ftsWeight: 0.4 },
     codeGraphService?: CodeGraphService
   ) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
-    this.rrfConfig = rrfConfig;
     this.codeUnitService = new CodeUnitService();
     this.codeGraphService = codeGraphService;
     this.graphCache = new Map();
@@ -223,7 +247,8 @@ export class SearchService {
     const limit = query.limit ?? 10;
     const stores = query.stores ?? [];
     const detail = query.detail ?? 'minimal';
-    const intent = classifyQueryIntent(query.query);
+    const intents = classifyQueryIntents(query.query);
+    const primaryIntent = getPrimaryIntent(intents);
 
     logger.debug({
       query: query.query,
@@ -231,7 +256,8 @@ export class SearchService {
       limit,
       stores,
       detail,
-      intent,
+      intent: primaryIntent,
+      intents,
     }, 'Search query received');
 
     let allResults: SearchResult[] = [];
@@ -274,7 +300,7 @@ export class SearchService {
       mode,
       resultCount: enhancedResults.length,
       dedupedFrom: allResults.length,
-      intent,
+      intents: intents.map(i => `${i.intent}(${i.confidence.toFixed(2)})`),
       timeMs,
     }, 'Search complete');
 
@@ -297,20 +323,22 @@ export class SearchService {
     const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
 
     for (const result of results) {
-      // Use file path as the source key, fallback to document ID
+      // Use file path as the source key (or url for web content, or id as last resort)
       const sourceKey = result.metadata.path ?? result.metadata.url ?? result.id;
 
       const existing = bySource.get(sourceKey);
       if (!existing) {
         bySource.set(sourceKey, result);
       } else {
-        // Compare: prefer chunk with more query terms in content
+        // Score-weighted relevance: accounts for fileType/framework boosts
         const existingTermCount = this.countQueryTerms(existing.content, queryTerms);
         const newTermCount = this.countQueryTerms(result.content, queryTerms);
 
-        // Prefer chunk with more query terms, or higher score if same
-        if (newTermCount > existingTermCount ||
-            (newTermCount === existingTermCount && result.score > existing.score)) {
+        // Weight term count by score to account for ranking boosts
+        const existingRelevance = existingTermCount * existing.score;
+        const newRelevance = newTermCount * result.score;
+
+        if (newRelevance > existingRelevance) {
           bySource.set(sourceKey, result);
         }
       }
@@ -376,8 +404,8 @@ export class SearchService {
     limit: number,
     threshold?: number
   ): Promise<SearchResult[]> {
-    // Phase 1: Classify query intent for context-aware ranking
-    const intent = classifyQueryIntent(query);
+    // Classify query intents for context-aware ranking (supports multiple intents)
+    const intents = classifyQueryIntents(query);
 
     // Get both result sets
     const [vectorResults, ftsResults] = await Promise.all([
@@ -416,7 +444,10 @@ export class SearchService {
         frameworkBoost: number;
       };
     }> = [];
-    const { k, vectorWeight, ftsWeight } = this.rrfConfig;
+
+    // Select RRF config based on content type (web vs code)
+    const contentType = detectContentType([...allDocs.values()]);
+    const { k, vectorWeight, ftsWeight } = RRF_PRESETS[contentType];
 
     for (const [id, result] of allDocs) {
       const vectorRank = vectorRanks.get(id) ?? Infinity;
@@ -425,11 +456,11 @@ export class SearchService {
       const vectorRRF = vectorRank !== Infinity ? vectorWeight / (k + vectorRank) : 0;
       const ftsRRF = ftsRank !== Infinity ? ftsWeight / (k + ftsRank) : 0;
 
-      // Apply file-type boost (base + intent-adjusted)
+      // Apply file-type boost (base + multi-intent-adjusted)
       const fileTypeBoost = this.getFileTypeBoost(
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         result.metadata['fileType'] as string | undefined,
-        intent
+        intents
       );
 
       // Apply framework context boost
@@ -514,7 +545,7 @@ export class SearchService {
    * Phase 4: Strengthened boosts for better documentation ranking.
    * Phase 1: Intent-based adjustments for context-aware ranking.
    */
-  private getFileTypeBoost(fileType: string | undefined, intent: QueryIntent): number {
+  private getFileTypeBoost(fileType: string | undefined, intents: ClassifiedIntent[]): number {
     // Base file-type boosts
     let baseBoost: number;
     switch (fileType) {
@@ -543,11 +574,22 @@ export class SearchService {
         baseBoost = 1.0;
     }
 
-    // Apply intent-based multiplier
-    const intentBoosts = INTENT_FILE_BOOSTS[intent];
-    const intentMultiplier = intentBoosts[fileType ?? 'other'] ?? 1.0;
+    // Blend intent-based multipliers weighted by confidence
+    let weightedMultiplier = 0;
+    let totalConfidence = 0;
 
-    return baseBoost * intentMultiplier;
+    for (const { intent, confidence } of intents) {
+      const intentBoosts = INTENT_FILE_BOOSTS[intent];
+      const multiplier = intentBoosts[fileType ?? 'other'] ?? 1.0;
+      weightedMultiplier += multiplier * confidence;
+      totalConfidence += confidence;
+    }
+
+    const blendedMultiplier = totalConfidence > 0
+      ? weightedMultiplier / totalConfidence
+      : 1.0;
+
+    return baseBoost * blendedMultiplier;
   }
 
   /**

@@ -17,6 +17,19 @@ export interface Chunk {
   docSummary?: string | undefined;
 }
 
+/**
+ * Preset configurations for different content types.
+ * Code uses smaller chunks for precise symbol matching.
+ * Web/docs use larger chunks to preserve prose context.
+ */
+const CHUNK_PRESETS = {
+  code: { chunkSize: 768, chunkOverlap: 100 },
+  web: { chunkSize: 1200, chunkOverlap: 200 },
+  docs: { chunkSize: 1200, chunkOverlap: 200 },
+} as const;
+
+export type ContentType = keyof typeof CHUNK_PRESETS;
+
 export class ChunkingService {
   private readonly chunkSize: number;
   private readonly chunkOverlap: number;
@@ -24,6 +37,16 @@ export class ChunkingService {
   constructor(config: ChunkConfig) {
     this.chunkSize = config.chunkSize;
     this.chunkOverlap = config.chunkOverlap;
+  }
+
+  /**
+   * Create a ChunkingService with preset configuration for a content type.
+   * - 'code': Smaller chunks (768/100) for precise code symbol matching
+   * - 'web': Larger chunks (1200/200) for web prose content
+   * - 'docs': Larger chunks (1200/200) for documentation
+   */
+  static forContentType(type: ContentType): ChunkingService {
+    return new ChunkingService(CHUNK_PRESETS[type]);
   }
 
   /**

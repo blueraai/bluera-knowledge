@@ -869,79 +869,92 @@ var FRAMEWORK_PATTERNS = [
   { pattern: /\btypescript\b/i, terms: ["typescript", "ts"] },
   { pattern: /\bjwt\b/i, terms: ["jwt", "jsonwebtoken", "json-web-token"] }
 ];
-function classifyQueryIntent(query) {
+var HOW_TO_PATTERNS = [
+  /how (do|can|should|would) (i|you|we)/i,
+  /how to\b/i,
+  /what('s| is) the (best |right |correct )?(way|approach) to/i,
+  /i (need|want|have) to/i,
+  /show me how/i,
+  /\bwhat's the syntax\b/i,
+  /\bhow do i (use|create|make|set up|configure|implement|add|get)\b/i,
+  /\bi'm (trying|building|creating|making)\b/i
+];
+var IMPLEMENTATION_PATTERNS = [
+  /how (does|is) .* (implemented|work internally)/i,
+  /\binternal(ly)?\b/i,
+  /\bsource code\b/i,
+  /\bunder the hood\b/i,
+  /\bimplementation (of|details?)\b/i
+];
+var COMPARISON_PATTERNS = [
+  /\b(vs\.?|versus)\b/i,
+  /\bdifference(s)? between\b/i,
+  /\bcompare\b/i,
+  /\bshould (i|we) use .* or\b/i,
+  /\bwhat's the difference\b/i,
+  /\bwhich (one|is better)\b/i,
+  /\bwhen (should|to) use\b/i
+];
+var DEBUGGING_PATTERNS = [
+  /\b(error|bug|issue|problem|crash|fail|broken|wrong)\b/i,
+  /\bdoesn't (work|compile|run)\b/i,
+  /\bisn't (working|updating|rendering)\b/i,
+  /\bwhy (is|does|doesn't|isn't)\b/i,
+  /\bwhat('s| is) (wrong|happening|going on)\b/i,
+  /\bwhat am i doing wrong\b/i,
+  /\bnot (working|updating|showing)\b/i,
+  /\bhow do i (fix|debug|solve|resolve)\b/i
+];
+var CONCEPTUAL_PATTERNS = [
+  /\bwhat (is|are)\b/i,
+  /\bexplain\b/i,
+  /\bwhat does .* (mean|do)\b/i,
+  /\bhow does .* work\b/i,
+  /\bwhat('s| is) the (purpose|point|idea)\b/i
+];
+function classifyQueryIntents(query) {
   const q = query.toLowerCase();
-  const howToPatterns = [
-    /how (do|can|should|would) (i|you|we)/i,
-    /how to\b/i,
-    /what('s| is) the (best |right |correct )?(way|approach) to/i,
-    /i (need|want|have) to/i,
-    /show me how/i,
-    /\bwhat's the syntax\b/i,
-    /\bhow do i (use|create|make|set up|configure|implement|add|get)\b/i,
-    /\bi'm (trying|building|creating|making)\b/i
-  ];
-  const implementationPatterns = [
-    /how (does|is) .* (implemented|work internally)/i,
-    /\binternal(ly)?\b/i,
-    /\bsource code\b/i,
-    /\bunder the hood\b/i,
-    /\bimplementation (of|details?)\b/i
-  ];
-  const comparisonPatterns = [
-    /\b(vs\.?|versus)\b/i,
-    /\bdifference(s)? between\b/i,
-    /\bcompare\b/i,
-    /\bshould (i|we) use .* or\b/i,
-    /\bwhat's the difference\b/i,
-    /\bwhich (one|is better)\b/i,
-    /\bwhen (should|to) use\b/i
-  ];
-  const debuggingPatterns = [
-    /\b(error|bug|issue|problem|crash|fail|broken|wrong)\b/i,
-    /\bdoesn't (work|compile|run)\b/i,
-    /\bisn't (working|updating|rendering)\b/i,
-    /\bwhy (is|does|doesn't|isn't)\b/i,
-    /\bwhat('s| is) (wrong|happening|going on)\b/i,
-    /\bwhat am i doing wrong\b/i,
-    /\bnot (working|updating|showing)\b/i,
-    /\bhow do i (fix|debug|solve|resolve)\b/i
-  ];
-  const conceptualPatterns = [
-    /\bwhat (is|are)\b/i,
-    /\bexplain\b/i,
-    /\bwhat does .* (mean|do)\b/i,
-    /\bhow does .* work\b/i,
-    /\bwhat('s| is) the (purpose|point|idea)\b/i
-  ];
-  if (implementationPatterns.some((p) => p.test(q))) {
-    return "implementation";
+  const intents = [];
+  if (IMPLEMENTATION_PATTERNS.some((p) => p.test(q))) {
+    intents.push({ intent: "implementation", confidence: 0.9 });
   }
-  if (debuggingPatterns.some((p) => p.test(q))) {
-    return "debugging";
+  if (DEBUGGING_PATTERNS.some((p) => p.test(q))) {
+    intents.push({ intent: "debugging", confidence: 0.85 });
   }
-  if (comparisonPatterns.some((p) => p.test(q))) {
-    return "comparison";
+  if (COMPARISON_PATTERNS.some((p) => p.test(q))) {
+    intents.push({ intent: "comparison", confidence: 0.8 });
   }
-  if (howToPatterns.some((p) => p.test(q))) {
-    return "how-to";
+  if (HOW_TO_PATTERNS.some((p) => p.test(q))) {
+    intents.push({ intent: "how-to", confidence: 0.75 });
   }
-  if (conceptualPatterns.some((p) => p.test(q))) {
-    return "conceptual";
+  if (CONCEPTUAL_PATTERNS.some((p) => p.test(q))) {
+    intents.push({ intent: "conceptual", confidence: 0.7 });
   }
-  return "how-to";
+  if (intents.length === 0) {
+    intents.push({ intent: "how-to", confidence: 0.5 });
+  }
+  return intents.sort((a, b) => b.confidence - a.confidence);
+}
+function getPrimaryIntent(intents) {
+  return intents[0]?.intent ?? "how-to";
+}
+var RRF_PRESETS = {
+  code: { k: 20, vectorWeight: 0.6, ftsWeight: 0.4 },
+  web: { k: 30, vectorWeight: 0.55, ftsWeight: 0.45 }
+};
+function detectContentType(results) {
+  const webCount = results.filter((r) => "url" in r.metadata).length;
+  return webCount > results.length / 2 ? "web" : "code";
 }
 var SearchService = class {
   lanceStore;
   embeddingEngine;
-  rrfConfig;
   codeUnitService;
   codeGraphService;
   graphCache;
-  constructor(lanceStore, embeddingEngine, rrfConfig = { k: 20, vectorWeight: 0.6, ftsWeight: 0.4 }, codeGraphService) {
+  constructor(lanceStore, embeddingEngine, codeGraphService) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
-    this.rrfConfig = rrfConfig;
     this.codeUnitService = new CodeUnitService();
     this.codeGraphService = codeGraphService;
     this.graphCache = /* @__PURE__ */ new Map();
@@ -965,14 +978,16 @@ var SearchService = class {
     const limit = query.limit ?? 10;
     const stores = query.stores ?? [];
     const detail = query.detail ?? "minimal";
-    const intent = classifyQueryIntent(query.query);
+    const intents = classifyQueryIntents(query.query);
+    const primaryIntent = getPrimaryIntent(intents);
     logger.debug({
       query: query.query,
       mode,
       limit,
       stores,
       detail,
-      intent
+      intent: primaryIntent,
+      intents
     }, "Search query received");
     let allResults = [];
     const fetchLimit = limit * 3;
@@ -1002,7 +1017,7 @@ var SearchService = class {
       mode,
       resultCount: enhancedResults.length,
       dedupedFrom: allResults.length,
-      intent,
+      intents: intents.map((i) => `${i.intent}(${i.confidence.toFixed(2)})`),
       timeMs
     }, "Search complete");
     return {
@@ -1029,7 +1044,9 @@ var SearchService = class {
       } else {
         const existingTermCount = this.countQueryTerms(existing.content, queryTerms);
         const newTermCount = this.countQueryTerms(result.content, queryTerms);
-        if (newTermCount > existingTermCount || newTermCount === existingTermCount && result.score > existing.score) {
+        const existingRelevance = existingTermCount * existing.score;
+        const newRelevance = newTermCount * result.score;
+        if (newRelevance > existingRelevance) {
           bySource.set(sourceKey, result);
         }
       }
@@ -1071,7 +1088,7 @@ var SearchService = class {
     return results.sort((a, b) => b.score - a.score).slice(0, limit);
   }
   async hybridSearch(query, stores, limit, threshold) {
-    const intent = classifyQueryIntent(query);
+    const intents = classifyQueryIntents(query);
     const [vectorResults, ftsResults] = await Promise.all([
       this.vectorSearch(query, stores, limit * 2, threshold),
       this.ftsSearch(query, stores, limit * 2)
@@ -1090,7 +1107,8 @@ var SearchService = class {
       }
     });
     const rrfScores = [];
-    const { k, vectorWeight, ftsWeight } = this.rrfConfig;
+    const contentType = detectContentType([...allDocs.values()]);
+    const { k, vectorWeight, ftsWeight } = RRF_PRESETS[contentType];
     for (const [id, result] of allDocs) {
       const vectorRank = vectorRanks.get(id) ?? Infinity;
       const ftsRank = ftsRanks.get(id) ?? Infinity;
@@ -1099,7 +1117,7 @@ var SearchService = class {
       const fileTypeBoost = this.getFileTypeBoost(
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         result.metadata["fileType"],
-        intent
+        intents
       );
       const frameworkBoost = this.getFrameworkContextBoost(query, result);
       const metadata = {
@@ -1161,7 +1179,7 @@ var SearchService = class {
    * Phase 4: Strengthened boosts for better documentation ranking.
    * Phase 1: Intent-based adjustments for context-aware ranking.
    */
-  getFileTypeBoost(fileType, intent) {
+  getFileTypeBoost(fileType, intents) {
     let baseBoost;
     switch (fileType) {
       case "documentation-primary":
@@ -1188,9 +1206,16 @@ var SearchService = class {
       default:
         baseBoost = 1;
     }
-    const intentBoosts = INTENT_FILE_BOOSTS[intent];
-    const intentMultiplier = intentBoosts[fileType ?? "other"] ?? 1;
-    return baseBoost * intentMultiplier;
+    let weightedMultiplier = 0;
+    let totalConfidence = 0;
+    for (const { intent, confidence } of intents) {
+      const intentBoosts = INTENT_FILE_BOOSTS[intent];
+      const multiplier = intentBoosts[fileType ?? "other"] ?? 1;
+      weightedMultiplier += multiplier * confidence;
+      totalConfidence += confidence;
+    }
+    const blendedMultiplier = totalConfidence > 0 ? weightedMultiplier / totalConfidence : 1;
+    return baseBoost * blendedMultiplier;
   }
   /**
    * Get a score multiplier based on framework context.
@@ -1493,12 +1518,26 @@ import { join as join5, extname, basename } from "path";
 import { createHash as createHash2 } from "crypto";
 
 // src/services/chunking.service.ts
-var ChunkingService = class {
+var CHUNK_PRESETS = {
+  code: { chunkSize: 768, chunkOverlap: 100 },
+  web: { chunkSize: 1200, chunkOverlap: 200 },
+  docs: { chunkSize: 1200, chunkOverlap: 200 }
+};
+var ChunkingService = class _ChunkingService {
   chunkSize;
   chunkOverlap;
   constructor(config) {
     this.chunkSize = config.chunkSize;
     this.chunkOverlap = config.chunkOverlap;
+  }
+  /**
+   * Create a ChunkingService with preset configuration for a content type.
+   * - 'code': Smaller chunks (768/100) for precise code symbol matching
+   * - 'web': Larger chunks (1200/200) for web prose content
+   * - 'docs': Larger chunks (1200/200) for documentation
+   */
+  static forContentType(type) {
+    return new _ChunkingService(CHUNK_PRESETS[type]);
   }
   /**
    * Chunk text content. Uses semantic chunking for Markdown and code files,
@@ -1981,6 +2020,29 @@ var IndexService = class {
     return false;
   }
 };
+function classifyWebContentType(url, title) {
+  const urlLower = url.toLowerCase();
+  const titleLower = (title ?? "").toLowerCase();
+  if (/\/api[-/]?(ref|reference|docs?)?\//i.test(urlLower) || /api\s*(reference|documentation)/i.test(titleLower)) {
+    return "documentation-primary";
+  }
+  if (/\/(getting[-_]?started|quickstart|tutorial|setup)\b/i.test(urlLower) || /(getting started|quickstart|tutorial)/i.test(titleLower)) {
+    return "documentation-primary";
+  }
+  if (/\/(docs?|documentation|reference|learn|manual|guide)/i.test(urlLower)) {
+    return "documentation";
+  }
+  if (/\/(examples?|demos?|samples?|cookbook)/i.test(urlLower)) {
+    return "example";
+  }
+  if (/changelog|release[-_]?notes/i.test(urlLower)) {
+    return "changelog";
+  }
+  if (/\/blog\//i.test(urlLower)) {
+    return "other";
+  }
+  return "documentation";
+}
 
 // src/services/code-graph.service.ts
 import { readFile as readFile4, writeFile as writeFile3, mkdir as mkdir4 } from "fs/promises";
@@ -3778,7 +3840,7 @@ async function createServices(configPath, dataDir, projectRoot) {
   const pythonBridge = new PythonBridge();
   await pythonBridge.start();
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
-  const search = new SearchService(lance, embeddings, void 0, codeGraph);
+  const search = new SearchService(lance, embeddings, codeGraph);
   const index = new IndexService(lance, embeddings, { codeGraphService: codeGraph });
   logger4.info({ dataDir: resolvedDataDir }, "Services initialized successfully");
   return {
@@ -3807,10 +3869,12 @@ export {
   createLogger,
   summarizePayload,
   truncateForLog,
+  ChunkingService,
+  classifyWebContentType,
   ASTParser,
   PythonBridge,
   JobService,
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-PM7UZC3P.js.map
+//# sourceMappingURL=chunk-JEXZPYBE.js.map
