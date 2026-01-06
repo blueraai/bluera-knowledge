@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.9.17](https://github.com/blueraai/bluera-knowledge/compare/v0.9.16...v0.9.17) (2026-01-06)
+
+
+### Features
+
+* **mcp:** consolidate 10 tools into 3 via execute meta-tool ([d59923a](https://github.com/blueraai/bluera-knowledge/commit/d59923ab6a5f29ea5c3f2371e485a12151f9460c))
+
+
+### Bug Fixes
+
+* **commands:** add explicit README check criteria to commit command ([fb7bd7b](https://github.com/blueraai/bluera-knowledge/commit/fb7bd7bb745b0e92199274185ec6ac8267613c9a))
+* **hooks:** make precommit scripts properly fail on errors ([d21c39e](https://github.com/blueraai/bluera-knowledge/commit/d21c39e33c51710107414772a8a9e57a9a386fb1))
+
 ## [0.9.16](https://github.com/blueraai/bluera-knowledge/compare/v0.9.14...v0.9.16) (2026-01-06)
 
 
