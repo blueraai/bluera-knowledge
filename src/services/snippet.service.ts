@@ -54,6 +54,11 @@ export function extractSnippet(
 
 /**
  * Find the position in content where the most query terms cluster together.
+ * Uses multi-factor scoring:
+ * - Query term density (base score)
+ * - Sentence completeness bonus
+ * - Code example presence bonus
+ * - Section header proximity bonus
  */
 function findBestMatchPosition(content: string, queryTerms: string[]): number {
   const lowerContent = content.toLowerCase();
@@ -73,7 +78,6 @@ function findBestMatchPosition(content: string, queryTerms: string[]): number {
     return -1;
   }
 
-  // Score each position by how many other terms are nearby (within 200 chars)
   const PROXIMITY_WINDOW = 200;
   const firstTerm = termPositions[0];
   if (firstTerm === undefined) {
@@ -83,15 +87,36 @@ function findBestMatchPosition(content: string, queryTerms: string[]): number {
   let bestScore = 0;
 
   for (const { position } of termPositions) {
-    // Count unique terms within proximity window
+    // Base score: count unique terms within proximity window
     const nearbyTerms = new Set<string>();
     for (const { term, position: otherPos } of termPositions) {
       if (Math.abs(position - otherPos) <= PROXIMITY_WINDOW) {
         nearbyTerms.add(term);
       }
     }
+    let score = nearbyTerms.size * 10; // Base: 10 points per unique term
 
-    const score = nearbyTerms.size;
+    // Extract window around position for bonus scoring
+    const windowStart = Math.max(0, position - PROXIMITY_WINDOW / 2);
+    const windowEnd = Math.min(content.length, position + PROXIMITY_WINDOW / 2);
+    const window = content.slice(windowStart, windowEnd);
+
+    // Bonus: Sentence completeness (contains sentence-ending punctuation)
+    if (/[.!?]/.test(window)) {
+      score += 5;
+    }
+
+    // Bonus: Code example presence (backticks, brackets, common code patterns)
+    if (/[`{}()[\]]|=>|function|const |let |var /.test(window)) {
+      score += 3;
+    }
+
+    // Bonus: Near markdown section header
+    const headerMatch = content.slice(Math.max(0, position - 100), position).match(/^#{1,3}\s+.+$/m);
+    if (headerMatch) {
+      score += 4;
+    }
+
     if (score > bestScore) {
       bestScore = score;
       bestPosition = position;

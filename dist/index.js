@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import {
   runMCPServer
-} from "./chunk-6Z4IGBN6.js";
+} from "./chunk-KKJ35NEK.js";
 import {
   IntelligentCrawler
-} from "./chunk-RZSEVTQJ.js";
+} from "./chunk-D3S46ZOE.js";
 import {
   ASTParser,
+  ChunkingService,
+  classifyWebContentType,
   createDocumentId,
   createServices,
   createStoreId,
@@ -14,7 +16,7 @@ import {
   err,
   extractRepoName,
   ok
-} from "./chunk-PM7UZC3P.js";
+} from "./chunk-JEXZPYBE.js";
 import "./chunk-L2YVNC63.js";
 
 // src/index.ts
@@ -469,8 +471,8 @@ function createCrawlCommand(getOptions) {
     const services = await createServices(globalOpts.config, globalOpts.dataDir);
     const store = await services.store.getByIdOrName(storeIdOrName);
     if (!store || store.type !== "web") {
-      console.error(`Error: Web store not found: ${storeIdOrName}`);
-      process.exit(3);
+      await destroyServices(services);
+      throw new Error(`Web store not found: ${storeIdOrName}`);
     }
     const maxPages = cmdOptions.maxPages !== void 0 ? parseInt(cmdOptions.maxPages) : 50;
     const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true && globalOpts.format !== "json";
@@ -482,7 +484,9 @@ function createCrawlCommand(getOptions) {
       console.log(`Crawling ${url}`);
     }
     const crawler = new IntelligentCrawler();
+    const webChunker = ChunkingService.forContentType("web");
     let pagesIndexed = 0;
+    let chunksCreated = 0;
     crawler.on("progress", (progress) => {
       if (spinner) {
         if (progress.type === "strategy") {
@@ -508,22 +512,33 @@ function createCrawlCommand(getOptions) {
         ...cmdOptions.simple !== void 0 && { simple: cmdOptions.simple },
         useHeadless: cmdOptions.headless ?? false
       })) {
-        const contentToEmbed = result.extracted !== void 0 ? result.extracted : result.markdown;
-        const vector = await services.embeddings.embed(contentToEmbed);
-        docs.push({
-          id: createDocumentId(`${store.id}-${createHash("md5").update(result.url).digest("hex")}`),
-          content: contentToEmbed,
-          vector,
-          metadata: {
-            type: "web",
-            storeId: store.id,
-            url: result.url,
-            title: result.title,
-            extracted: result.extracted !== void 0,
-            depth: result.depth,
-            indexedAt: /* @__PURE__ */ new Date()
-          }
-        });
+        const contentToProcess = result.extracted !== void 0 ? result.extracted : result.markdown;
+        const chunks = webChunker.chunk(contentToProcess, `${result.url}.md`);
+        const fileType = classifyWebContentType(result.url, result.title);
+        const urlHash = createHash("md5").update(result.url).digest("hex");
+        for (const chunk of chunks) {
+          const chunkId = chunks.length > 1 ? `${store.id}-${urlHash}-${String(chunk.chunkIndex)}` : `${store.id}-${urlHash}`;
+          const vector = await services.embeddings.embed(chunk.content);
+          docs.push({
+            id: createDocumentId(chunkId),
+            content: chunk.content,
+            vector,
+            metadata: {
+              type: chunks.length > 1 ? "chunk" : "web",
+              storeId: store.id,
+              url: result.url,
+              title: result.title,
+              extracted: result.extracted !== void 0,
+              depth: result.depth,
+              indexedAt: /* @__PURE__ */ new Date(),
+              fileType,
+              chunkIndex: chunk.chunkIndex,
+              totalChunks: chunk.totalChunks,
+              sectionHeader: chunk.sectionHeader
+            }
+          });
+          chunksCreated++;
+        }
         pagesIndexed++;
       }
       if (docs.length > 0) {
@@ -537,6 +552,7 @@ function createCrawlCommand(getOptions) {
         store: store.name,
         url,
         pagesCrawled: pagesIndexed,
+        chunksCreated,
         mode: cmdOptions.simple === true ? "simple" : "intelligent",
         hadCrawlInstruction: cmdOptions.crawl !== void 0,
         hadExtractInstruction: cmdOptions.extract !== void 0
@@ -544,9 +560,9 @@ function createCrawlCommand(getOptions) {
       if (globalOpts.format === "json") {
         console.log(JSON.stringify(crawlResult, null, 2));
       } else if (spinner !== void 0) {
-        spinner.succeed(`Crawled and indexed ${String(pagesIndexed)} pages`);
+        spinner.succeed(`Crawled ${String(pagesIndexed)} pages, indexed ${String(chunksCreated)} chunks`);
       } else if (globalOpts.quiet !== true) {
-        console.log(`Crawled and indexed ${String(pagesIndexed)} pages`);
+        console.log(`Crawled ${String(pagesIndexed)} pages, indexed ${String(chunksCreated)} chunks`);
       }
     } catch (error) {
       const message = `Crawl failed: ${error instanceof Error ? error.message : String(error)}`;

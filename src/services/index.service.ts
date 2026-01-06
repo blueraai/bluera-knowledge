@@ -295,3 +295,47 @@ export class IndexService {
     return false;
   }
 }
+
+/**
+ * Classify web content type based on URL patterns and page title.
+ * Used for ranking boosts similar to local file classification.
+ */
+export function classifyWebContentType(url: string, title?: string): string {
+  const urlLower = url.toLowerCase();
+  const titleLower = (title ?? '').toLowerCase();
+
+  // API reference documentation → documentation-primary (1.8x boost)
+  if (/\/api[-/]?(ref|reference|docs?)?\//i.test(urlLower) ||
+      /api\s*(reference|documentation)/i.test(titleLower)) {
+    return 'documentation-primary';
+  }
+
+  // Getting started / tutorials → documentation-primary (1.8x boost)
+  if (/\/(getting[-_]?started|quickstart|tutorial|setup)\b/i.test(urlLower) ||
+      /(getting started|quickstart|tutorial)/i.test(titleLower)) {
+    return 'documentation-primary';
+  }
+
+  // General docs paths → documentation (1.5x boost)
+  if (/\/(docs?|documentation|reference|learn|manual|guide)/i.test(urlLower)) {
+    return 'documentation';
+  }
+
+  // Examples and demos → example (1.4x boost)
+  if (/\/(examples?|demos?|samples?|cookbook)/i.test(urlLower)) {
+    return 'example';
+  }
+
+  // Changelog → changelog (special handling in intent boosts)
+  if (/changelog|release[-_]?notes/i.test(urlLower)) {
+    return 'changelog';
+  }
+
+  // Blog posts → lower priority
+  if (/\/blog\//i.test(urlLower)) {
+    return 'other';
+  }
+
+  // Web content without specific path indicators is treated as documentation
+  return 'documentation';
+}

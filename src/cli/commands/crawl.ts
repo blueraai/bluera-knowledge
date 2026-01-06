@@ -6,6 +6,8 @@ import { IntelligentCrawler, type CrawlProgress } from '../../crawl/intelligent-
 import { createDocumentId } from '../../types/brands.js';
 import type { GlobalOptions } from '../program.js';
 import type { Document } from '../../types/document.js';
+import { ChunkingService } from '../../services/chunking.service.js';
+import { classifyWebContentType } from '../../services/index.service.js';
 
 export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
   return new Command('crawl')
@@ -29,8 +31,8 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
 
       const store = await services.store.getByIdOrName(storeIdOrName);
       if (!store || store.type !== 'web') {
-        console.error(`Error: Web store not found: ${storeIdOrName}`);
-        process.exit(3);
+        await destroyServices(services);
+        throw new Error(`Web store not found: ${storeIdOrName}`);
       }
 
       const maxPages = cmdOptions.maxPages !== undefined ? parseInt(cmdOptions.maxPages) : 50;
@@ -47,7 +49,10 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
       }
 
       const crawler = new IntelligentCrawler();
+      // Use web preset for larger prose-friendly chunks
+      const webChunker = ChunkingService.forContentType('web');
       let pagesIndexed = 0;
+      let chunksCreated = 0;
 
       // Listen for progress events
       crawler.on('progress', (progress: CrawlProgress) => {
@@ -78,24 +83,40 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
           ...(cmdOptions.simple !== undefined && { simple: cmdOptions.simple }),
           useHeadless: cmdOptions.headless ?? false,
         })) {
-          // Embed and index the content (use extracted if available, otherwise markdown)
-          const contentToEmbed = result.extracted !== undefined ? result.extracted : result.markdown;
-          const vector = await services.embeddings.embed(contentToEmbed);
+          // Use extracted content if available, otherwise markdown
+          const contentToProcess = result.extracted !== undefined ? result.extracted : result.markdown;
 
-          docs.push({
-            id: createDocumentId(`${store.id}-${createHash('md5').update(result.url).digest('hex')}`),
-            content: contentToEmbed,
-            vector,
-            metadata: {
-              type: 'web',
-              storeId: store.id,
-              url: result.url,
-              title: result.title,
-              extracted: result.extracted !== undefined,
-              depth: result.depth,
-              indexedAt: new Date(),
-            },
-          });
+          // Chunk the content using markdown-aware chunking (web content is converted to markdown)
+          const chunks = webChunker.chunk(contentToProcess, `${result.url}.md`);
+          const fileType = classifyWebContentType(result.url, result.title);
+          const urlHash = createHash('md5').update(result.url).digest('hex');
+
+          for (const chunk of chunks) {
+            const chunkId = chunks.length > 1
+              ? `${store.id}-${urlHash}-${String(chunk.chunkIndex)}`
+              : `${store.id}-${urlHash}`;
+            const vector = await services.embeddings.embed(chunk.content);
+
+            docs.push({
+              id: createDocumentId(chunkId),
+              content: chunk.content,
+              vector,
+              metadata: {
+                type: chunks.length > 1 ? 'chunk' : 'web',
+                storeId: store.id,
+                url: result.url,
+                title: result.title,
+                extracted: result.extracted !== undefined,
+                depth: result.depth,
+                indexedAt: new Date(),
+                fileType,
+                chunkIndex: chunk.chunkIndex,
+                totalChunks: chunk.totalChunks,
+                sectionHeader: chunk.sectionHeader,
+              },
+            });
+            chunksCreated++;
+          }
 
           pagesIndexed++;
         }
@@ -113,6 +134,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
           store: store.name,
           url,
           pagesCrawled: pagesIndexed,
+          chunksCreated,
           mode: cmdOptions.simple === true ? 'simple' : 'intelligent',
           hadCrawlInstruction: cmdOptions.crawl !== undefined,
           hadExtractInstruction: cmdOptions.extract !== undefined,
@@ -121,9 +143,9 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
         if (globalOpts.format === 'json') {
           console.log(JSON.stringify(crawlResult, null, 2));
         } else if (spinner !== undefined) {
-          spinner.succeed(`Crawled and indexed ${String(pagesIndexed)} pages`);
+          spinner.succeed(`Crawled ${String(pagesIndexed)} pages, indexed ${String(chunksCreated)} chunks`);
         } else if (globalOpts.quiet !== true) {
-          console.log(`Crawled and indexed ${String(pagesIndexed)} pages`);
+          console.log(`Crawled ${String(pagesIndexed)} pages, indexed ${String(chunksCreated)} chunks`);
         }
       } catch (error) {
         const message = `Crawl failed: ${error instanceof Error ? error.message : String(error)}`;

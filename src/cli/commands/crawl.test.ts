@@ -292,22 +292,19 @@ describe('crawl command execution', () => {
   });
 
   describe('error handling', () => {
-    it('exits with code 3 when store not found', async () => {
+    it('throws error when store not found', async () => {
       mockServices.store.getByIdOrName.mockResolvedValue(undefined);
 
       const command = createCrawlCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['https://example.com', 'nonexistent-store'])).rejects.toThrow('process.exit: 3');
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error: Web store not found: nonexistent-store'
+      await expect(actionHandler(['https://example.com', 'nonexistent-store'])).rejects.toThrow(
+        'Web store not found: nonexistent-store'
       );
-      expect(processExitSpy).toHaveBeenCalledWith(3);
       expect(mockCrawler.crawl).not.toHaveBeenCalled();
     });
 
-    it('exits with code 3 when store is not a web store', async () => {
+    it('throws error when store is not a web store', async () => {
       const mockFileStore = {
         id: createStoreId('store-1'),
         name: 'file-store',
@@ -322,10 +319,9 @@ describe('crawl command execution', () => {
       const command = createCrawlCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['https://example.com', 'file-store'])).rejects.toThrow('process.exit: 3');
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Web store not found: file-store');
-      expect(processExitSpy).toHaveBeenCalledWith(3);
+      await expect(actionHandler(['https://example.com', 'file-store'])).rejects.toThrow(
+        'Web store not found: file-store'
+      );
     });
 
     it('exits with code 6 when crawling fails', async () => {
@@ -933,7 +929,7 @@ describe('crawl command execution', () => {
         await actionHandler(['https://example.com', 'test-store']);
 
         expect(consoleLogSpy).toHaveBeenCalledWith('Crawling https://example.com');
-        expect(consoleLogSpy).toHaveBeenCalledWith('Crawled and indexed 1 pages');
+        expect(consoleLogSpy).toHaveBeenCalledWith('Crawled 1 pages, indexed 1 chunks');
       } finally {
         Object.defineProperty(process.stdout, 'isTTY', { value: originalIsTTY, configurable: true });
       }

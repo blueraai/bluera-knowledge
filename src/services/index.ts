@@ -56,7 +56,7 @@ export async function createServices(
   await pythonBridge.start();
 
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
-  const search = new SearchService(lance, embeddings, undefined, codeGraph);
+  const search = new SearchService(lance, embeddings, codeGraph);
   const index = new IndexService(lance, embeddings, { codeGraphService: codeGraph });
 
   logger.info({ dataDir: resolvedDataDir }, 'Services initialized successfully');

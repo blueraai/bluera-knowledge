@@ -141,21 +141,16 @@ describe('SearchService - RRF Ranking Algorithm', () => {
     expect(results.results.some(r => r.id === createDocumentId('doc2'))).toBe(true);
   });
 
-  it('applies custom RRF k parameter correctly', async () => {
-    const customSearchService = new SearchService(
-      mockLanceStore,
-      mockEmbeddingEngine,
-      { k: 50, vectorWeight: 0.6, ftsWeight: 0.4 }
-    );
-
+  it('uses web RRF preset for web content (url metadata)', async () => {
+    // Web content has url in metadata - should use web preset (k=30)
     vi.mocked(mockLanceStore.search).mockResolvedValue([
-      { id: createDocumentId('doc1'), score: 0.9, content: 'result 1', metadata: { type: 'file' as const, storeId, indexedAt: new Date() } },
+      { id: createDocumentId('doc1'), score: 0.9, content: 'result 1', metadata: { type: 'web' as const, storeId, indexedAt: new Date(), url: 'https://example.com/docs' } },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([
-      { id: createDocumentId('doc1'), score: 0.95, content: 'result 1', metadata: { type: 'file' as const, storeId, indexedAt: new Date() } },
+      { id: createDocumentId('doc1'), score: 0.95, content: 'result 1', metadata: { type: 'web' as const, storeId, indexedAt: new Date(), url: 'https://example.com/docs' } },
     ]);
 
-    const results = await customSearchService.search({
+    const results = await searchService.search({
       query: 'test query',
       stores: [storeId],
       mode: 'hybrid',
@@ -166,28 +161,22 @@ describe('SearchService - RRF Ranking Algorithm', () => {
     expect(results.results[0]?.score).toBeGreaterThan(0);
   });
 
-  it('applies vector and FTS weights correctly', async () => {
-    const vectorOnlyService = new SearchService(
-      mockLanceStore,
-      mockEmbeddingEngine,
-      { k: 20, vectorWeight: 1.0, ftsWeight: 0.0 }
-    );
-
+  it('uses code RRF preset for file content (path metadata)', async () => {
+    // File content has path, no url - should use code preset (k=20)
     vi.mocked(mockLanceStore.search).mockResolvedValue([
-      { id: createDocumentId('doc1'), score: 0.9, content: 'vector result', metadata: { type: 'file' as const, storeId, indexedAt: new Date() } },
+      { id: createDocumentId('doc1'), score: 0.9, content: 'function test() {}', metadata: { type: 'file' as const, storeId, indexedAt: new Date(), path: '/src/test.ts' } },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([
-      { id: createDocumentId('doc2'), score: 0.95, content: 'fts result', metadata: { type: 'file' as const, storeId, indexedAt: new Date() } },
+      { id: createDocumentId('doc2'), score: 0.95, content: 'class Example {}', metadata: { type: 'file' as const, storeId, indexedAt: new Date(), path: '/src/example.ts' } },
     ]);
 
-    const results = await vectorOnlyService.search({
+    const results = await searchService.search({
       query: 'test query',
       stores: [storeId],
       mode: 'hybrid',
       limit: 10,
     });
 
-    // With vectorWeight=1.0 and ftsWeight=0.0, vector results should dominate
     expect(results.results.length).toBeGreaterThan(0);
   });
 
