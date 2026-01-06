@@ -34,20 +34,19 @@ Create atomic, well-organized commits with each logical feature in its own commi
 - `plugin.json` - Plugin metadata
 - `commands/*.md` - Command documentation
 
-### CLAUDE.md (Claude Code memory)
+### CLAUDE.md (Claude Code memory - hierarchical)
 
-| Change Type | CLAUDE.md Section to Update |
-|-------------|----------------------------|
-| package.json scripts | Scripts section |
-| CI/CD workflow changes | GitHub Actions Workflows section |
-| Build/dist process changes | Distribution Requirements section |
-| Coding conventions | ALWAYS/NEVER sections |
+CLAUDE.md stores context that helps future sessions "do the right thing". Update when:
+- You struggled with something and the insight would prevent future mistakes
+- Important patterns or conventions that aren't obvious from code alone
+- Workflows or commands that are non-trivial to discover
 
-**Trigger files → check CLAUDE.md:**
-- `package.json` scripts - Development commands
-- `.github/workflows/*.yml` - CI/CD workflows
-- `tsconfig.json`, `tsup.config.ts` - Build configuration
-- `.husky/*` - Git hooks
+CLAUDE.md is hierarchical - use the directory level matching the changed files. Use `@path/to/file` includes to stay DRY.
+
+| Change Scope | Which CLAUDE.md |
+|--------------|-----------------|
+| Project-wide (scripts, CI/CD, build) | Root CLAUDE.md |
+| Directory-specific patterns | Subdirectory CLAUDE.md (create if needed) |
 
 **3. Group**: Identify logical features by grouping related files:
 - Same feature = same commit
