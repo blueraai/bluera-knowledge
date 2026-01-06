@@ -1121,12 +1121,14 @@ var SearchService = class {
       );
       const frameworkBoost = this.getFrameworkContextBoost(query, result);
       const urlKeywordBoost = this.getUrlKeywordBoost(query, result);
+      const pathKeywordBoost = this.getPathKeywordBoost(query, result);
       const metadata = {
         vectorRRF,
         ftsRRF,
         fileTypeBoost,
         frameworkBoost,
-        urlKeywordBoost
+        urlKeywordBoost,
+        pathKeywordBoost
       };
       if (vectorRank !== Infinity) {
         metadata.vectorRank = vectorRank;
@@ -1136,7 +1138,7 @@ var SearchService = class {
       }
       rrfScores.push({
         id,
-        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost * urlKeywordBoost,
+        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost * urlKeywordBoost * pathKeywordBoost,
         result,
         metadata
       });
@@ -1260,6 +1262,51 @@ var SearchService = class {
     const queryTerms = query.toLowerCase().split(/\s+/).filter((t2) => t2.length > 2 && !stopWords.has(t2));
     if (queryTerms.length === 0) return 1;
     const matchingTerms = queryTerms.filter((term) => urlPath.includes(term));
+    if (matchingTerms.length === 0) return 1;
+    const matchRatio = matchingTerms.length / queryTerms.length;
+    return 1 + 0.6 * matchRatio;
+  }
+  /**
+   * Get a score multiplier based on file path keyword matching.
+   * Boosts results where file path contains significant query keywords.
+   * This helps queries like "dispatcher" rank async_dispatcher.py higher.
+   */
+  getPathKeywordBoost(query, result) {
+    const path3 = result.metadata.path;
+    if (path3 === void 0 || path3 === "") return 1;
+    const pathSegments = path3.toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    const stopWords = /* @__PURE__ */ new Set([
+      "how",
+      "to",
+      "the",
+      "a",
+      "an",
+      "is",
+      "are",
+      "what",
+      "why",
+      "when",
+      "where",
+      "can",
+      "do",
+      "does",
+      "i",
+      "my",
+      "your",
+      "it",
+      "in",
+      "on",
+      "for",
+      "with",
+      "this",
+      "that",
+      "get",
+      "use",
+      "using"
+    ]);
+    const queryTerms = query.toLowerCase().split(/\s+/).filter((t2) => t2.length > 2 && !stopWords.has(t2));
+    if (queryTerms.length === 0) return 1;
+    const matchingTerms = queryTerms.filter((term) => pathSegments.includes(term));
     if (matchingTerms.length === 0) return 1;
     const matchRatio = matchingTerms.length / queryTerms.length;
     return 1 + 0.6 * matchRatio;
@@ -3924,4 +3971,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-VVPZAKB6.js.map
+//# sourceMappingURL=chunk-MH4UM7WL.js.map
