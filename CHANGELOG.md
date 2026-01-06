@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.9.31](https://github.com/blueraai/bluera-knowledge/compare/v0.9.30...v0.9.31) (2026-01-06)
+
+
+### Bug Fixes
+
+* address three bugs found during API testing ([862b7e6](https://github.com/blueraai/bluera-knowledge/commit/862b7e67c057c004ae788d9205c147b422339c67)), closes [#1](https://github.com/blueraai/bluera-knowledge/issues/1) [#2](https://github.com/blueraai/bluera-knowledge/issues/2) [#3](https://github.com/blueraai/bluera-knowledge/issues/3)
+
 ## [0.9.30](https://github.com/blueraai/bluera-knowledge/compare/v0.9.26...v0.9.30) (2026-01-06)
 
 
