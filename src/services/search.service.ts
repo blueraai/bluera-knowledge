@@ -636,9 +636,9 @@ export class SearchService {
     if (matchingTerms.length === 0) return 1.0;
 
     // Boost based on proportion of matching terms
-    // Single match: ~1.3, all terms match: ~1.6
+    // Single match: ~1.5, all terms match: ~2.0
     const matchRatio = matchingTerms.length / queryTerms.length;
-    return 1.0 + (0.6 * matchRatio);
+    return 1.0 + (1.0 * matchRatio);
   }
 
   /**
@@ -673,9 +673,9 @@ export class SearchService {
     if (matchingTerms.length === 0) return 1.0;
 
     // Boost based on proportion of matching terms
-    // Single match: ~1.3, all terms match: ~1.6
+    // Single match: ~1.5, all terms match: ~2.0
     const matchRatio = matchingTerms.length / queryTerms.length;
-    return 1.0 + (0.6 * matchRatio);
+    return 1.0 + (1.0 * matchRatio);
   }
 
   /**
