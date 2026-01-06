@@ -20,6 +20,7 @@ export default defineConfig({
             'src/plugin/git-clone.test.ts',
             'src/services/project-root.service.test.ts',
             'src/workers/spawn-worker.test.ts',
+            'src/logging/payload.test.ts',
           ],
           // Use forks pool for onnxruntime-node compatibility
           pool: 'forks',
@@ -40,6 +41,7 @@ export default defineConfig({
             'src/plugin/git-clone.test.ts',
             'src/services/project-root.service.test.ts',
             'src/workers/spawn-worker.test.ts',
+            'src/logging/payload.test.ts',
           ],
           // Use forks pool for onnxruntime-node compatibility
           pool: 'forks',
