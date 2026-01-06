@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file. See [commit
 
 * **crawl:** add Claude CLI availability detection for npm package mode ([9afaae5](https://github.com/blueraai/bluera-knowledge/commit/9afaae5b4b4da98ce787d966c9910004401756dd))
 * **release:** add automatic changelog generation with commit-and-tag-version ([177c6a3](https://github.com/blueraai/bluera-knowledge/commit/177c6a35f0a965b701940b2f8fc72fe2e4645647))
-* rename to @blueraai/bluera-knowledge and add npm publishing ([51a86cb](https://github.com/blueraai/bluera-knowledge/commit/51a86cb574fb9752224e724c1047a5000f4e898b))
+* rename to @bluera/bluera-knowledge and add npm publishing ([51a86cb](https://github.com/blueraai/bluera-knowledge/commit/51a86cb574fb9752224e724c1047a5000f4e898b))
 * **skills:** add hybrid MCP + Skills enhancement ([9fbee1d](https://github.com/blueraai/bluera-knowledge/commit/9fbee1d90d02663dbda9646e244423c7840330a6))
 
 

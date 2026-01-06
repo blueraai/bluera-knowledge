@@ -1,5 +1,5 @@
 {
-  "name": "@blueraai/bluera-knowledge",
+  "name": "@bluera/bluera-knowledge",
   "version": "0.9.15",
   "description": "CLI tool for managing knowledge stores with semantic search",
   "type": "module",
