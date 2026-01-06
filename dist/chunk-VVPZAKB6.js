@@ -1120,11 +1120,13 @@ var SearchService = class {
         intents
       );
       const frameworkBoost = this.getFrameworkContextBoost(query, result);
+      const urlKeywordBoost = this.getUrlKeywordBoost(query, result);
       const metadata = {
         vectorRRF,
         ftsRRF,
         fileTypeBoost,
-        frameworkBoost
+        frameworkBoost,
+        urlKeywordBoost
       };
       if (vectorRank !== Infinity) {
         metadata.vectorRank = vectorRank;
@@ -1134,7 +1136,7 @@ var SearchService = class {
       }
       rrfScores.push({
         id,
-        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost,
+        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost * urlKeywordBoost,
         result,
         metadata
       });
@@ -1216,6 +1218,51 @@ var SearchService = class {
     }
     const blendedMultiplier = totalConfidence > 0 ? weightedMultiplier / totalConfidence : 1;
     return baseBoost * blendedMultiplier;
+  }
+  /**
+   * Get a score multiplier based on URL keyword matching.
+   * Boosts results where URL path contains significant query keywords.
+   * This helps queries like "troubleshooting" rank /troubleshooting pages first.
+   */
+  getUrlKeywordBoost(query, result) {
+    const url = result.metadata.url;
+    if (url === void 0 || url === "") return 1;
+    const urlPath = url.toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    const stopWords = /* @__PURE__ */ new Set([
+      "how",
+      "to",
+      "the",
+      "a",
+      "an",
+      "is",
+      "are",
+      "what",
+      "why",
+      "when",
+      "where",
+      "can",
+      "do",
+      "does",
+      "i",
+      "my",
+      "your",
+      "it",
+      "in",
+      "on",
+      "for",
+      "with",
+      "this",
+      "that",
+      "get",
+      "use",
+      "using"
+    ]);
+    const queryTerms = query.toLowerCase().split(/\s+/).filter((t2) => t2.length > 2 && !stopWords.has(t2));
+    if (queryTerms.length === 0) return 1;
+    const matchingTerms = queryTerms.filter((term) => urlPath.includes(term));
+    if (matchingTerms.length === 0) return 1;
+    const matchRatio = matchingTerms.length / queryTerms.length;
+    return 1 + 0.6 * matchRatio;
   }
   /**
    * Get a score multiplier based on framework context.
@@ -3877,4 +3924,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-JEXZPYBE.js.map
+//# sourceMappingURL=chunk-VVPZAKB6.js.map
