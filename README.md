@@ -1082,6 +1082,32 @@ The plugin includes a Model Context Protocol server that exposes search tools. T
 }
 ```
 
+### 🎯 Context Efficiency Strategy
+
+**Why only 3 MCP tools?**
+
+Every MCP tool exposed requires its full schema to be sent to Claude with each tool invocation. More tools = more tokens consumed before Claude can even respond.
+
+**Design decision:** Consolidate from 10+ tools down to 3:
+
+| Approach | Tool Count | Context Cost | Trade-off |
+|----------|------------|--------------|-----------|
+| Individual tools | 10+ | ~800+ tokens | Simple calls, high overhead |
+| **Consolidated (current)** | 3 | ~300 tokens | Minimal overhead, slightly longer commands |
+
+**How it works:**
+
+1. **Native tools for common workflow** - `search` and `get_full_context` are the operations Claude uses most often, so they get dedicated tools with full schemas
+
+2. **Meta-tool for management** - The `execute` tool consolidates 8 store/job management commands into a single tool. Commands are discovered on-demand via `execute("commands")` or `execute("help", {command: "store:create"})`
+
+3. **Lazy documentation** - Command help isn't pre-sent with tool listings; it's discoverable when needed
+
+**Result:** ~60% reduction in context overhead for MCP tool listings, without sacrificing functionality.
+
+> [!TIP]
+> This pattern—consolidating infrequent operations into a meta-tool while keeping high-frequency operations native—is a general strategy for MCP context efficiency.
+
 ### 🛠️ Available MCP Tools
 
 The plugin exposes 3 MCP tools optimized for minimal context overhead:
