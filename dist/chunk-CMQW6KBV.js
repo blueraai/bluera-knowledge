@@ -53,6 +53,10 @@ var ListJobsArgsSchema = z.object({
 var CancelJobArgsSchema = z.object({
   jobId: z.string().min(1, "Job ID must be a non-empty string")
 });
+var ExecuteArgsSchema = z.object({
+  command: z.string().min(1, "Command name is required"),
+  args: z.record(z.string(), z.unknown()).optional()
+});
 
 // src/mcp/cache.ts
 var LRUCache = class {
@@ -277,6 +281,130 @@ var handleGetFullContext = async (args, context) => {
   };
 };
 
+// src/mcp/handlers/index.ts
+var tools = [
+  {
+    name: "search",
+    description: "Search all indexed knowledge stores with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.",
+    schema: SearchArgsSchema,
+    handler: handleSearch
+  },
+  {
+    name: "get_full_context",
+    description: "Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.",
+    schema: GetFullContextArgsSchema,
+    handler: handleGetFullContext
+  }
+];
+
+// src/mcp/commands/registry.ts
+import { z as z2 } from "zod";
+var CommandRegistry = class {
+  commands = /* @__PURE__ */ new Map();
+  /**
+   * Register a command
+   */
+  register(command) {
+    if (this.commands.has(command.name)) {
+      throw new Error(`Command already registered: ${command.name}`);
+    }
+    this.commands.set(command.name, command);
+  }
+  /**
+   * Register multiple commands at once
+   */
+  registerAll(commands) {
+    for (const command of commands) {
+      this.register(command);
+    }
+  }
+  /**
+   * Get a command by name
+   */
+  get(name) {
+    return this.commands.get(name);
+  }
+  /**
+   * Check if a command exists
+   */
+  has(name) {
+    return this.commands.has(name);
+  }
+  /**
+   * Get all registered commands
+   */
+  all() {
+    return Array.from(this.commands.values());
+  }
+  /**
+   * Get commands grouped by category (prefix before colon)
+   */
+  grouped() {
+    const groups = /* @__PURE__ */ new Map();
+    for (const cmd of this.commands.values()) {
+      const colonIndex = cmd.name.indexOf(":");
+      const category = colonIndex === -1 ? "general" : cmd.name.slice(0, colonIndex);
+      const existing = groups.get(category) ?? [];
+      existing.push(cmd);
+      groups.set(category, existing);
+    }
+    return groups;
+  }
+};
+var commandRegistry = new CommandRegistry();
+async function executeCommand(commandName, args, context) {
+  const command = commandRegistry.get(commandName);
+  if (command === void 0) {
+    throw new Error(
+      `Unknown command: ${commandName}. Use execute("commands") to list available commands.`
+    );
+  }
+  const validatedArgs = command.argsSchema !== void 0 ? command.argsSchema.parse(args) : args;
+  return command.handler(validatedArgs, context);
+}
+function generateHelp(commandName) {
+  if (commandName !== void 0) {
+    const command = commandRegistry.get(commandName);
+    if (command === void 0) {
+      throw new Error(`Unknown command: ${commandName}`);
+    }
+    const lines2 = [
+      `Command: ${command.name}`,
+      `Description: ${command.description}`,
+      ""
+    ];
+    if (command.argsSchema !== void 0) {
+      lines2.push("Arguments:");
+      const schema = command.argsSchema;
+      if (schema instanceof z2.ZodObject) {
+        const shape = schema.shape;
+        for (const [key, fieldSchema] of Object.entries(shape)) {
+          const isOptional = fieldSchema.safeParse(void 0).success;
+          const desc = fieldSchema.description ?? "";
+          lines2.push(`  ${key}${isOptional ? " (optional)" : ""}: ${desc}`);
+        }
+      }
+    } else {
+      lines2.push("Arguments: none");
+    }
+    return lines2.join("\n");
+  }
+  const groups = commandRegistry.grouped();
+  const lines = ["Available commands:", ""];
+  for (const [category, commands] of groups) {
+    lines.push(`${category}:`);
+    for (const cmd of commands) {
+      lines.push(`  ${cmd.name} - ${cmd.description}`);
+    }
+    lines.push("");
+  }
+  lines.push('Use execute("help", {command: "name"}) for detailed command help.');
+  return lines.join("\n");
+}
+
+// src/mcp/commands/store.commands.ts
+import { z as z3 } from "zod";
+
 // src/mcp/handlers/store.handler.ts
 import { rm } from "fs/promises";
 import { join } from "path";
@@ -497,6 +625,57 @@ var handleDeleteStore = async (args, context) => {
   };
 };
 
+// src/mcp/commands/store.commands.ts
+var storeCommands = [
+  {
+    name: "stores",
+    description: "List all indexed knowledge stores",
+    argsSchema: z3.object({
+      type: z3.enum(["file", "repo", "web"]).optional().describe("Filter by store type")
+    }),
+    handler: (args, context) => handleListStores(args, context)
+  },
+  {
+    name: "store:info",
+    description: "Get detailed information about a specific store",
+    argsSchema: z3.object({
+      store: z3.string().min(1).describe("Store name or ID")
+    }),
+    handler: (args, context) => handleGetStoreInfo(args, context)
+  },
+  {
+    name: "store:create",
+    description: "Create a new knowledge store from git URL or local path",
+    argsSchema: z3.object({
+      name: z3.string().min(1).describe("Store name"),
+      type: z3.enum(["file", "repo"]).describe("Store type"),
+      source: z3.string().min(1).describe("Git URL or local path"),
+      branch: z3.string().optional().describe("Git branch (for repo type)"),
+      description: z3.string().optional().describe("Store description")
+    }),
+    handler: (args, context) => handleCreateStore(args, context)
+  },
+  {
+    name: "store:index",
+    description: "Re-index a knowledge store to update search data",
+    argsSchema: z3.object({
+      store: z3.string().min(1).describe("Store name or ID")
+    }),
+    handler: (args, context) => handleIndexStore(args, context)
+  },
+  {
+    name: "store:delete",
+    description: "Delete a knowledge store and all associated data",
+    argsSchema: z3.object({
+      store: z3.string().min(1).describe("Store name or ID")
+    }),
+    handler: (args, context) => handleDeleteStore(args, context)
+  }
+];
+
+// src/mcp/commands/job.commands.ts
+import { z as z4 } from "zod";
+
 // src/mcp/handlers/job.handler.ts
 var handleCheckJobStatus = (args, context) => {
   const validated = CheckJobStatusArgsSchema.parse(args);
@@ -559,72 +738,89 @@ var handleCancelJob = (args, context) => {
   });
 };
 
-// src/mcp/handlers/index.ts
-var tools = [
-  // Search tools
+// src/mcp/commands/job.commands.ts
+var jobCommands = [
   {
-    name: "search",
-    description: "Search all indexed knowledge stores with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.",
-    schema: SearchArgsSchema,
-    handler: handleSearch
+    name: "jobs",
+    description: "List all background jobs",
+    argsSchema: z4.object({
+      activeOnly: z4.boolean().optional().describe("Only show active jobs"),
+      status: z4.enum(["pending", "running", "completed", "failed", "cancelled"]).optional().describe("Filter by job status")
+    }),
+    handler: (args, context) => handleListJobs(args, context)
   },
   {
-    name: "get_full_context",
-    description: "Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.",
-    schema: GetFullContextArgsSchema,
-    handler: handleGetFullContext
-  },
-  // Store tools
-  {
-    name: "list_stores",
-    description: "List all indexed knowledge stores (library sources, reference material, documentation)",
-    schema: ListStoresArgsSchema,
-    handler: handleListStores
+    name: "job:status",
+    description: "Check the status of a specific background job",
+    argsSchema: z4.object({
+      jobId: z4.string().min(1).describe("Job ID to check")
+    }),
+    handler: (args, context) => handleCheckJobStatus(args, context)
   },
   {
-    name: "get_store_info",
-    description: "Get detailed information about a specific store including its file path for direct access",
-    schema: GetStoreInfoArgsSchema,
-    handler: handleGetStoreInfo
-  },
-  {
-    name: "create_store",
-    description: "Create a new knowledge store from git URL or local path",
-    schema: CreateStoreArgsSchema,
-    handler: handleCreateStore
-  },
-  {
-    name: "index_store",
-    description: "Index or re-index a knowledge store to make it searchable",
-    schema: IndexStoreArgsSchema,
-    handler: handleIndexStore
-  },
-  {
-    name: "delete_store",
-    description: "Delete a knowledge store and all associated data (database, cloned files)",
-    schema: DeleteStoreArgsSchema,
-    handler: handleDeleteStore
-  },
-  // Job tools
-  {
-    name: "check_job_status",
-    description: "Check the status of a background job (clone, index, crawl operations)",
-    schema: CheckJobStatusArgsSchema,
-    handler: handleCheckJobStatus
-  },
-  {
-    name: "list_jobs",
-    description: "List all background jobs, optionally filtered by status",
-    schema: ListJobsArgsSchema,
-    handler: handleListJobs
-  },
-  {
-    name: "cancel_job",
+    name: "job:cancel",
     description: "Cancel a running or pending background job",
-    schema: CancelJobArgsSchema,
-    handler: handleCancelJob
+    argsSchema: z4.object({
+      jobId: z4.string().min(1).describe("Job ID to cancel")
+    }),
+    handler: (args, context) => handleCancelJob(args, context)
   }
 ];
+
+// src/mcp/commands/meta.commands.ts
+import { z as z5 } from "zod";
+var metaCommands = [
+  {
+    name: "commands",
+    description: "List all available commands",
+    handler: () => {
+      const commands = commandRegistry.all();
+      const commandList = commands.map((cmd) => ({
+        name: cmd.name,
+        description: cmd.description
+      }));
+      return Promise.resolve({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ commands: commandList }, null, 2)
+          }
+        ]
+      });
+    }
+  },
+  {
+    name: "help",
+    description: "Show help for a specific command or list all commands",
+    argsSchema: z5.object({
+      command: z5.string().optional().describe("Command name to get help for")
+    }),
+    handler: (args) => {
+      const commandName = args["command"];
+      const helpText = generateHelp(commandName);
+      return Promise.resolve({
+        content: [
+          {
+            type: "text",
+            text: helpText
+          }
+        ]
+      });
+    }
+  }
+];
+
+// src/mcp/commands/index.ts
+commandRegistry.registerAll(storeCommands);
+commandRegistry.registerAll(jobCommands);
+commandRegistry.registerAll(metaCommands);
+
+// src/mcp/handlers/execute.handler.ts
+var handleExecute = async (args, context) => {
+  const validated = ExecuteArgsSchema.parse(args);
+  const commandArgs = validated.args ?? {};
+  return executeCommand(validated.command, commandArgs, context);
+};
 
 // src/mcp/server.ts
 function createMCPServer(options) {
@@ -642,6 +838,7 @@ function createMCPServer(options) {
   server.setRequestHandler(ListToolsRequestSchema, () => {
     return Promise.resolve({
       tools: [
+        // Native search tool with full schema (most used, benefits from detailed params)
         {
           name: "search",
           description: "Search all indexed knowledge stores with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.",
@@ -677,93 +874,7 @@ function createMCPServer(options) {
             required: ["query"]
           }
         },
-        {
-          name: "list_stores",
-          description: "List all indexed knowledge stores (library sources, reference material, documentation)",
-          inputSchema: {
-            type: "object",
-            properties: {
-              type: {
-                type: "string",
-                enum: ["file", "repo", "web"],
-                description: "Filter by store type (optional)"
-              }
-            }
-          }
-        },
-        {
-          name: "get_store_info",
-          description: "Get detailed information about a specific store including its file path for direct access",
-          inputSchema: {
-            type: "object",
-            properties: {
-              store: {
-                type: "string",
-                description: "Store name or ID"
-              }
-            },
-            required: ["store"]
-          }
-        },
-        {
-          name: "create_store",
-          description: "Create a new knowledge store from git URL or local path",
-          inputSchema: {
-            type: "object",
-            properties: {
-              name: {
-                type: "string",
-                description: "Store name"
-              },
-              type: {
-                type: "string",
-                enum: ["file", "repo"],
-                description: "Store type"
-              },
-              source: {
-                type: "string",
-                description: "Git URL or local path"
-              },
-              branch: {
-                type: "string",
-                description: "Git branch (for repo type)"
-              },
-              description: {
-                type: "string",
-                description: "Store description"
-              }
-            },
-            required: ["name", "type", "source"]
-          }
-        },
-        {
-          name: "index_store",
-          description: "Index or re-index a knowledge store to make it searchable",
-          inputSchema: {
-            type: "object",
-            properties: {
-              store: {
-                type: "string",
-                description: "Store name or ID"
-              }
-            },
-            required: ["store"]
-          }
-        },
-        {
-          name: "delete_store",
-          description: "Delete a knowledge store and all associated data (database, cloned files)",
-          inputSchema: {
-            type: "object",
-            properties: {
-              store: {
-                type: "string",
-                description: "Store name or ID to delete"
-              }
-            },
-            required: ["store"]
-          }
-        },
+        // Native get_full_context tool (frequently used after search)
         {
           name: "get_full_context",
           description: "Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.",
@@ -778,51 +889,23 @@ function createMCPServer(options) {
             required: ["resultId"]
           }
         },
+        // Meta-tool for store and job management (consolidates 8 tools into 1)
         {
-          name: "check_job_status",
-          description: "Check the status of a background job (clone, index, crawl operations)",
+          name: "execute",
+          description: "Execute store/job management commands. Commands: stores, store:info, store:create, store:index, store:delete, jobs, job:status, job:cancel, help, commands",
           inputSchema: {
             type: "object",
             properties: {
-              jobId: {
+              command: {
                 type: "string",
-                description: "Job ID to check status for"
-              }
-            },
-            required: ["jobId"]
-          }
-        },
-        {
-          name: "list_jobs",
-          description: "List all background jobs, optionally filtered by status",
-          inputSchema: {
-            type: "object",
-            properties: {
-              status: {
-                type: "string",
-                enum: ["pending", "running", "completed", "failed", "cancelled"],
-                description: "Filter jobs by status (optional)"
+                description: 'Command to execute (e.g., "stores", "store:create", "jobs", "help")'
               },
-              activeOnly: {
-                type: "boolean",
-                default: false,
-                description: "Only show active (pending/running) jobs"
-              }
-            }
-          }
-        },
-        {
-          name: "cancel_job",
-          description: "Cancel a running or pending background job",
-          inputSchema: {
-            type: "object",
-            properties: {
-              jobId: {
-                type: "string",
-                description: "Job ID to cancel"
+              args: {
+                type: "object",
+                description: 'Command arguments (e.g., {store: "mystore"} for store:info)'
               }
             },
-            required: ["jobId"]
+            required: ["command"]
           }
         }
       ]
@@ -830,17 +913,22 @@ function createMCPServer(options) {
   });
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-    const tool = tools.find((t) => t.name === name);
-    if (!tool) {
-      throw new Error(`Unknown tool: ${name}`);
-    }
-    const validated = tool.schema.parse(args ?? {});
     const services = await createServices(
       options.config,
       options.dataDir,
       options.projectRoot
     );
-    return tool.handler(validated, { services, options });
+    const context = { services, options };
+    if (name === "execute") {
+      const validated2 = ExecuteArgsSchema.parse(args ?? {});
+      return handleExecute(validated2, context);
+    }
+    const tool = tools.find((t) => t.name === name);
+    if (tool === void 0) {
+      throw new Error(`Unknown tool: ${name}`);
+    }
+    const validated = tool.schema.parse(args ?? {});
+    return tool.handler(validated, context);
   });
   return server;
 }
@@ -867,4 +955,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-AIKC6ROY.js.map
+//# sourceMappingURL=chunk-CMQW6KBV.js.map

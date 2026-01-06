@@ -1,7 +1,7 @@
 ---
 description: Check status of background operations
 argument-hint: "[job-id]"
-allowed-tools: ["mcp__bluera-knowledge__check_job_status", "mcp__bluera-knowledge__list_jobs"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # Check Background Job Status
@@ -15,11 +15,13 @@ Check the status of a background operation: **$ARGUMENTS**
    - If no arguments, show all active jobs
 
 2. If job ID provided:
-   - Use mcp__bluera-knowledge__check_job_status with the job ID
+   - Use mcp__bluera-knowledge__execute tool with command "job:status":
+     - args.jobId: The job ID from $ARGUMENTS
    - Display current status, progress, and details
 
 3. If no job ID provided:
-   - Use mcp__bluera-knowledge__list_jobs with activeOnly: true
+   - Use mcp__bluera-knowledge__execute tool with command "jobs":
+     - args.activeOnly: true
    - Display a table of running/pending jobs
 
 ## Display Format

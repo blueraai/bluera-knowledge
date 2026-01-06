@@ -1,7 +1,7 @@
 ---
 description: Cancel a background job
 argument-hint: "[job-id]"
-allowed-tools: ["mcp__bluera-knowledge__cancel_job"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # Cancel Background Job
@@ -13,7 +13,8 @@ Cancel a running or pending background job: **$ARGUMENTS**
 1. Parse the job ID from $ARGUMENTS (required)
    - If no job ID provided, show error and suggest using /bluera-knowledge:check-status to list active jobs
 
-2. Use mcp__bluera-knowledge__cancel_job with the job ID
+2. Use mcp__bluera-knowledge__execute tool with command "job:cancel":
+   - args.jobId: The job ID from $ARGUMENTS
 
 3. Display cancellation result:
 
