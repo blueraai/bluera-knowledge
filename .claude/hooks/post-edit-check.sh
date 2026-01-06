@@ -23,7 +23,7 @@ if [ -n "$LINT_OUTPUT" ]; then
 fi
 
 # Run typecheck (exit 2 to block and show to Claude)
-TYPE_OUTPUT=$(tsc --noEmit --pretty false 2>&1)
+TYPE_OUTPUT=$(npx tsc --noEmit --pretty false 2>&1)
 if [ -n "$TYPE_OUTPUT" ]; then
   echo "$TYPE_OUTPUT" | head -20 >&2
   exit 2
