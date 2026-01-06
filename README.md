@@ -1282,7 +1282,7 @@ Replace the path with your actual repo location. This creates a separate `bluera
 | `bun run lint` | 🔍 Run ESLint | Check code style issues |
 | `bun run typecheck` | 🔒 Run TypeScript type checking | Verify type safety |
 | `bun run precommit` | ✨ Smart validation (file-type aware) | Runs only relevant checks based on changed files |
-| `bun run prepush` | 📊 Smart coverage (skips tests for docs) | Runs coverage only for code changes |
+| `bun run prepush` | 📊 Smart coverage (skips for docs/config) | Runs coverage only when src/tests changed |
 | `bun run lint:quiet` | 🔇 ESLint (minimal output) | Used by git hooks |
 | `bun run typecheck:quiet` | 🔇 Type check (minimal output) | Used by git hooks |
 | `bun run test:changed:quiet` | 🔇 Test changed files (minimal output) | Used by git hooks |
