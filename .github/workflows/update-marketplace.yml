@@ -17,7 +17,7 @@ jobs:
         uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-          check-name: 'test'
+          check-regexp: '^(lint-and-typecheck|test|build)$'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           wait-interval: 10
           allowed-conclusions: success
@@ -25,12 +25,15 @@ jobs:
       # Get the tag name from the workflow run
       - name: Get tag name
         id: get_tag
+        env:
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           # Get the tag that triggered the Release workflow
-          TAG_NAME=$(echo "${{ github.event.workflow_run.head_branch }}" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+          # head_branch could be "v0.9.15" or "refs/tags/v0.9.15"
+          TAG_NAME=$(echo "$HEAD_BRANCH" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "")
           if [ -z "$TAG_NAME" ]; then
-            # Fallback: get from the commit
-            TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+            echo "::error::Could not extract tag from head_branch: $HEAD_BRANCH"
+            exit 1
           fi
           echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "Tag: ${TAG_NAME}"
