@@ -1,0 +1,28 @@
+{
+  "packageFiles": [
+    {
+      "filename": "package.json",
+      "type": "json"
+    }
+  ],
+  "bumpFiles": [
+    {
+      "filename": "package.json",
+      "type": "json"
+    },
+    {
+      "filename": ".claude-plugin/plugin.json",
+      "type": "json"
+    },
+    {
+      "filename": "README.md",
+      "updater": "scripts/readme-version-updater.cjs"
+    }
+  ],
+  "tagPrefix": "v",
+  "commitAll": true,
+  "sign": false,
+  "scripts": {
+    "postbump": "npm run build"
+  }
+}
