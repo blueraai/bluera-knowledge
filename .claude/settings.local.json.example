@@ -1,0 +1,49 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(osascript:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bun run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run typecheck:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && bun run lint:quiet 2>&1 || true",
+            "statusMessage": "Linting TypeScript code..."
+          },
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && bun run typecheck:quiet 2>&1 || true",
+            "statusMessage": "Type-checking TypeScript code..."
+          },
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && if git diff -- ':!.claude/' | grep -E '\\b(fallback|deprecated|backward compatibility)\\b' | grep -v '^-' | grep -qE '^\\+'; then echo 'Anti-pattern detected (fallback/deprecated/backward compatibility). Review CLAUDE.md: never use fallback code, deprecated implementations, or backward compatibility shims.' >&2; exit 2; fi",
+            "statusMessage": "Checking for deprecated patterns..."
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt|elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude needs your input\" with title \"Claude Code\" sound name \"Glass\"' 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "bluera-knowledge@bluera": true
+  }
+}
