@@ -15,8 +15,19 @@ fi
 # Auto-fix lint issues on modified files only (fast)
 echo "$MODIFIED_TS_FILES" | xargs npx eslint --fix --quiet 2>/dev/null || true
 
-# Run typecheck (can't auto-fix, just report)
-tsc --noEmit --pretty false 2>&1 | head -20
+# Check for remaining lint errors (exit 2 to block and show to Claude)
+LINT_OUTPUT=$(echo "$MODIFIED_TS_FILES" | xargs npx eslint --quiet 2>&1)
+if [ -n "$LINT_OUTPUT" ]; then
+  echo "$LINT_OUTPUT" >&2
+  exit 2
+fi
+
+# Run typecheck (exit 2 to block and show to Claude)
+TYPE_OUTPUT=$(tsc --noEmit --pretty false 2>&1)
+if [ -n "$TYPE_OUTPUT" ]; then
+  echo "$TYPE_OUTPUT" | head -20 >&2
+  exit 2
+fi
 
 # Check for anti-patterns in code files
 if git diff -- ':!.claude/' | grep -E '\b(fallback|deprecated|backward compatibility)\b' | grep -v '^-' | grep -qE '^\+'; then
