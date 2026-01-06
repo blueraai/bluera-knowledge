@@ -16,7 +16,7 @@ export interface ToolDefinition {
   name: string;
   description: string;
   schema: z.ZodType;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous tool registry requires any; schema provides runtime type safety via Zod validation
   handler: ToolHandler<any>;
 }
 
