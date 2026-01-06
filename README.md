@@ -726,7 +726,7 @@ Removed:
 
 **⚙️ Requirements:**
 - 🐍 Python 3 with `crawl4ai` package installed
-- 📦 A web store must be created first
+- 📦 Web store is auto-created if it doesn't exist
 
 **Examples:**
 ```bash
