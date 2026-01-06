@@ -40,6 +40,7 @@ All searchable in milliseconds, no rate limits, fully offline.
 - [Data Storage](#-data-storage)
 - [Development](#-development)
   - [Setup](#-setup)
+  - [Claude Code Settings](#️-claude-code-settings-recommended)
   - [Commands / Scripts](#-commands)
   - [Releasing](#-releasing)
   - [Testing](#-testing-locally)
@@ -1235,6 +1236,25 @@ bun test
 ```
 
 > **Note:** This project uses [Bun](https://bun.sh) for development. Install it via `curl -fsSL https://bun.sh/install | bash`
+
+### ⚙️ Claude Code Settings (Recommended)
+
+For the best development experience with Claude Code, copy the example settings file:
+
+```bash
+cp .claude/settings.local.json.example .claude/settings.local.json
+```
+
+**This provides:**
+- ✅ **Smart validation** - Automatically runs lint/typecheck after editing code (file-type aware)
+- ✅ **No permission prompts** - Pre-approves common commands (lint, typecheck, precommit)
+- ✅ **Desktop notifications** - macOS notifications when Claude needs your input
+- ✅ **Plugin auto-enabled** - Automatically enables the bluera-knowledge plugin
+- ✅ **Faster workflow** - Catch issues immediately without manual validation
+
+The validation is intelligent - it only runs checks for TypeScript/JavaScript files, skipping docs/config to save time.
+
+> **Note:** The `.claude/settings.local.json` file is gitignored (local to your machine). The example file is checked in for reference.
 
 ### 🔌 MCP Server
 
