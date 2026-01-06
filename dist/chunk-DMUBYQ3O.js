@@ -281,7 +281,9 @@ var JobService = class {
     if (fs.existsSync(pidFile)) {
       try {
         const pid = parseInt(fs.readFileSync(pidFile, "utf-8"), 10);
-        process.kill(pid, "SIGTERM");
+        if (!Number.isNaN(pid) && Number.isInteger(pid) && pid > 0) {
+          process.kill(pid, "SIGTERM");
+        }
       } catch {
       }
       try {
@@ -867,8 +869,8 @@ var CodeUnitService = class {
   extractSignature(line, name, type) {
     const sig = line.replace(/^\s*export\s+/, "").replace(/^\s*async\s+/, "").trim();
     if (type === "function") {
-      const match = sig.match(/function\s+(\w+\([^)]*\):\s*\w+)/);
-      if (match?.[1] !== void 0 && match[1].length > 0) return match[1];
+      const match = sig.match(/function\s+(\w+\([^)]*\):\s*[\w<>[\],\s|]+)/);
+      if (match?.[1] !== void 0 && match[1].length > 0) return match[1].trim();
     }
     if (type === "class") {
       return `class ${name}`;
@@ -4004,13 +4006,31 @@ var PythonBridge = class {
     });
   }
   stop() {
-    if (this.process) {
+    if (!this.process) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve3) => {
       this.stoppingIntentionally = true;
       this.rejectAllPending(new Error("Python bridge stopped"));
-      this.process.kill();
-      this.process = null;
-    }
-    return Promise.resolve();
+      const proc = this.process;
+      if (proc === null) {
+        resolve3();
+        return;
+      }
+      const onExit = () => {
+        resolve3();
+      };
+      proc.once("exit", onExit);
+      proc.kill();
+      setTimeout(() => {
+        proc.removeListener("exit", onExit);
+        if (this.process === proc) {
+          proc.kill("SIGKILL");
+          this.process = null;
+        }
+        resolve3();
+      }, 5e3);
+    });
   }
   rejectAllPending(error) {
     for (const pending of this.pending.values()) {
@@ -4085,4 +4105,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-3ABAWNLA.js.map
+//# sourceMappingURL=chunk-DMUBYQ3O.js.map

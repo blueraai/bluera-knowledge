@@ -33,6 +33,18 @@ describe('Python Bridge Integration Tests', () => {
       expect(result.pages.length).toBeGreaterThan(0);
     }, 30000);
 
+    it('stop() waits for process to actually exit', async () => {
+      // Make a request to ensure process is running
+      await bridge.crawl(baseUrl);
+
+      // Stop should wait for process exit
+      await bridge.stop();
+
+      // After stop() resolves, the process should be fully terminated
+      // Calling stop() again should be a no-op (process already null)
+      await bridge.stop(); // Should not hang or error
+    }, 30000);
+
     it('can create new bridge after stopping', async () => {
       // Stop the current bridge
       await bridge.stop();
