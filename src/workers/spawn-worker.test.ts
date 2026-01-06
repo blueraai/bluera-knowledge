@@ -22,27 +22,26 @@ describe('spawnBackgroundWorker', () => {
   it('should use tsx in development mode (src folder)', () => {
     spawnBackgroundWorker('test-job', '/test/data');
 
-    const callArgs = mockSpawn.mock.calls[0];
-    const command = callArgs?.[0];
-    const args = callArgs?.[1];
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+    const [command, args] = mockSpawn.mock.calls[0] as [string, string[], object];
 
     // In development (src folder), should use npx tsx
     expect(command).toBe('npx');
-    expect(args?.[0]).toBe('tsx');
+    expect(args[0]).toBe('tsx');
   });
 
   it('should spawn a background worker process', () => {
     spawnBackgroundWorker('test-job-id', '/test/data/dir');
 
-    expect(mockSpawn).toHaveBeenCalled();
-    expect(mockUnref).toHaveBeenCalled();
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+    expect(mockUnref).toHaveBeenCalledTimes(1);
   });
 
   it('should pass job ID as argument', () => {
     spawnBackgroundWorker('my-job-123', '/test/data/dir');
 
-    const callArgs = mockSpawn.mock.calls[0];
-    const args = callArgs?.[1];
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+    const [, args] = mockSpawn.mock.calls[0] as [string, string[], object];
 
     expect(args).toContain('my-job-123');
   });
@@ -50,8 +49,8 @@ describe('spawnBackgroundWorker', () => {
   it('should spawn detached process with ignored stdio', () => {
     spawnBackgroundWorker('test-job', '/test/data/dir');
 
-    const callArgs = mockSpawn.mock.calls[0];
-    const options = callArgs?.[2];
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+    const [, , options] = mockSpawn.mock.calls[0] as [string, string[], { detached: boolean; stdio: string }];
 
     expect(options).toMatchObject({
       detached: true,
@@ -63,10 +62,10 @@ describe('spawnBackgroundWorker', () => {
     const dataDir = '/custom/data/directory';
     spawnBackgroundWorker('test-job', dataDir);
 
-    const callArgs = mockSpawn.mock.calls[0];
-    const options = callArgs?.[2];
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+    const [, , options] = mockSpawn.mock.calls[0] as [string, string[], { env: Record<string, string> }];
 
-    expect(options?.env).toMatchObject({
+    expect(options.env).toMatchObject({
       ...process.env,
       BLUERA_DATA_DIR: dataDir
     });
@@ -76,10 +75,10 @@ describe('spawnBackgroundWorker', () => {
     const testDataDir = '.bluera/bluera-knowledge/data';
     spawnBackgroundWorker('job-456', testDataDir);
 
-    const callArgs = mockSpawn.mock.calls[0];
-    const options = callArgs?.[2];
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
+    const [, , options] = mockSpawn.mock.calls[0] as [string, string[], { env: Record<string, string> }];
 
-    expect(options?.env?.BLUERA_DATA_DIR).toBe(testDataDir);
+    expect(options.env.BLUERA_DATA_DIR).toBe(testDataDir);
   });
 });
 
@@ -116,13 +115,12 @@ describe('spawnBackgroundWorker (production mode)', () => {
 
     spawnProd('test-job', '/test/data');
 
-    const callArgs = mockSpawnProd.mock.calls[0];
-    const command = callArgs?.[0];
-    const args = callArgs?.[1];
+    expect(mockSpawnProd).toHaveBeenCalledTimes(1);
+    const [command, args] = mockSpawnProd.mock.calls[0] as [string, string[]];
 
     // In production (dist folder), should use Node.js directly
     expect(command).toBe(process.execPath);
-    expect(args?.[0]).toContain('background-worker-cli.js');
-    expect(args?.[1]).toBe('test-job');
+    expect(args[0]).toContain('background-worker-cli.js');
+    expect(args[1]).toBe('test-job');
   });
 });
