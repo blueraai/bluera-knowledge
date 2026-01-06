@@ -1,8 +1,3 @@
----
-description: Create atomic commits grouped by logical features with README.md and CLAUDE.md awareness.
-allowed-tools: Bash(git:*), Read, Glob, Grep
----
-
 # Commit
 
 Create atomic, well-organized commits. See @.claude/skills/atomic-commits/SKILL.md for documentation check criteria.
@@ -19,7 +14,6 @@ Create atomic, well-organized commits. See @.claude/skills/atomic-commits/SKILL.
 4. **Commit each group**:
    ```bash
    git add <files>
-   bun run precommit
    git commit -m "<type>(<scope>): <description>"
    ```
 5. **Handle untracked**: Categorize as commit/ignore/intentional
@@ -27,8 +21,11 @@ Create atomic, well-organized commits. See @.claude/skills/atomic-commits/SKILL.
 
 ## Validation
 
+Pre-commit hooks run automatically:
 - **Doc-only changes**: Skips all validation (instant)
-- **Code changes**: Runs lint + typecheck + tests + build
+- **Code changes**: Runs lint + typecheck per language
+
+If hooks fail, fix issues and retry. Never use `--no-verify`.
 
 ## Safety
 
