@@ -442,6 +442,7 @@ export class SearchService {
         ftsRRF: number;
         fileTypeBoost: number;
         frameworkBoost: number;
+        urlKeywordBoost: number;
       };
     }> = [];
 
@@ -466,6 +467,9 @@ export class SearchService {
       // Apply framework context boost
       const frameworkBoost = this.getFrameworkContextBoost(query, result);
 
+      // Apply URL keyword boost (helps "troubleshooting" find /troubleshooting pages)
+      const urlKeywordBoost = this.getUrlKeywordBoost(query, result);
+
       const metadata: {
         vectorRank?: number;
         ftsRank?: number;
@@ -473,11 +477,13 @@ export class SearchService {
         ftsRRF: number;
         fileTypeBoost: number;
         frameworkBoost: number;
+        urlKeywordBoost: number;
       } = {
         vectorRRF,
         ftsRRF,
         fileTypeBoost,
         frameworkBoost,
+        urlKeywordBoost,
       };
 
       if (vectorRank !== Infinity) {
@@ -489,7 +495,7 @@ export class SearchService {
 
       rrfScores.push({
         id,
-        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost,
+        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost * urlKeywordBoost,
         result,
         metadata,
       });
@@ -590,6 +596,43 @@ export class SearchService {
       : 1.0;
 
     return baseBoost * blendedMultiplier;
+  }
+
+  /**
+   * Get a score multiplier based on URL keyword matching.
+   * Boosts results where URL path contains significant query keywords.
+   * This helps queries like "troubleshooting" rank /troubleshooting pages first.
+   */
+  private getUrlKeywordBoost(query: string, result: SearchResult): number {
+    const url = result.metadata.url;
+    if (url === undefined || url === '') return 1.0;
+
+    // Extract path segments from URL and normalize
+    const urlPath = url.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+
+    // Common stop words to filter from queries
+    const stopWords = new Set([
+      'how', 'to', 'the', 'a', 'an', 'is', 'are', 'what', 'why', 'when',
+      'where', 'can', 'do', 'does', 'i', 'my', 'your', 'it', 'in', 'on',
+      'for', 'with', 'this', 'that', 'get', 'use', 'using'
+    ]);
+
+    // Extract meaningful query terms
+    const queryTerms = query.toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 2 && !stopWords.has(t));
+
+    if (queryTerms.length === 0) return 1.0;
+
+    // Count matching terms in URL path
+    const matchingTerms = queryTerms.filter(term => urlPath.includes(term));
+
+    if (matchingTerms.length === 0) return 1.0;
+
+    // Boost based on proportion of matching terms
+    // Single match: ~1.3, all terms match: ~1.6
+    const matchRatio = matchingTerms.length / queryTerms.length;
+    return 1.0 + (0.6 * matchRatio);
   }
 
   /**

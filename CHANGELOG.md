@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.9.27](https://github.com/blueraai/bluera-knowledge/compare/v0.9.26...v0.9.27) (2026-01-06)
+
+
+### Features
+
+* **logging:** add comprehensive pino-based file logging with auto-rotation ([1f8bc84](https://github.com/blueraai/bluera-knowledge/commit/1f8bc84493b1237d11597aa23312f52d632dcfac))
+* **search:** improve search quality for web content ([d2093af](https://github.com/blueraai/bluera-knowledge/commit/d2093af9d36089e3c5ea562be346bc9871477689))
+
+
+### Bug Fixes
+
+* **skills:** add required YAML frontmatter to commit skill ([dbba76d](https://github.com/blueraai/bluera-knowledge/commit/dbba76d5ae01c9d9de2b15c75bfd2756071fb2cd))
+
 ## [0.9.26](https://github.com/blueraai/bluera-knowledge/compare/v0.9.25...v0.9.26) (2026-01-06)
 
 
