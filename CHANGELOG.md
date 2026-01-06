@@ -1,31 +1,27 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-## [Unreleased]
+## [0.9.15](https://github.com/blueraai/bluera-knowledge/compare/v0.9.14...v0.9.15) (2026-01-06)
 
-### Added
-- `destroyServices()` function for proper CLI resource cleanup
-- CLI tests now enabled (previously skipped due to hanging subprocess)
-- 26 re-enabled CLI integration tests verifying exit codes, JSON format, quiet mode
-- Pre-commit hook auto-stages `dist/` after build (no manual staging needed)
 
-### Removed
-- Export/import CLI commands (`bkb export`, `bkb import`) - unused functionality
+### Features
 
-### Fixed
-- CLI commands now exit cleanly by calling `destroyServices()` after completion
-- PythonBridge subprocess properly terminated on CLI exit (no more hanging)
-- Suppressed noisy "Python bridge process killed" message on intentional stop
-- Flaky stress tests: removed relative timing comparisons, made thresholds generous (10-30s)
-- README rendering on GitHub: fixed nested code blocks breaking markdown parser
-- MCP server auto-start on import fixed with entry point guard
+* **crawl:** add Claude CLI availability detection for npm package mode ([9afaae5](https://github.com/blueraai/bluera-knowledge/commit/9afaae5b4b4da98ce787d966c9910004401756dd))
+* **release:** add automatic changelog generation with commit-and-tag-version ([177c6a3](https://github.com/blueraai/bluera-knowledge/commit/177c6a35f0a965b701940b2f8fc72fe2e4645647))
+* rename to @blueraai/bluera-knowledge and add npm publishing ([51a86cb](https://github.com/blueraai/bluera-knowledge/commit/51a86cb574fb9752224e724c1047a5000f4e898b))
+* **skills:** add hybrid MCP + Skills enhancement ([9fbee1d](https://github.com/blueraai/bluera-knowledge/commit/9fbee1d90d02663dbda9646e244423c7840330a6))
 
-### Changed
-- Integration tests rewritten to use service APIs instead of CLI (60+ tests, 120s faster)
-- Added dead code linting (knip) to precommit checks
-- Removed Vue fixture tests (third-party code not relevant to our test suite)
-- Documented `dist/` commit requirement for Claude Code plugin distribution
+
+### Bug Fixes
+
+* **ci:** add model warm-up step to prevent race conditions ([4f5cc6a](https://github.com/blueraai/bluera-knowledge/commit/4f5cc6a6a33f4ab28e8daa2ee6a02e1cc81bf59b))
+* **ci:** correct model cache location and test timeouts ([8ae7d9d](https://github.com/blueraai/bluera-knowledge/commit/8ae7d9dcd38ac7ccea3a5bae83ef07449adb693f))
+* **cli:** resolve hanging subprocess by adding destroyServices cleanup ([36acc15](https://github.com/blueraai/bluera-knowledge/commit/36acc1560ed6ea999781e63614de701c7277c8d5))
+* **docs:** remove nested code blocks breaking GitHub rendering ([11aef7a](https://github.com/blueraai/bluera-knowledge/commit/11aef7a433623c8831e235714a7c1382b146504d))
+* **hooks:** make npm precommit script use smart git hook ([4a9f6b0](https://github.com/blueraai/bluera-knowledge/commit/4a9f6b0bddfd3d1d310b8dba40093c36cc3fa163))
+* **security:** address vulnerabilities from security audit ([4de8b46](https://github.com/blueraai/bluera-knowledge/commit/4de8b461268484dadccee86da42f96c6917e262d))
+* **test:** remove flaky performance assertions from stress tests ([69a480b](https://github.com/blueraai/bluera-knowledge/commit/69a480ba00b6e4b5aace4ea1b732c0246552dc40))
 
 ## [0.9.11] - 2026-01-04
 
