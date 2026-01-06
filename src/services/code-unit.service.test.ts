@@ -97,7 +97,7 @@ function nested() {
       expect(result?.fullContent).toContain('if (true)');
     });
 
-    it('handles function with braces in string literals', () => {
+    it('correctly handles braces inside double-quoted string literals', () => {
       const code = `
 function withString() {
   const template = "{ this is a brace }";
@@ -107,11 +107,24 @@ function withString() {
 
       const result = service.extractCodeUnit(code, 'withString', 'typescript');
 
-      // NOTE: Current implementation has a bug - it doesn't handle braces in strings
-      // This test documents the current behavior
       expect(result).toBeDefined();
-      // The brace counting may be incorrect due to string literal braces
-      // but it should still complete the extraction
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('return template');
+    });
+
+    it('correctly handles braces inside single-quoted string literals', () => {
+      const code = `
+function withSingleQuote() {
+  const json = '{"key": "value"}';
+  return json;
+}
+      `.trim();
+
+      const result = service.extractCodeUnit(code, 'withSingleQuote', 'typescript');
+
+      expect(result).toBeDefined();
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('return json');
     });
 
     it('returns undefined for non-existent function', () => {
@@ -524,7 +537,7 @@ const unrelated = { key: "value" };
       expect(result?.fullContent).not.toContain('unrelated');
     });
 
-    it('handles brace in comments (limitation - not supported)', () => {
+    it('correctly handles braces in single-line comments', () => {
       const code = `
 function withComment() {
   // This comment has a brace: {
@@ -534,15 +547,30 @@ function withComment() {
 
       const result = service.extractCodeUnit(code, 'withComment', 'typescript');
 
-      // NOTE: Current implementation doesn't handle braces in comments
-      // This may cause incorrect boundary detection
       expect(result).toBeDefined();
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('return true');
     });
 
-    it('handles template literals with braces (limitation)', () => {
+    it('correctly handles braces in multi-line comments', () => {
+      const code = `
+function withMultiComment() {
+  /* { braces } in comment */
+  return false;
+}
+      `.trim();
+
+      const result = service.extractCodeUnit(code, 'withMultiComment', 'typescript');
+
+      expect(result).toBeDefined();
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('return false');
+    });
+
+    it('correctly handles template literals with embedded expressions', () => {
       const code = `
 function withTemplate() {
-  const str = \`template \${var} end\`;
+  const str = \`template \${value} end\`;
   return str;
 }
       `.trim();
@@ -550,7 +578,23 @@ function withTemplate() {
       const result = service.extractCodeUnit(code, 'withTemplate', 'typescript');
 
       expect(result).toBeDefined();
-      expect(result?.fullContent).toContain('template');
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('return str');
+    });
+
+    it('correctly handles template literals with braces in text', () => {
+      const code = `
+function withTemplateBraces() {
+  const json = \`{"key": "value"}\`;
+  return json;
+}
+      `.trim();
+
+      const result = service.extractCodeUnit(code, 'withTemplateBraces', 'typescript');
+
+      expect(result).toBeDefined();
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('return json');
     });
   });
 
