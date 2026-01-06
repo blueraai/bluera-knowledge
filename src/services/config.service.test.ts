@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ConfigService } from './config.service.js';
-import { rm, mkdtemp } from 'node:fs/promises';
+import { rm, mkdtemp, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -122,6 +122,38 @@ describe('ConfigService', () => {
       // Should successfully save to deep path
       const loaded = await service.load();
       expect(loaded).toBeDefined();
+    });
+  });
+
+  describe('first-run vs corruption handling (CLAUDE.md compliance)', () => {
+    it('creates config file on first run when missing', async () => {
+      // Config file does not exist
+      const config = await configService.load();
+
+      // Should return default config
+      expect(config.version).toBe(1);
+
+      // File should now exist (created automatically)
+      await expect(access(configPath)).resolves.toBeUndefined();
+    });
+
+    it('throws on corrupted config file', async () => {
+      // Create corrupted config file
+      await writeFile(configPath, '{invalid json syntax');
+
+      // Create fresh service (no cache)
+      const freshService = new ConfigService(configPath, tempDir);
+
+      // Should throw per CLAUDE.md "fail early and fast"
+      await expect(freshService.load()).rejects.toThrow();
+    });
+
+    it('throws with descriptive message on JSON parse error', async () => {
+      await writeFile(configPath, '{"incomplete":');
+
+      const freshService = new ConfigService(configPath, tempDir);
+
+      await expect(freshService.load()).rejects.toThrow(/JSON|parse|config/i);
     });
   });
 });

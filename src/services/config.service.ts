@@ -1,9 +1,21 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import type { AppConfig } from '../types/config.js';
 import { DEFAULT_CONFIG } from '../types/config.js';
 import { ProjectRootService } from './project-root.service.js';
+
+/**
+ * Check if a file exists
+ */
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export class ConfigService {
   private readonly configPath: string;
@@ -33,12 +45,21 @@ export class ConfigService {
       return this.config;
     }
 
+    const exists = await fileExists(this.configPath);
+    if (!exists) {
+      // First run - create config file with defaults
+      this.config = { ...DEFAULT_CONFIG };
+      await this.save(this.config);
+      return this.config;
+    }
+
+    // File exists - load it (throws on corruption per CLAUDE.md "fail early")
+    const content = await readFile(this.configPath, 'utf-8');
     try {
-      const content = await readFile(this.configPath, 'utf-8');
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       this.config = { ...DEFAULT_CONFIG, ...JSON.parse(content) } as AppConfig;
-    } catch {
-      this.config = { ...DEFAULT_CONFIG };
+    } catch (error) {
+      throw new Error(`Failed to parse config file at ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return this.config;

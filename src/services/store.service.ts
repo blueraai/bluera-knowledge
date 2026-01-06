@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { Store, FileStore, RepoStore, WebStore, StoreType } from '../types/store.js';
@@ -7,6 +7,18 @@ import { createStoreId } from '../types/brands.js';
 import type { Result } from '../types/result.js';
 import { ok, err } from '../types/result.js';
 import { cloneRepository } from '../plugin/git-clone.js';
+
+/**
+ * Check if a file exists
+ */
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export interface CreateStoreInput {
   name: string;
@@ -205,8 +217,18 @@ export class StoreService {
 
   private async loadRegistry(): Promise<void> {
     const registryPath = join(this.dataDir, 'stores.json');
+    const exists = await fileExists(registryPath);
+
+    if (!exists) {
+      // First run - create empty registry
+      this.registry = { stores: [] };
+      await this.saveRegistry();
+      return;
+    }
+
+    // File exists - load it (throws on corruption per CLAUDE.md "fail early")
+    const content = await readFile(registryPath, 'utf-8');
     try {
-      const content = await readFile(registryPath, 'utf-8');
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const data = JSON.parse(content) as { stores: Store[] };
       this.registry = {
@@ -217,8 +239,8 @@ export class StoreService {
           updatedAt: new Date(s.updatedAt),
         })),
       };
-    } catch {
-      this.registry = { stores: [] };
+    } catch (error) {
+      throw new Error(`Failed to parse store registry at ${registryPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

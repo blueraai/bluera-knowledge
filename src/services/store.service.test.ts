@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { StoreService } from './store.service.js';
-import { rm, mkdtemp } from 'node:fs/promises';
+import { rm, mkdtemp, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -497,6 +497,45 @@ describe('StoreService', () => {
     it('initializes with empty stores when no registry file exists', async () => {
       const stores = await storeService.list();
       expect(stores).toHaveLength(0);
+    });
+  });
+
+  describe('first-run vs corruption handling (CLAUDE.md compliance)', () => {
+    it('creates stores.json file on first run', async () => {
+      const freshDir = await mkdtemp(join(tmpdir(), 'fresh-'));
+      const freshService = new StoreService(freshDir);
+      await freshService.initialize();
+
+      // File should now exist
+      const registryPath = join(freshDir, 'stores.json');
+      await expect(access(registryPath)).resolves.toBeUndefined();
+
+      await rm(freshDir, { recursive: true, force: true });
+    });
+
+    it('throws on corrupted stores.json', async () => {
+      const corruptDir = await mkdtemp(join(tmpdir(), 'corrupt-'));
+      const registryPath = join(corruptDir, 'stores.json');
+      await writeFile(registryPath, '{invalid json syntax');
+
+      const freshService = new StoreService(corruptDir);
+
+      // Should throw per CLAUDE.md "fail early and fast"
+      await expect(freshService.initialize()).rejects.toThrow();
+
+      await rm(corruptDir, { recursive: true, force: true });
+    });
+
+    it('throws with descriptive message on JSON parse error', async () => {
+      const corruptDir = await mkdtemp(join(tmpdir(), 'corrupt-'));
+      const registryPath = join(corruptDir, 'stores.json');
+      await writeFile(registryPath, '{"stores": [');
+
+      const freshService = new StoreService(corruptDir);
+
+      await expect(freshService.initialize()).rejects.toThrow(/JSON|parse|registry/i);
+
+      await rm(corruptDir, { recursive: true, force: true });
     });
   });
 });
