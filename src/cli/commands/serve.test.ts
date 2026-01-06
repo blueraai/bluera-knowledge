@@ -326,4 +326,54 @@ describe('Serve Command - Execution Tests', () => {
       expect(callOrder).toEqual(['createApp', 'serve']);
     });
   });
+
+  describe('graceful shutdown', () => {
+    it('sets up SIGINT handler', async () => {
+      const processOnSpy = vi.spyOn(process, 'on').mockImplementation(() => process);
+
+      const command = createServeCommand(getOptions);
+      const actionHandler = (command as any)._actionHandler;
+      await actionHandler([]);
+
+      expect(processOnSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
+      processOnSpy.mockRestore();
+    });
+
+    it('sets up SIGTERM handler', async () => {
+      const processOnSpy = vi.spyOn(process, 'on').mockImplementation(() => process);
+
+      const command = createServeCommand(getOptions);
+      const actionHandler = (command as any)._actionHandler;
+      await actionHandler([]);
+
+      expect(processOnSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
+      processOnSpy.mockRestore();
+    });
+
+    it('calls destroyServices on SIGINT', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+      const processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+      let sigintHandler: (() => void) | undefined;
+
+      const processOnSpy = vi.spyOn(process, 'on').mockImplementation((event, handler) => {
+        if (event === 'SIGINT') {
+          sigintHandler = handler as () => void;
+        }
+        return process;
+      });
+
+      const command = createServeCommand(getOptions);
+      const actionHandler = (command as any)._actionHandler;
+      await actionHandler([]);
+
+      expect(sigintHandler).toBeDefined();
+      await sigintHandler!();
+
+      expect(destroyServices).toHaveBeenCalledWith(mockServices);
+      expect(processExitSpy).toHaveBeenCalledWith(0);
+
+      processOnSpy.mockRestore();
+      processExitSpy.mockRestore();
+    });
+  });
 });

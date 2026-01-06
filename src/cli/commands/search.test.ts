@@ -374,6 +374,8 @@ describe('search command execution', () => {
 
   describe('error handling', () => {
     it('exits with code 3 when specified store not found', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+
       mockServices.store.list.mockResolvedValue([]);
       mockServices.store.getByIdOrName.mockResolvedValue(undefined);
 
@@ -386,9 +388,13 @@ describe('search command execution', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Store not found: nonexistent');
       expect(processExitSpy).toHaveBeenCalledWith(3);
       expect(mockServices.search.search).not.toHaveBeenCalled();
+      // Must call destroyServices before process.exit per CLAUDE.md
+      expect(destroyServices).toHaveBeenCalled();
     });
 
     it('exits with code 1 when no stores exist', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+
       mockServices.store.list.mockResolvedValue([]);
 
       const command = createSearchCommand(getOptions);
@@ -399,9 +405,13 @@ describe('search command execution', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('No stores to search. Create a store first.');
       expect(processExitSpy).toHaveBeenCalledWith(1);
       expect(mockServices.search.search).not.toHaveBeenCalled();
+      // Must call destroyServices before process.exit per CLAUDE.md
+      expect(destroyServices).toHaveBeenCalled();
     });
 
     it('exits with code 3 when one of multiple stores not found', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+
       const mockStores = [{ id: createStoreId('store-1'), name: 'store1', type: 'file' as const }];
 
       mockServices.store.list.mockResolvedValue(mockStores);
@@ -418,6 +428,8 @@ describe('search command execution', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Store not found: nonexistent');
       expect(processExitSpy).toHaveBeenCalledWith(3);
+      // Must call destroyServices before process.exit per CLAUDE.md
+      expect(destroyServices).toHaveBeenCalled();
     });
   });
 

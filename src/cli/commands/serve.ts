@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { serve } from '@hono/node-server';
-import { createServices } from '../../services/index.js';
+import { createServices, destroyServices } from '../../services/index.js';
 import { createApp } from '../../server/app.js';
 import type { GlobalOptions } from '../program.js';
 
@@ -16,6 +16,17 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
 
       const port = parseInt(options.port ?? '3847', 10);
       const host = options.host ?? '127.0.0.1';
+
+      // Graceful shutdown handler
+      const shutdown = (): void => {
+        void (async (): Promise<void> => {
+          await destroyServices(services);
+          process.exit(0);
+        })();
+      };
+
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
 
       console.log(`Starting server on http://${host}:${String(port)}`);
 

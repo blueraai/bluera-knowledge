@@ -315,6 +315,8 @@ describe('createIndexCommand - Execution Tests', () => {
 
   describe('index command - error handling', () => {
     it('exits with code 3 when store not found', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
 
       const command = createIndexCommand(getOptions);
@@ -323,9 +325,13 @@ describe('createIndexCommand - Execution Tests', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Store not found: nonexistent-store');
       expect(processExitSpy).toHaveBeenCalledWith(3);
+      // Must call destroyServices before process.exit per CLAUDE.md
+      expect(destroyServices).toHaveBeenCalled();
     });
 
     it('exits with code 4 when indexing fails', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+
       const mockStore: Store = {
         id: 'store-123',
         name: 'test',
@@ -347,6 +353,8 @@ describe('createIndexCommand - Execution Tests', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Failed to read files');
       expect(processExitSpy).toHaveBeenCalledWith(4);
+      // Must call destroyServices before process.exit per CLAUDE.md
+      expect(destroyServices).toHaveBeenCalled();
     });
 
     it('handles lance initialization errors', async () => {
