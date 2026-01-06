@@ -36,8 +36,9 @@ export const metaCommands: CommandDefinition[] = [
     argsSchema: z.object({
       command: z.string().optional().describe('Command name to get help for')
     }),
-    handler: (args): Promise<ToolResponse> => {
-      const commandName = (args as Record<string, unknown>)['command'] as string | undefined;
+    handler: (args: Record<string, unknown>): Promise<ToolResponse> => {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+      const commandName = args['command'] as string | undefined;
       const helpText = generateHelp(commandName);
 
       return Promise.resolve({

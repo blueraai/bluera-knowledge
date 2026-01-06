@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   runMCPServer
-} from "./chunk-CMQW6KBV.js";
+} from "./chunk-J7J6LXOJ.js";
 import {
   IntelligentCrawler
 } from "./chunk-BICFAWMN.js";

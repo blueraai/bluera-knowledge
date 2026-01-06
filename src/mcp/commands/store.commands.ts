@@ -20,7 +20,12 @@ import {
  *
  * These commands wrap the existing store handlers, providing
  * a unified interface through the execute command.
+ *
+ * Note: Type assertions are necessary here because CommandHandler uses
+ * Record<string, unknown> for generic command args, while handlers expect
+ * specific typed args. Zod validates at runtime before the cast.
  */
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 export const storeCommands: CommandDefinition[] = [
   {
     name: 'stores',
@@ -67,3 +72,4 @@ export const storeCommands: CommandDefinition[] = [
     handler: (args, context) => handleDeleteStore(args as unknown as DeleteStoreArgs, context)
   }
 ];
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
