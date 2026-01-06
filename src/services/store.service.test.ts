@@ -237,6 +237,34 @@ describe('StoreService', () => {
     });
   });
 
+  describe('name validation', () => {
+    it('returns error when name is empty string', async () => {
+      const result = await storeService.create({
+        name: '',
+        type: 'file',
+        path: tempDir
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Store name cannot be empty');
+      }
+    });
+
+    it('returns error when name is whitespace only', async () => {
+      const result = await storeService.create({
+        name: '   ',
+        type: 'file',
+        path: tempDir
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Store name cannot be empty');
+      }
+    });
+  });
+
   describe('duplicate name handling', () => {
     it('returns error when creating store with duplicate name', async () => {
       const dir1 = await mkdtemp(join(tmpdir(), 'dup1-'));

@@ -935,7 +935,7 @@ describe('store command execution', () => {
       });
     });
 
-    it('routes source to path for repo stores', async () => {
+    it('routes source to path for repo stores with local path', async () => {
       const mockStore: RepoStore = {
         id: createStoreId('store-2'),
         name: 'repo-store',
@@ -962,6 +962,73 @@ describe('store command execution', () => {
         type: 'repo',
         path: '/repo/path',
         url: undefined,
+        description: undefined,
+        tags: undefined,
+      });
+    });
+
+    it('routes URL source to url for repo stores (Bug #1 fix)', async () => {
+      const mockStore: RepoStore = {
+        id: createStoreId('store-2'),
+        name: 'repo-url-store',
+        type: 'repo',
+        path: '/cloned/repo/path',
+        url: 'https://github.com/user/repo',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockServices.store.create.mockResolvedValue({
+        success: true,
+        data: mockStore,
+      });
+
+      const command = createStoreCommand(getOptions);
+      const createCommand = command.commands.find(c => c.name() === 'create');
+      const actionHandler = createCommand?._actionHandler;
+
+      createCommand.parseOptions(['--type', 'repo', '--source', 'https://github.com/user/repo']);
+      await actionHandler!(['repo-url-store']);
+
+      // URL should be routed to 'url' parameter, not 'path'
+      expect(mockServices.store.create).toHaveBeenCalledWith({
+        name: 'repo-url-store',
+        type: 'repo',
+        path: undefined,
+        url: 'https://github.com/user/repo',
+        description: undefined,
+        tags: undefined,
+      });
+    });
+
+    it('routes http:// URL source to url for repo stores', async () => {
+      const mockStore: RepoStore = {
+        id: createStoreId('store-2'),
+        name: 'repo-http-store',
+        type: 'repo',
+        path: '/cloned/repo/path',
+        url: 'http://internal-git.example.com/repo',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockServices.store.create.mockResolvedValue({
+        success: true,
+        data: mockStore,
+      });
+
+      const command = createStoreCommand(getOptions);
+      const createCommand = command.commands.find(c => c.name() === 'create');
+      const actionHandler = createCommand?._actionHandler;
+
+      createCommand.parseOptions(['--type', 'repo', '--source', 'http://internal-git.example.com/repo']);
+      await actionHandler!(['repo-http-store']);
+
+      expect(mockServices.store.create).toHaveBeenCalledWith({
+        name: 'repo-http-store',
+        type: 'repo',
+        path: undefined,
+        url: 'http://internal-git.example.com/repo',
         description: undefined,
         tags: undefined,
       });
