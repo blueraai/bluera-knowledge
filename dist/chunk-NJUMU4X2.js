@@ -1264,7 +1264,7 @@ var SearchService = class {
     const matchingTerms = queryTerms.filter((term) => urlPath.includes(term));
     if (matchingTerms.length === 0) return 1;
     const matchRatio = matchingTerms.length / queryTerms.length;
-    return 1 + 0.6 * matchRatio;
+    return 1 + 1 * matchRatio;
   }
   /**
    * Get a score multiplier based on file path keyword matching.
@@ -1309,7 +1309,7 @@ var SearchService = class {
     const matchingTerms = queryTerms.filter((term) => pathSegments.includes(term));
     if (matchingTerms.length === 0) return 1;
     const matchRatio = matchingTerms.length / queryTerms.length;
-    return 1 + 0.6 * matchRatio;
+    return 1 + 1 * matchRatio;
   }
   /**
    * Get a score multiplier based on framework context.
@@ -3971,4 +3971,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-MH4UM7WL.js.map
+//# sourceMappingURL=chunk-NJUMU4X2.js.map
