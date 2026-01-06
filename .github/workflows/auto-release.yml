@@ -3,6 +3,7 @@ name: Auto Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 # Prevent parallel tag creation - queue instead of cancel
 concurrency:
