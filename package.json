@@ -20,7 +20,7 @@
     "lint:deadcode": "knip --no-exit-code",
     "lint:deadcode:strict": "knip",
     "typecheck": "tsc --noEmit",
-    "precommit": "bun run lint:quiet && bun run lint:deadcode:quiet && bun run typecheck:quiet && bun run test:changed:quiet && bun run build:quiet",
+    "precommit": ".husky/pre-commit",
     "prepush": "bun run test:coverage:quiet",
     "lint:quiet": "eslint src/ --quiet && echo '✓ Lint passed' || echo '❌ ESLint errors'",
     "lint:deadcode:quiet": "knip --no-exit-code --quiet 2>&1 | grep -E '^(Unused|Configuration)' || echo '✓ No unused code'",

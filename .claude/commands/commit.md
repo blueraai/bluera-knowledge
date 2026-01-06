@@ -20,7 +20,7 @@ Create atomic, well-organized commits with each logical feature in its own commi
 **3. Commit each group**:
 ```bash
 git add <files>        # Stage related files
-bun run precommit      # Validate
+bun run precommit      # Validate (smart - skips checks for doc-only changes)
 # Fix issues if needed, re-stage, re-validate
 git commit -m "<type>(<scope>): <description>"
 ```
@@ -31,11 +31,11 @@ git commit -m "<type>(<scope>): <description>"
 
 ## Validation
 
-If `bun run precommit` fails:
-1. Read the error output
-2. Fix the issues
-3. Re-stage: `git add <fixed-file>`
-4. Re-run `bun run precommit`
+The precommit script is smart about file types:
+- **Doc-only changes**: Skips all validation (instant)
+- **Code changes**: Runs lint + typecheck + tests + build
+
+If validation fails, fix issues and re-run `bun run precommit`
 
 ## Safety
 
