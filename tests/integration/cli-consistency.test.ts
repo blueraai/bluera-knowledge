@@ -231,10 +231,7 @@ describe('CLI Consistency', () => {
       expect(result.stderr).toMatch(/^Error: Store not found: nonexistent/m);
     });
 
-    it('uses consistent "Error:" prefix for crawl store not found', () => {
-      const result = runCli('crawl https://example.com nonexistent');
-      expect(result.stderr).toMatch(/^Error: /m);
-    });
+    // Note: crawl auto-creates stores when not found, so no error test needed
   });
 
   describe('store delete Confirmation', () => {
