@@ -75,10 +75,10 @@ All searchable in milliseconds, no rate limits, fully offline.
 
 ```bash
 # Global install (CLI available everywhere)
-npm install -g @bluera/bluera-knowledge
+npm install -g bluera-knowledge
 
 # Or project install
-npm install --save-dev @bluera/bluera-knowledge
+npm install --save-dev bluera-knowledge
 ```
 
 > [!TIP]
@@ -1137,13 +1137,13 @@ While Bluera Knowledge works seamlessly as a Claude Code plugin, it's also avail
 Install globally via npm:
 
 ```bash
-npm install -g @bluera/bluera-knowledge
+npm install -g bluera-knowledge
 ```
 
 Or use in a project:
 
 ```bash
-npm install --save-dev @bluera/bluera-knowledge
+npm install --save-dev bluera-knowledge
 ```
 
 ### Usage
