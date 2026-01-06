@@ -16,7 +16,12 @@ import {
  *
  * These commands wrap the existing job handlers, providing
  * a unified interface through the execute command.
+ *
+ * Note: Type assertions are necessary here because CommandHandler uses
+ * Record<string, unknown> for generic command args, while handlers expect
+ * specific typed args. Zod validates at runtime before the cast.
  */
+/* eslint-disable @typescript-eslint/consistent-type-assertions */
 export const jobCommands: CommandDefinition[] = [
   {
     name: 'jobs',
@@ -46,3 +51,4 @@ export const jobCommands: CommandDefinition[] = [
     handler: (args, context) => handleCancelJob(args as unknown as CancelJobArgs, context)
   }
 ];
+/* eslint-enable @typescript-eslint/consistent-type-assertions */
