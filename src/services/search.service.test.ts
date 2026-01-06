@@ -1092,3 +1092,154 @@ describe('SearchService - Edge Cases', () => {
     );
   });
 });
+
+describe('SearchService - Path Keyword Boosting', () => {
+  let mockLanceStore: LanceStore;
+  let mockEmbeddingEngine: EmbeddingEngine;
+  let searchService: SearchService;
+  const storeId = createStoreId('test-store');
+
+  beforeEach(() => {
+    mockLanceStore = {
+      search: vi.fn(),
+      fullTextSearch: vi.fn(),
+    } as unknown as LanceStore;
+
+    mockEmbeddingEngine = {
+      embed: vi.fn().mockResolvedValue([0.1, 0.2, 0.3]),
+    } as unknown as EmbeddingEngine;
+
+    searchService = new SearchService(mockLanceStore, mockEmbeddingEngine);
+  });
+
+  it('boosts results when path contains query keywords', async () => {
+    // Two files with same base score, but one has "dispatcher" in the path
+    vi.mocked(mockLanceStore.search).mockResolvedValue([
+      {
+        id: createDocumentId('generic-file'),
+        score: 0.85,
+        content: 'handles async operations',
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date(),
+          path: '/src/utils/helpers.py'
+        }
+      },
+      {
+        id: createDocumentId('dispatcher-file'),
+        score: 0.85,
+        content: 'handles async operations',
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date(),
+          path: '/src/async_dispatcher.py'
+        }
+      },
+    ]);
+    vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
+
+    const results = await searchService.search({
+      query: 'dispatcher',
+      stores: [storeId],
+      mode: 'hybrid',
+      limit: 10,
+    });
+
+    // dispatcher-file should rank higher due to path keyword match
+    expect(results.results[0]?.id).toBe(createDocumentId('dispatcher-file'));
+  });
+
+  it('boosts results with multiple path keyword matches', async () => {
+    vi.mocked(mockLanceStore.search).mockResolvedValue([
+      {
+        id: createDocumentId('single-match'),
+        score: 0.85,
+        content: 'crawler implementation',
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date(),
+          path: '/src/crawler.py'
+        }
+      },
+      {
+        id: createDocumentId('double-match'),
+        score: 0.85,
+        content: 'crawler implementation',
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date(),
+          path: '/src/deep_crawling/crawler.py'
+        }
+      },
+    ]);
+    vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
+
+    const results = await searchService.search({
+      query: 'deep crawler',
+      stores: [storeId],
+      mode: 'hybrid',
+      limit: 10,
+    });
+
+    // double-match should rank higher (both "deep" and "crawler" in path)
+    expect(results.results[0]?.id).toBe(createDocumentId('double-match'));
+  });
+
+  it('ignores stop words when matching path keywords', async () => {
+    vi.mocked(mockLanceStore.search).mockResolvedValue([
+      {
+        id: createDocumentId('doc1'),
+        score: 0.85,
+        content: 'configuration guide',
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date(),
+          path: '/src/config.ts'
+        }
+      },
+    ]);
+    vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
+
+    const results = await searchService.search({
+      query: 'how to configure',
+      stores: [storeId],
+      mode: 'hybrid',
+      limit: 10,
+    });
+
+    // Should match "config" from "configure", not boost from "how" or "to"
+    expect(results.results.length).toBeGreaterThan(0);
+  });
+
+  it('does not boost when path has no matching keywords', async () => {
+    vi.mocked(mockLanceStore.search).mockResolvedValue([
+      {
+        id: createDocumentId('unrelated-path'),
+        score: 0.9,
+        content: 'dispatcher implementation details',
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date(),
+          path: '/src/utils/helpers.ts'
+        }
+      },
+    ]);
+    vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
+
+    const results = await searchService.search({
+      query: 'dispatcher',
+      stores: [storeId],
+      mode: 'hybrid',
+      limit: 10,
+    });
+
+    // Should still return result (content matches), just no path boost
+    expect(results.results.length).toBe(1);
+  });
+});

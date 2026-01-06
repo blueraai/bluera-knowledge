@@ -443,6 +443,7 @@ export class SearchService {
         fileTypeBoost: number;
         frameworkBoost: number;
         urlKeywordBoost: number;
+        pathKeywordBoost: number;
       };
     }> = [];
 
@@ -470,6 +471,9 @@ export class SearchService {
       // Apply URL keyword boost (helps "troubleshooting" find /troubleshooting pages)
       const urlKeywordBoost = this.getUrlKeywordBoost(query, result);
 
+      // Apply path keyword boost (helps "dispatcher" find async_dispatcher.py)
+      const pathKeywordBoost = this.getPathKeywordBoost(query, result);
+
       const metadata: {
         vectorRank?: number;
         ftsRank?: number;
@@ -478,12 +482,14 @@ export class SearchService {
         fileTypeBoost: number;
         frameworkBoost: number;
         urlKeywordBoost: number;
+        pathKeywordBoost: number;
       } = {
         vectorRRF,
         ftsRRF,
         fileTypeBoost,
         frameworkBoost,
         urlKeywordBoost,
+        pathKeywordBoost,
       };
 
       if (vectorRank !== Infinity) {
@@ -495,7 +501,7 @@ export class SearchService {
 
       rrfScores.push({
         id,
-        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost * urlKeywordBoost,
+        score: (vectorRRF + ftsRRF) * fileTypeBoost * frameworkBoost * urlKeywordBoost * pathKeywordBoost,
         result,
         metadata,
       });
@@ -626,6 +632,43 @@ export class SearchService {
 
     // Count matching terms in URL path
     const matchingTerms = queryTerms.filter(term => urlPath.includes(term));
+
+    if (matchingTerms.length === 0) return 1.0;
+
+    // Boost based on proportion of matching terms
+    // Single match: ~1.3, all terms match: ~1.6
+    const matchRatio = matchingTerms.length / queryTerms.length;
+    return 1.0 + (0.6 * matchRatio);
+  }
+
+  /**
+   * Get a score multiplier based on file path keyword matching.
+   * Boosts results where file path contains significant query keywords.
+   * This helps queries like "dispatcher" rank async_dispatcher.py higher.
+   */
+  private getPathKeywordBoost(query: string, result: SearchResult): number {
+    const path = result.metadata.path;
+    if (path === undefined || path === '') return 1.0;
+
+    // Extract path segments and normalize (split on slashes, dots, underscores, etc.)
+    const pathSegments = path.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+
+    // Common stop words to filter from queries
+    const stopWords = new Set([
+      'how', 'to', 'the', 'a', 'an', 'is', 'are', 'what', 'why', 'when',
+      'where', 'can', 'do', 'does', 'i', 'my', 'your', 'it', 'in', 'on',
+      'for', 'with', 'this', 'that', 'get', 'use', 'using'
+    ]);
+
+    // Extract meaningful query terms
+    const queryTerms = query.toLowerCase()
+      .split(/\s+/)
+      .filter(t => t.length > 2 && !stopWords.has(t));
+
+    if (queryTerms.length === 0) return 1.0;
+
+    // Count matching terms in file path
+    const matchingTerms = queryTerms.filter(term => pathSegments.includes(term));
 
     if (matchingTerms.length === 0) return 1.0;
 
