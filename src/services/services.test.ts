@@ -25,8 +25,8 @@ describe('destroyServices', () => {
   it('handles stop errors gracefully', async () => {
     mockPythonBridge.stop.mockRejectedValue(new Error('stop failed'));
 
-    // destroyServices should propagate errors
-    await expect(destroyServices(mockServices)).rejects.toThrow('stop failed');
+    // destroyServices catches and logs errors instead of propagating (Bug #2 fix)
+    await expect(destroyServices(mockServices)).resolves.not.toThrow();
   });
 
   it('is idempotent - multiple calls work correctly', async () => {

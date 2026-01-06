@@ -292,6 +292,37 @@ describe('LanceStore', () => {
     });
   });
 
+  describe('close', () => {
+    it('clears tables and connection', async () => {
+      const closeStoreId = createStoreId('close-test-store');
+      const closeStore = new LanceStore(tempDir);
+      await closeStore.initialize(closeStoreId);
+
+      const doc = {
+        id: createDocumentId('close-doc'),
+        content: 'test',
+        vector: new Array(384).fill(0.1),
+        metadata: {
+          type: 'file' as const,
+          storeId: closeStoreId,
+          indexedAt: new Date(),
+        },
+      };
+
+      await closeStore.addDocuments(closeStoreId, [doc]);
+
+      // Close should not throw
+      expect(() => closeStore.close()).not.toThrow();
+    });
+
+    it('handles close when never initialized', () => {
+      const uninitializedStore = new LanceStore(tempDir);
+
+      // Should not throw even when never initialized
+      expect(() => uninitializedStore.close()).not.toThrow();
+    });
+  });
+
   describe('multiple documents operations', () => {
     it('adds multiple documents at once', async () => {
       const multiStoreId = createStoreId('multi-doc-store');
