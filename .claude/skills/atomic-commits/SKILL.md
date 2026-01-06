@@ -1,6 +1,6 @@
 ---
-name: commit
-description: Create atomic commits grouped by logical features with README.md and CLAUDE.md awareness. (project)
+name: atomic-commits
+description: Create atomic commits grouped by logical features with README.md and CLAUDE.md awareness.
 version: 1.0.0
 ---
 
