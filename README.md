@@ -1397,9 +1397,9 @@ bun run dev  # Watches for changes and rebuilds instantly
 
 This is useful when testing CLI commands locally, but not required for committing — the hook handles everything.
 
-| `bun run version:patch` | 🔢 Bump patch version (0.0.x) | Bug fixes, minor updates |
-| `bun run version:minor` | 🔢 Bump minor version (0.x.0) | New features, backwards compatible |
-| `bun run version:major` | 🔢 Bump major version (x.0.0) | Breaking changes |
+| `bun run version:patch` | 🔢 Bump patch version (0.0.x) + generate CHANGELOG | Bug fixes, minor updates |
+| `bun run version:minor` | 🔢 Bump minor version (0.x.0) + generate CHANGELOG | New features, backwards compatible |
+| `bun run version:major` | 🔢 Bump major version (x.0.0) + generate CHANGELOG | Breaking changes |
 
 ### 🚀 Releasing
 
@@ -1408,15 +1408,12 @@ This is useful when testing CLI commands locally, but not required for committin
 bun run release:patch   # Bug fixes (0.0.x)
 bun run release:minor   # New features (0.x.0)
 bun run release:major   # Breaking changes (x.0.0)
-
-# If version already bumped but not tagged
-bun run release:current
 ```
 
 **Workflow (Fully Automated):**
 
 1. Make changes and commit
-2. Bump version: `bun run version:patch` (updates package.json, plugin.json, README)
+2. Bump version: `bun run version:patch` (updates package.json, plugin.json, README, CHANGELOG)
 3. Commit version bump: `git commit -am "chore: bump version to X.Y.Z"`
 4. Push to main: `git push`
 5. **GitHub Actions automatically:**

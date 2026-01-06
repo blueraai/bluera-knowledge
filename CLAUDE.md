@@ -6,7 +6,7 @@
 - `bun run precommit` - Full validation (lint, typecheck, tests, build)
 
 **Versioning (after code changes):**
-- `bun run version:patch` - Bump patch version (updates package.json, plugin.json, README badge)
+- `bun run version:patch` - Bump patch version (updates package.json, plugin.json, README badge, CHANGELOG.md)
 - `bun run version:minor` - Bump minor version
 - `bun run version:major` - Bump major version
 
@@ -26,7 +26,6 @@
 - `bun run release:patch` - Bump + commit + tag + push
 - `bun run release:minor` - Same for minor version
 - `bun run release:major` - Same for major version
-- `bun run release:current` - Tag + push current version (deprecated, use auto-release instead)
 
 ## GitHub Actions Workflows
 

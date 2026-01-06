@@ -29,14 +29,12 @@
     "test:coverage:quiet": "vitest run --coverage --reporter=dot 2>&1 | grep -E '(FAIL|Test Files|passed|Coverage|threshold)' | tail -10",
     "build:quiet": "tsup --silent 2>&1 | grep -E '(⚡️|success|Error)' || echo '✓ Build complete'",
     "prepare": "husky",
-    "version:major": "node scripts/version.js major",
-    "version:minor": "node scripts/version.js minor",
-    "version:patch": "node scripts/version.js patch",
-    "release:patch": "bun run version:patch && bun run release:finish",
-    "release:minor": "bun run version:minor && bun run release:finish",
-    "release:major": "bun run version:major && bun run release:finish",
-    "release:finish": "git commit -m \"chore: release v$(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push && git push --tags",
-    "release:current": "git tag v$(node -p \"require('./package.json').version\") && git push --tags"
+    "version:major": "commit-and-tag-version --release-as major --skip.commit --skip.tag",
+    "version:minor": "commit-and-tag-version --release-as minor --skip.commit --skip.tag",
+    "version:patch": "commit-and-tag-version --release-as patch --skip.commit --skip.tag",
+    "release:patch": "commit-and-tag-version --release-as patch && git push --follow-tags",
+    "release:minor": "commit-and-tag-version --release-as minor && git push --follow-tags",
+    "release:major": "commit-and-tag-version --release-as major && git push --follow-tags"
   },
   "keywords": [
     "knowledge",
@@ -63,6 +61,7 @@
     "@types/node": "^25.0.2",
     "@types/turndown": "^5.0.6",
     "@vitest/coverage-v8": "^4.0.16",
+    "commit-and-tag-version": "^12.6.1",
     "eslint": "^9.39.2",
     "eslint-plugin-eslint-comments": "^3.2.0",
     "husky": "^9.1.7",
