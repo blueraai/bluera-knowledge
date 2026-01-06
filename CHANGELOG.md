@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.9.30](https://github.com/blueraai/bluera-knowledge/compare/v0.9.26...v0.9.30) (2026-01-06)
+
+
+### Features
+
+* **crawl:** auto-create web store if it doesn't exist ([98face4](https://github.com/blueraai/bluera-knowledge/commit/98face486df69f6d27be9ccca84ce83cbc788de7))
+* **logging:** add comprehensive pino-based file logging with auto-rotation ([1f8bc84](https://github.com/blueraai/bluera-knowledge/commit/1f8bc84493b1237d11597aa23312f52d632dcfac))
+* **search:** add path keyword boosting for file/folder search ([8771a19](https://github.com/blueraai/bluera-knowledge/commit/8771a19f42c469f7728118deda58de12a0b80db6))
+* **search:** add URL keyword matching for improved web search ranking ([17f2e5e](https://github.com/blueraai/bluera-knowledge/commit/17f2e5e55f7d7ce79ac43ad06664cd5056468938))
+* **search:** improve search quality for web content ([d2093af](https://github.com/blueraai/bluera-knowledge/commit/d2093af9d36089e3c5ea562be346bc9871477689))
+* **search:** increase path/URL keyword boost for better source file ranking ([7f557d3](https://github.com/blueraai/bluera-knowledge/commit/7f557d3973db451b751caf925ad6dd306feed486)), closes [#2](https://github.com/blueraai/bluera-knowledge/issues/2) [#1](https://github.com/blueraai/bluera-knowledge/issues/1)
+* **search:** show token usage in MCP search responses ([b4fce10](https://github.com/blueraai/bluera-knowledge/commit/b4fce10c6fce30c493a03da6ff36dd235ae6543d))
+
+
+### Bug Fixes
+
+* **commands:** resolve skill/command naming collision for /commit ([3b8f854](https://github.com/blueraai/bluera-knowledge/commit/3b8f854caaab9b3390dd66a5e88870ebbd770146))
+* **hooks:** capture coverage exit code before filtering output ([e6c72ed](https://github.com/blueraai/bluera-knowledge/commit/e6c72ed9bd149c3291e50b4a4b6eef16e817cad7))
+* **hooks:** exit 2 on lint/type errors to block and show to Claude ([8782e8e](https://github.com/blueraai/bluera-knowledge/commit/8782e8ed584298d8f96e08571fbaa1bb9a45c6d7))
+* **hooks:** use npx tsc for PATH compatibility ([873b500](https://github.com/blueraai/bluera-knowledge/commit/873b5001e8e27ea676e0124fb1ec6570cef744b1))
+* **skills:** add required YAML frontmatter to commit skill ([dbba76d](https://github.com/blueraai/bluera-knowledge/commit/dbba76d5ae01c9d9de2b15c75bfd2756071fb2cd))
+
 ## [0.9.29](https://github.com/blueraai/bluera-knowledge/compare/v0.9.26...v0.9.29) (2026-01-06)
 
 
