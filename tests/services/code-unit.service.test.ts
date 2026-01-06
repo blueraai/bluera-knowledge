@@ -26,6 +26,54 @@ export function parseToken(token: string): object {
     expect(unit.endLine).toBe(5);
   });
 
+  it('should extract function with Promise return type', () => {
+    const code = `
+export async function getData(id: string): Promise<User> {
+  return await db.find(id);
+}
+`;
+
+    const service = new CodeUnitService();
+    const unit = service.extractCodeUnit(code, 'getData', 'typescript');
+
+    expect(unit).toBeDefined();
+    expect(unit.type).toBe('function');
+    expect(unit.name).toBe('getData');
+    // Should include the generic type
+    expect(unit.signature).toContain('getData(id: string)');
+    expect(unit.signature).toContain('Promise<User>');
+  });
+
+  it('should extract function with array return type', () => {
+    const code = `
+export function getUsers(): User[] {
+  return users;
+}
+`;
+
+    const service = new CodeUnitService();
+    const unit = service.extractCodeUnit(code, 'getUsers', 'typescript');
+
+    expect(unit).toBeDefined();
+    expect(unit.signature).toContain('getUsers()');
+    expect(unit.signature).toContain('User[]');
+  });
+
+  it('should extract function with union return type', () => {
+    const code = `
+export function findUser(id: string): User | null {
+  return users.find(u => u.id === id) || null;
+}
+`;
+
+    const service = new CodeUnitService();
+    const unit = service.extractCodeUnit(code, 'findUser', 'typescript');
+
+    expect(unit).toBeDefined();
+    expect(unit.signature).toContain('findUser(id: string)');
+    expect(unit.signature).toContain('User | null');
+  });
+
   it('should extract class with methods', () => {
     const code = `
 export class UserService {

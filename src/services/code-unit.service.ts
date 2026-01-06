@@ -156,9 +156,9 @@ export class CodeUnitService {
 
     if (type === 'function') {
       // Extract just "functionName(params): returnType"
-      // TODO: This regex is limited and may not handle complex return types, generics, or multiline signatures
-      const match = sig.match(/function\s+(\w+\([^)]*\):\s*\w+)/);
-      if (match?.[1] !== undefined && match[1].length > 0) return match[1];
+      // Supports: simple types, generics (Promise<T>), arrays (T[]), unions (T | null)
+      const match = sig.match(/function\s+(\w+\([^)]*\):\s*[\w<>[\],\s|]+)/);
+      if (match?.[1] !== undefined && match[1].length > 0) return match[1].trim();
     }
 
     if (type === 'class') {
