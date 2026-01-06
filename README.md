@@ -999,20 +999,21 @@ playwright install  # Required for --headless mode (Next.js, React, Vue sites)
 
 ## 🔌 MCP Integration
 
-The plugin includes a Model Context Protocol server that exposes search tools. This is configured in `.mcp.json`:
+The plugin includes a Model Context Protocol server that exposes search tools. This is configured in `mcp.plugin.json`:
 
 > [!IMPORTANT]
 > **Commands vs MCP Tools**: You interact with the plugin using `/bluera-knowledge:` slash commands. Behind the scenes, these commands instruct Claude Code to use MCP tools (`mcp__bluera-knowledge__*`) which handle the actual operations. Commands provide the user interface, while MCP tools are the backend that AI agents use to access your knowledge stores.
 
 ```json
 {
-  "bluera-knowledge": {
-    "command": "node",
-    "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
-    "env": {
-      "PWD": "${PWD}",
-      "DATA_DIR": "${PWD}/.bluera/bluera-knowledge/data",
-      "CONFIG_PATH": "${PWD}/.bluera/bluera-knowledge/config.json"
+  "mcpServers": {
+    "bluera-knowledge": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
+      "env": {
+        "DATA_DIR": ".bluera/bluera-knowledge/data",
+        "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
+      }
     }
   }
 }
@@ -1237,9 +1238,10 @@ bun test
 
 ### 🔌 MCP Server
 
-**`.mcp.json`** (Plugin distribution)
-- Located at plugin root (auto-discovered by Claude Code)
+**`mcp.plugin.json`** (Plugin distribution)
+- Located at plugin root, referenced from `plugin.json`
 - Uses `${CLAUDE_PLUGIN_ROOT}` and points to compiled `dist/mcp/server.js`
+- Only loaded when directory is loaded as a plugin (no project/plugin conflict)
 - Committed to git and distributed with the plugin
 
 **For local development/dogfooding:**
@@ -1337,20 +1339,26 @@ bun run release:current
 
 ### 🧪 Testing Locally
 
-> **⚠️ Important**: Do NOT run Claude Code from inside the plugin repository directory. The `.mcp.json` at the repo root will be treated as a **project config** (not a plugin config), causing `${CLAUDE_PLUGIN_ROOT}` errors.
-
-**Recommended approach per [official Anthropic plugin-dev documentation](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/plugin-dev/skills/mcp-integration)**:
+**Option 1: Development MCP Server (Recommended)**
 
 Use the local development MCP server (see "MCP Server" section above) which runs your source code directly via `tsx`:
 
-1. Set up dev MCP server in `~/.claude.json` (see lines 1002-1018 above)
-2. Work from OUTSIDE the plugin repository:
-   ```bash
-   cd ~/your-project  # NOT inside bluera-knowledge/
-   ```
-3. Test your changes - MCP server updates automatically as you edit code
+1. Set up dev MCP server in `~/.claude.json` (see MCP Server section)
+2. Test your changes - MCP server updates automatically as you edit code
 
-**For testing the CLI tool directly:**
+**Option 2: Test Plugin from Working Directory**
+
+Load the plugin directly from your development directory:
+
+```bash
+cd /path/to/bluera-knowledge
+claude --plugin-dir .
+```
+
+The MCP config in `mcp.plugin.json` is only loaded when the directory is loaded as a plugin (via `--plugin-dir` or marketplace install), so there's no conflict with project-level MCP config.
+
+**Option 3: CLI Tool Testing**
+
 ```bash
 # Build and link
 cd /path/to/bluera-knowledge
@@ -1363,43 +1371,15 @@ bluera-knowledge search "test query" my-store
 ```
 
 **For testing as an installed plugin:**
-This requires publishing a new version to the marketplace. Local plugin testing via `/plugin install` is not supported for development workflows.
-
-**Why this matters**: The `.mcp.json` file uses `${CLAUDE_PLUGIN_ROOT}` which only exists when loaded as a **plugin**, not as a **project config**. Working inside the repo causes Claude Code to load it as a project config where this variable is undefined.
-
-**If you must work inside the plugin repository:**
-
-```bash
-# Temporarily rename .mcp.json so Claude Code doesn't auto-discover it
-mv .mcp.json .mcp.json.plugin-dist
-
-# Work normally...
-# (MCP server won't be available, but that's expected - it requires proper installation)
-
-# When done, restore it
-mv .mcp.json.plugin-dist .mcp.json
-```
-
-This is necessary because of known limitations in Claude Code:
-- **[Issue #9354](https://github.com/anthropics/claude-code/issues/9354)**: `${CLAUDE_PLUGIN_ROOT}` expansion fails in project-scoped configs
-- **[Issue #14689](https://github.com/anthropics/claude-code/issues/14689)**: `--plugin-dir` flag has visibility bugs - plugins visible in `/plugins` list but not available to Claude Code
-- **[Issue #12541](https://github.com/anthropics/claude-code/issues/12541)**: Feature request for plugin environment variables (not yet implemented)
-
-**Alternative - Testing with `--plugin-dir`**: Not recommended due to the above issues:
-
-```bash
-# ⚠️ Known to have visibility bugs
-cd ~/your-project  # Use from outside the plugin repo
-claude --plugin-dir /path/to/bluera-knowledge
-```
+This requires publishing a new version to the marketplace.
 
 ### 📂 Project Structure
 
 ```
 .claude-plugin/
-└── plugin.json          # Plugin metadata
+└── plugin.json          # Plugin metadata (references mcp.plugin.json)
 
-.mcp.json                # MCP server configuration (auto-discovered)
+mcp.plugin.json          # MCP server configuration (plugin-scoped)
 commands/                # Slash commands (auto-discovered)
 skills/                  # Agent Skills (auto-discovered)
 ├── knowledge-search/    # How to access dependency sources
