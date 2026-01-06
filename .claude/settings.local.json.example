@@ -5,7 +5,8 @@
       "Bash(bun run lint:*)",
       "Bash(bun run typecheck:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(bun run precommit:*)"
     ]
   },
   "hooks": {
@@ -15,18 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && bun run lint:quiet 2>&1 || true",
-            "statusMessage": "Linting TypeScript code..."
-          },
-          {
-            "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && bun run typecheck:quiet 2>&1 || true",
-            "statusMessage": "Type-checking TypeScript code..."
-          },
-          {
-            "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && if git diff -- ':!.claude/' | grep -E '\\b(fallback|deprecated|backward compatibility)\\b' | grep -v '^-' | grep -qE '^\\+'; then echo 'Anti-pattern detected (fallback/deprecated/backward compatibility). Review CLAUDE.md: never use fallback code, deprecated implementations, or backward compatibility shims.' >&2; exit 2; fi",
-            "statusMessage": "Checking for deprecated patterns..."
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-check.sh\"",
+            "statusMessage": "Validating changes..."
           }
         ]
       }
