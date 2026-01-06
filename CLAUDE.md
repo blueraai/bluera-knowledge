@@ -1,3 +1,27 @@
+# THIS IS CLAUDE.md - YOUR MEMORY FILE
+
+**STOP. READ THIS FIRST.**
+
+This file is YOUR (Claude's) project memory. It is NOT user documentation. It is NOT a README.
+
+| File | Purpose | Audience |
+|------|---------|----------|
+| **CLAUDE.md** (this file) | Claude Code's memory - scripts, workflows, coding rules | YOU (Claude) |
+| **README.md** | User-facing documentation - features, installation, API | HUMANS (users) |
+
+**When to update this file:** When scripts, CI/CD workflows, build processes, or coding conventions change.
+
+**Keep this file LEAN.** This entire file loads into your context every session. Be concise. No prose. No redundancy. Every line must earn its place.
+
+**CLAUDE.md is hierarchical.** Any subdirectory can have its own CLAUDE.md that auto-loads when you work in that directory. Use this pattern:
+- **Root CLAUDE.md** (this file): Project-wide info - scripts, CI/CD, general conventions
+- **Subdirectory CLAUDE.md**: Directory-specific context scoped to files below it
+- Nest as deep as needed - each level inherits from parents
+
+**Stay DRY with includes.** Use `@path/to/file` syntax to import content instead of duplicating. Not evaluated inside code blocks.
+
+---
+
 ## Scripts
 
 **Development:**
