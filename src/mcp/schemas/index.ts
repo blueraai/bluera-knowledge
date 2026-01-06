@@ -119,3 +119,20 @@ export const CancelJobArgsSchema = z.object({
 });
 
 export type CancelJobArgs = z.infer<typeof CancelJobArgsSchema>;
+
+// ============================================================================
+// Execute Meta-Tool Schema
+// ============================================================================
+
+/**
+ * Schema for execute meta-tool arguments
+ *
+ * The execute tool consolidates store and job management commands
+ * into a single tool, reducing context overhead.
+ */
+export const ExecuteArgsSchema = z.object({
+  command: z.string().min(1, 'Command name is required'),
+  args: z.record(z.string(), z.unknown()).optional()
+});
+
+export type ExecuteArgs = z.infer<typeof ExecuteArgsSchema>;

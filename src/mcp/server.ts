@@ -6,6 +6,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { createServices } from '../services/index.js';
 import { tools } from './handlers/index.js';
+import { handleExecute } from './handlers/execute.handler.js';
+import { ExecuteArgsSchema } from './schemas/index.js';
 import type { MCPServerOptions } from './types.js';
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -23,10 +25,11 @@ export function createMCPServer(options: MCPServerOptions): Server {
     }
   );
 
-  // List available tools
+  // List available tools - consolidated from 10 tools to 3 for reduced context overhead
   server.setRequestHandler(ListToolsRequestSchema, () => {
     return Promise.resolve({
       tools: [
+        // Native search tool with full schema (most used, benefits from detailed params)
         {
           name: 'search',
           description: 'Search all indexed knowledge stores with pattern detection and AI-optimized results. Returns structured code units with progressive context layers.',
@@ -62,93 +65,7 @@ export function createMCPServer(options: MCPServerOptions): Server {
             required: ['query']
           }
         },
-        {
-          name: 'list_stores',
-          description: 'List all indexed knowledge stores (library sources, reference material, documentation)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              type: {
-                type: 'string',
-                enum: ['file', 'repo', 'web'],
-                description: 'Filter by store type (optional)'
-              }
-            }
-          }
-        },
-        {
-          name: 'get_store_info',
-          description: 'Get detailed information about a specific store including its file path for direct access',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              store: {
-                type: 'string',
-                description: 'Store name or ID'
-              }
-            },
-            required: ['store']
-          }
-        },
-        {
-          name: 'create_store',
-          description: 'Create a new knowledge store from git URL or local path',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: {
-                type: 'string',
-                description: 'Store name'
-              },
-              type: {
-                type: 'string',
-                enum: ['file', 'repo'],
-                description: 'Store type'
-              },
-              source: {
-                type: 'string',
-                description: 'Git URL or local path'
-              },
-              branch: {
-                type: 'string',
-                description: 'Git branch (for repo type)'
-              },
-              description: {
-                type: 'string',
-                description: 'Store description'
-              }
-            },
-            required: ['name', 'type', 'source']
-          }
-        },
-        {
-          name: 'index_store',
-          description: 'Index or re-index a knowledge store to make it searchable',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              store: {
-                type: 'string',
-                description: 'Store name or ID'
-              }
-            },
-            required: ['store']
-          }
-        },
-        {
-          name: 'delete_store',
-          description: 'Delete a knowledge store and all associated data (database, cloned files)',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              store: {
-                type: 'string',
-                description: 'Store name or ID to delete'
-              }
-            },
-            required: ['store']
-          }
-        },
+        // Native get_full_context tool (frequently used after search)
         {
           name: 'get_full_context',
           description: 'Get complete code and context for a specific search result by ID. Use this after search to get full implementation details.',
@@ -163,51 +80,23 @@ export function createMCPServer(options: MCPServerOptions): Server {
             required: ['resultId']
           }
         },
+        // Meta-tool for store and job management (consolidates 8 tools into 1)
         {
-          name: 'check_job_status',
-          description: 'Check the status of a background job (clone, index, crawl operations)',
+          name: 'execute',
+          description: 'Execute store/job management commands. Commands: stores, store:info, store:create, store:index, store:delete, jobs, job:status, job:cancel, help, commands',
           inputSchema: {
             type: 'object',
             properties: {
-              jobId: {
+              command: {
                 type: 'string',
-                description: 'Job ID to check status for'
-              }
-            },
-            required: ['jobId']
-          }
-        },
-        {
-          name: 'list_jobs',
-          description: 'List all background jobs, optionally filtered by status',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              status: {
-                type: 'string',
-                enum: ['pending', 'running', 'completed', 'failed', 'cancelled'],
-                description: 'Filter jobs by status (optional)'
+                description: 'Command to execute (e.g., "stores", "store:create", "jobs", "help")'
               },
-              activeOnly: {
-                type: 'boolean',
-                default: false,
-                description: 'Only show active (pending/running) jobs'
-              }
-            }
-          }
-        },
-        {
-          name: 'cancel_job',
-          description: 'Cancel a running or pending background job',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              jobId: {
-                type: 'string',
-                description: 'Job ID to cancel'
+              args: {
+                type: 'object',
+                description: 'Command arguments (e.g., {store: "mystore"} for store:info)'
               }
             },
-            required: ['jobId']
+            required: ['command']
           }
         }
       ]
@@ -218,24 +107,31 @@ export function createMCPServer(options: MCPServerOptions): Server {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    // Find handler in registry
+    // Create services once (needed by all handlers)
+    const services = await createServices(
+      options.config,
+      options.dataDir,
+      options.projectRoot
+    );
+    const context = { services, options };
+
+    // Handle execute meta-tool
+    if (name === 'execute') {
+      const validated = ExecuteArgsSchema.parse(args ?? {});
+      return handleExecute(validated, context);
+    }
+
+    // Find handler in registry for native tools (search, get_full_context)
     const tool = tools.find(t => t.name === name);
-    if (!tool) {
+    if (tool === undefined) {
       throw new Error(`Unknown tool: ${name}`);
     }
 
     // Validate arguments with Zod
     const validated = tool.schema.parse(args ?? {});
 
-    // Create services once
-    const services = await createServices(
-      options.config,
-      options.dataDir,
-      options.projectRoot
-    );
-
     // Execute handler with context
-    return tool.handler(validated, { services, options });
+    return tool.handler(validated, context);
   });
 
   return server;

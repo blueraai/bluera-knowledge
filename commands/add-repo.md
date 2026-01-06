@@ -1,7 +1,7 @@
 ---
 description: Clone and index a library source repository
 argument-hint: "[git-url] [--name store-name] [--branch branch-name]"
-allowed-tools: ["mcp__bluera-knowledge__create_store"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # Add Repository to Knowledge Stores
@@ -15,11 +15,11 @@ Clone and index a library source repository: **$ARGUMENTS**
    - Extract --name parameter (optional, defaults to repo name from URL)
    - Extract --branch parameter (optional, defaults to default branch)
 
-2. Use mcp__bluera-knowledge__create_store tool:
-   - name: Store name (from --name or extracted from URL)
-   - type: "repo"
-   - source: The git URL
-   - branch: Branch name (if --branch specified)
+2. Use mcp__bluera-knowledge__execute tool with command "store:create":
+   - args.name: Store name (from --name or extracted from URL)
+   - args.type: "repo"
+   - args.source: The git URL
+   - args.branch: Branch name (if --branch specified)
 
 3. Display results showing job ID for background indexing:
 

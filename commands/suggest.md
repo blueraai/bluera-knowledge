@@ -1,6 +1,6 @@
 ---
 description: Suggest important dependencies to add to knowledge stores
-allowed-tools: ["Glob", "Read", "mcp__bluera-knowledge__list_stores", "WebSearch"]
+allowed-tools: ["Glob", "Read", "mcp__bluera-knowledge__execute", "WebSearch"]
 ---
 
 # Suggest Dependencies to Index
@@ -28,7 +28,7 @@ Analyze project dependencies and suggest important libraries to add to knowledge
    - Count imports/requires for each dependency
    - Rank dependencies by frequency of use
 
-4. **Get existing stores** using mcp__bluera-knowledge__list_stores:
+4. **Get existing stores** using mcp__bluera-knowledge__execute with command "stores":
    - Filter out dependencies already in stores
    - Focus on new suggestions
 

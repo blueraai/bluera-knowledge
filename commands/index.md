@@ -1,7 +1,7 @@
 ---
 description: Re-index a knowledge store
 argument-hint: "[store-name-or-id]"
-allowed-tools: ["mcp__bluera-knowledge__index_store"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # Re-index Knowledge Store
@@ -12,8 +12,8 @@ Re-index a knowledge store: **$ARGUMENTS**
 
 1. Parse the store name or ID from $ARGUMENTS (required)
 
-2. Use mcp__bluera-knowledge__index_store tool:
-   - store: The store name or ID from $ARGUMENTS
+2. Use mcp__bluera-knowledge__execute tool with command "store:index":
+   - args.store: The store name or ID from $ARGUMENTS
 
 3. Display results showing job ID for background indexing:
 

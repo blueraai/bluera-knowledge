@@ -1,6 +1,6 @@
 ---
 description: List all indexed library stores
-allowed-tools: ["mcp__bluera-knowledge__list_stores"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # List Knowledge Stores
@@ -9,7 +9,7 @@ Show all configured knowledge stores in the project.
 
 ## Steps
 
-1. Use the mcp__bluera-knowledge__list_stores tool to retrieve all stores
+1. Use the mcp__bluera-knowledge__execute tool with command "stores" to retrieve all stores
 
 2. Present results in a clean table format:
 

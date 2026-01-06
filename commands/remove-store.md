@@ -1,7 +1,7 @@
 ---
 description: Delete a knowledge store and all associated data
 argument-hint: "[store-name-or-id]"
-allowed-tools: ["mcp__bluera-knowledge__delete_store"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # Remove Knowledge Store
@@ -13,8 +13,8 @@ Delete a knowledge store and all associated data: **$ARGUMENTS**
 1. Parse the store name or ID from $ARGUMENTS (required)
    - If no store provided, show error and suggest using /bluera-knowledge:stores to list available stores
 
-2. Use mcp__bluera-knowledge__delete_store tool:
-   - store: The store name or ID from $ARGUMENTS
+2. Use mcp__bluera-knowledge__execute tool with command "store:delete":
+   - args.store: The store name or ID from $ARGUMENTS
 
 3. Display deletion result:
 

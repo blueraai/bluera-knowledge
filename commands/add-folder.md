@@ -1,7 +1,7 @@
 ---
 description: Index a local folder of reference material
 argument-hint: "[path] [--name store-name]"
-allowed-tools: ["mcp__bluera-knowledge__create_store"]
+allowed-tools: ["mcp__bluera-knowledge__execute"]
 ---
 
 # Add Local Folder to Knowledge Stores
@@ -14,10 +14,10 @@ Index a local folder of reference material: **$ARGUMENTS**
    - Extract the folder path (required, first positional argument)
    - Extract --name parameter (optional, defaults to folder name)
 
-2. Use mcp__bluera-knowledge__create_store tool:
-   - name: Store name (from --name or folder basename)
-   - type: "file"
-   - source: The folder path
+2. Use mcp__bluera-knowledge__execute tool with command "store:create":
+   - args.name: Store name (from --name or folder basename)
+   - args.type: "file"
+   - args.source: The folder path
 
 3. Display results showing job ID for background indexing:
 
