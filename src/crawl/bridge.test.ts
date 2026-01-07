@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PythonBridge } from './bridge.js';
 import type { ChildProcess } from 'node:child_process';
+import type { Interface as ReadlineInterface, ReadLineOptions } from 'node:readline';
 import { EventEmitter } from 'node:events';
 
 // Mock child_process
@@ -27,20 +28,27 @@ describe('PythonBridge', () => {
   let mockReadline: MockReadline;
   let mockStderrReadline: MockReadline;
 
+  // Mock classes that satisfy the ChildProcess and Interface contracts
   class MockChildProcess extends EventEmitter {
-    stdin = {
-      write: vi.fn(),
-    };
+    stdin = { write: vi.fn() };
     stdout = new EventEmitter();
     stderr = new EventEmitter();
     kill = vi.fn(() => {
       // Emit exit event asynchronously to simulate real process behavior
       setImmediate(() => this.emit('exit', 0, null));
     });
+    // Type-safe cast helper
+    asChildProcess(): ChildProcess {
+      return this as unknown as ChildProcess;
+    }
   }
 
   class MockReadline extends EventEmitter {
     close = vi.fn();
+    // Type-safe cast helper
+    asInterface(): ReadlineInterface {
+      return this as unknown as ReadlineInterface;
+    }
   }
 
   beforeEach(() => {
@@ -50,14 +58,13 @@ describe('PythonBridge', () => {
     mockReadline = new MockReadline();
     mockStderrReadline = new MockReadline();
 
-    vi.mocked(spawn).mockReturnValue(mockProcess as unknown as ChildProcess);
-    // Use mockImplementation to create new instances each time
-    vi.mocked(createInterface).mockImplementation((config: any) => {
+    vi.mocked(spawn).mockReturnValue(mockProcess.asChildProcess());
+    vi.mocked(createInterface).mockImplementation((config: ReadLineOptions) => {
       // First call is for stderr, second is for stdout
       if (config.input === mockProcess.stderr) {
-        return mockStderrReadline as any;
+        return mockStderrReadline.asInterface();
       }
-      return mockReadline as any;
+      return mockReadline.asInterface();
     });
   });
 
@@ -397,10 +404,10 @@ describe('PythonBridge', () => {
       const newMockReadline = new MockReadline();
       const newMockStderrReadline = new MockReadline();
 
-      vi.mocked(spawn).mockReturnValue(newMockProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(newMockProcess.asChildProcess());
       vi.mocked(createInterface)
-        .mockReturnValueOnce(newMockStderrReadline as any)
-        .mockReturnValueOnce(newMockReadline as any);
+        .mockReturnValueOnce(newMockStderrReadline.asInterface())
+        .mockReturnValueOnce(newMockReadline.asInterface());
 
       const promise = bridge.crawl('https://example.com');
 
@@ -418,18 +425,20 @@ describe('PythonBridge', () => {
 
     it('should handle process with null stdout', async () => {
       const nullStdoutProcess = new MockChildProcess();
-      (nullStdoutProcess as any).stdout = null;
+      // Override stdout to null for this test case
+      Object.defineProperty(nullStdoutProcess, 'stdout', { value: null });
 
-      vi.mocked(spawn).mockReturnValue(nullStdoutProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(nullStdoutProcess.asChildProcess());
 
       await expect(bridge.start()).rejects.toThrow('Python bridge process stdout is null');
     });
 
     it('should kill process when stdout is null to prevent zombie process', async () => {
       const nullStdoutProcess = new MockChildProcess();
-      (nullStdoutProcess as any).stdout = null;
+      // Override stdout to null for this test case
+      Object.defineProperty(nullStdoutProcess, 'stdout', { value: null });
 
-      vi.mocked(spawn).mockReturnValue(nullStdoutProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(nullStdoutProcess.asChildProcess());
 
       await expect(bridge.start()).rejects.toThrow('Python bridge process stdout is null');
 
@@ -583,10 +592,10 @@ describe('PythonBridge', () => {
       const newMockReadline = new MockReadline();
       const newMockStderrReadline = new MockReadline();
 
-      vi.mocked(spawn).mockReturnValue(newMockProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(newMockProcess.asChildProcess());
       vi.mocked(createInterface)
-        .mockReturnValueOnce(newMockStderrReadline as any)
-        .mockReturnValueOnce(newMockReadline as any);
+        .mockReturnValueOnce(newMockStderrReadline.asInterface())
+        .mockReturnValueOnce(newMockReadline.asInterface());
 
       await bridge.start();
 
@@ -617,7 +626,7 @@ describe('PythonBridge', () => {
       mockProcess.emit('exit', 0, null);
 
       // Should be able to start again
-      vi.mocked(spawn).mockReturnValue(mockProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(mockProcess.asChildProcess());
       await bridge.start();
 
       expect(spawn).toHaveBeenCalledTimes(2);
@@ -631,10 +640,10 @@ describe('PythonBridge', () => {
       const newMockReadline = new MockReadline();
       const newMockStderrReadline = new MockReadline();
 
-      vi.mocked(spawn).mockReturnValue(newMockProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(newMockProcess.asChildProcess());
       vi.mocked(createInterface)
-        .mockReturnValueOnce(newMockStderrReadline as any)
-        .mockReturnValueOnce(newMockReadline as any);
+        .mockReturnValueOnce(newMockStderrReadline.asInterface())
+        .mockReturnValueOnce(newMockReadline.asInterface());
 
       await bridge.start();
 
@@ -653,10 +662,10 @@ describe('PythonBridge', () => {
       const newMockReadline = new MockReadline();
       const newMockStderrReadline = new MockReadline();
 
-      vi.mocked(spawn).mockReturnValue(newMockProcess as unknown as ChildProcess);
+      vi.mocked(spawn).mockReturnValue(newMockProcess.asChildProcess());
       vi.mocked(createInterface)
-        .mockReturnValueOnce(newMockStderrReadline as any)
-        .mockReturnValueOnce(newMockReadline as any);
+        .mockReturnValueOnce(newMockStderrReadline.asInterface())
+        .mockReturnValueOnce(newMockReadline.asInterface());
 
       const promise = bridge.crawl('https://example.com');
 
@@ -675,7 +684,8 @@ describe('PythonBridge', () => {
   describe('Error Edge Cases', () => {
     it('should handle crawl when process stdin is null', async () => {
       await bridge.start();
-      (mockProcess as any).stdin = null;
+      // Override stdin to null for this test case
+      Object.defineProperty(mockProcess, 'stdin', { value: null });
 
       await expect(bridge.crawl('https://example.com')).rejects.toThrow('process not available');
     });
