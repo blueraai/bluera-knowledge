@@ -11,7 +11,7 @@
       "type": "json"
     },
     {
-      "filename": ".claude-plugin/plugin.json",
+      "filename": "plugin.json",
       "type": "json"
     }
   ],
