@@ -1365,24 +1365,39 @@ The validation is intelligent - it only runs checks for TypeScript/JavaScript fi
 
 > **Note:** The `.claude/settings.local.json` file is gitignored (local to your machine). The example file is checked in for reference.
 
-### 🔌 MCP Server
+### 🐕 Dogfooding
 
-**`mcp.plugin.json`** (Plugin distribution)
-- Located at plugin root, referenced from `plugin.json`
-- Uses `${CLAUDE_PLUGIN_ROOT}` and points to compiled `dist/mcp/server.js`
-- Only loaded when directory is loaded as a plugin (no project/plugin conflict)
-- Committed to git and distributed with the plugin
+Develop this plugin while using it with Claude Code:
 
-**For local development/dogfooding:**
+```bash
+claude --plugin-dir /path/to/bluera-knowledge
+```
 
-To enable live development without rebuilding, add a user-level MCP server config to `~/.claude.json`:
+This loads the plugin directly from source. Changes take effect on Claude Code restart (no reinstall needed).
+
+| What to test | Approach |
+|--------------|----------|
+| **Commands** (`/search`, `/add-repo`) | `--plugin-dir` (changes need restart) |
+| **Hooks** (job status, dependencies) | `--plugin-dir` (changes need restart) |
+| **MCP tools** (compiled) | `--plugin-dir` (run `bun run build` first) |
+| **MCP tools** (live TypeScript) | `~/.claude.json` dev server (see below) |
+
+### 🔌 MCP Server Development
+
+**Production mode** (`mcp.plugin.json`):
+- Uses `${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js` (compiled)
+- Distributed with plugin, no extra setup needed
+
+**Development mode** (live TypeScript):
+
+For instant feedback when editing MCP server code, add a dev server to `~/.claude.json`:
 
 ```json
 {
   "mcpServers": {
     "bluera-knowledge-dev": {
       "command": "npx",
-      "args": ["tsx", "/Users/yourname/repos/bluera-knowledge/src/mcp/server.ts"],
+      "args": ["tsx", "/path/to/bluera-knowledge/src/mcp/server.ts"],
       "env": {
         "PWD": "${PWD}",
         "DATA_DIR": "${PWD}/.bluera/bluera-knowledge/data",
@@ -1393,10 +1408,7 @@ To enable live development without rebuilding, add a user-level MCP server confi
 }
 ```
 
-Replace the path with your actual repo location. This creates a separate `bluera-knowledge-dev` MCP server that:
-- Runs the source TypeScript directly via `tsx`
-- Updates immediately when you modify MCP server code
-- Doesn't interfere with the production plugin version
+This creates a separate `bluera-knowledge-dev` MCP server that runs source TypeScript directly via `tsx` - no rebuild needed for MCP changes
 
 ### 📜 Commands
 
