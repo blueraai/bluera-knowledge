@@ -34,11 +34,14 @@ This file is YOUR (Claude's) project memory. It is NOT user documentation. It is
 - `bun run build` - Compile TypeScript
 - `bun run test:run` - Run tests once
 - `bun run precommit` - Full validation (lint, typecheck, tests, build)
+- `bun run prerelease` - Full quality checks (format, lint, deadcode, typecheck, coverage, build)
 
 **Versioning (after code changes):**
-- `bun run version:patch` - Bump patch version (updates package.json, plugin.json, README badge, CHANGELOG.md)
-- `bun run version:minor` - Bump minor version
-- `bun run version:major` - Bump major version
+- `bun run version:patch` - Runs `prerelease` checks, then bumps patch version
+- `bun run version:minor` - Runs `prerelease` checks, then bumps minor version
+- `bun run version:major` - Runs `prerelease` checks, then bumps major version
+
+Note: Version scripts run full quality checks BEFORE bumping to prevent broken releases.
 
 **Releasing (Fully Automated):**
 1. Bump version: `bun run version:patch` (or minor/major)
