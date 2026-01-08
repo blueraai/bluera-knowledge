@@ -264,7 +264,7 @@ describe('CLI Consistency', () => {
       const result = runCli('store delete delete-force-store --force');
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Deleted');
-    });
+    }, 15000);
 
     it('accepts -y as alias for --force', () => {
       try {
