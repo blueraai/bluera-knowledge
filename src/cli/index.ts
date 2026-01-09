@@ -5,3 +5,4 @@ export { createIndexCommand } from './commands/index-cmd.js';
 export { createServeCommand } from './commands/serve.js';
 export { createCrawlCommand } from './commands/crawl.js';
 export { createSetupCommand } from './commands/setup.js';
+export { createSyncCommand } from './commands/sync.js';

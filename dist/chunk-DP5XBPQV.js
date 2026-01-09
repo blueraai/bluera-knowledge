@@ -1,10 +1,11 @@
 import {
   JobService,
+  ProjectRootService,
   createLogger,
   createServices,
   createStoreId,
   summarizePayload
-} from "./chunk-DWAIT2OD.js";
+} from "./chunk-UE4ZIJYA.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -599,10 +600,375 @@ var storeCommands = [
   }
 ];
 
+// src/mcp/commands/sync.commands.ts
+import { z as z7 } from "zod";
+
+// src/services/store-definition.service.ts
+import { readFile, writeFile, mkdir, access } from "fs/promises";
+import { dirname, resolve, isAbsolute, join as join2 } from "path";
+
+// src/types/store-definition.ts
+import { z as z6 } from "zod";
+var BaseStoreDefinitionSchema = z6.object({
+  name: z6.string().min(1, "Store name is required"),
+  description: z6.string().optional(),
+  tags: z6.array(z6.string()).optional()
+});
+var FileStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
+  type: z6.literal("file"),
+  path: z6.string().min(1, "Path is required for file stores")
+});
+var RepoStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
+  type: z6.literal("repo"),
+  url: z6.url("Valid URL is required for repo stores"),
+  branch: z6.string().optional(),
+  depth: z6.number().int().positive("Depth must be a positive integer").optional()
+});
+var WebStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
+  type: z6.literal("web"),
+  url: z6.url("Valid URL is required for web stores"),
+  depth: z6.number().int().min(0, "Depth must be non-negative").default(1),
+  maxPages: z6.number().int().positive("maxPages must be a positive integer").optional(),
+  crawlInstructions: z6.string().optional(),
+  extractInstructions: z6.string().optional()
+});
+var StoreDefinitionSchema = z6.discriminatedUnion("type", [
+  FileStoreDefinitionSchema,
+  RepoStoreDefinitionSchema,
+  WebStoreDefinitionSchema
+]);
+var StoreDefinitionsConfigSchema = z6.object({
+  version: z6.literal(1),
+  stores: z6.array(StoreDefinitionSchema)
+});
+function isFileStoreDefinition(def) {
+  return def.type === "file";
+}
+function isRepoStoreDefinition(def) {
+  return def.type === "repo";
+}
+function isWebStoreDefinition(def) {
+  return def.type === "web";
+}
+var DEFAULT_STORE_DEFINITIONS_CONFIG = {
+  version: 1,
+  stores: []
+};
+
+// src/services/store-definition.service.ts
+async function fileExists(path2) {
+  try {
+    await access(path2);
+    return true;
+  } catch {
+    return false;
+  }
+}
+var StoreDefinitionService = class {
+  configPath;
+  projectRoot;
+  config = null;
+  constructor(projectRoot) {
+    this.projectRoot = projectRoot ?? ProjectRootService.resolve();
+    this.configPath = join2(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
+  }
+  /**
+   * Load store definitions from config file.
+   * Returns empty config if file doesn't exist.
+   * Throws on parse/validation errors (fail fast per CLAUDE.md).
+   */
+  async load() {
+    if (this.config !== null) {
+      return this.config;
+    }
+    const exists = await fileExists(this.configPath);
+    if (!exists) {
+      this.config = {
+        ...DEFAULT_STORE_DEFINITIONS_CONFIG,
+        stores: [...DEFAULT_STORE_DEFINITIONS_CONFIG.stores]
+      };
+      return this.config;
+    }
+    const content = await readFile(this.configPath, "utf-8");
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (error) {
+      throw new Error(
+        `Failed to parse store definitions at ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+    const result = StoreDefinitionsConfigSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error(`Invalid store definitions at ${this.configPath}: ${result.error.message}`);
+    }
+    this.config = result.data;
+    return this.config;
+  }
+  /**
+   * Save store definitions to config file.
+   */
+  async save(config) {
+    await mkdir(dirname(this.configPath), { recursive: true });
+    await writeFile(this.configPath, JSON.stringify(config, null, 2));
+    this.config = config;
+  }
+  /**
+   * Add a store definition.
+   * Throws if a definition with the same name already exists.
+   */
+  async addDefinition(definition) {
+    const config = await this.load();
+    const existing = config.stores.find((s) => s.name === definition.name);
+    if (existing !== void 0) {
+      throw new Error(`Store definition "${definition.name}" already exists`);
+    }
+    config.stores.push(definition);
+    await this.save(config);
+  }
+  /**
+   * Remove a store definition by name.
+   * Returns true if removed, false if not found.
+   */
+  async removeDefinition(name) {
+    const config = await this.load();
+    const index = config.stores.findIndex((s) => s.name === name);
+    if (index === -1) {
+      return false;
+    }
+    config.stores.splice(index, 1);
+    await this.save(config);
+    return true;
+  }
+  /**
+   * Update an existing store definition.
+   * Only updates the provided fields, preserving others.
+   * Throws if definition not found.
+   */
+  async updateDefinition(name, updates) {
+    const config = await this.load();
+    const index = config.stores.findIndex((s) => s.name === name);
+    if (index === -1) {
+      throw new Error(`Store definition "${name}" not found`);
+    }
+    const existing = config.stores[index];
+    if (existing === void 0) {
+      throw new Error(`Store definition "${name}" not found at index ${String(index)}`);
+    }
+    if (updates.description !== void 0) {
+      existing.description = updates.description;
+    }
+    if (updates.tags !== void 0) {
+      existing.tags = updates.tags;
+    }
+    await this.save(config);
+  }
+  /**
+   * Get a store definition by name.
+   * Returns undefined if not found.
+   */
+  async getByName(name) {
+    const config = await this.load();
+    return config.stores.find((s) => s.name === name);
+  }
+  /**
+   * Check if any definitions exist.
+   */
+  async hasDefinitions() {
+    const config = await this.load();
+    return config.stores.length > 0;
+  }
+  /**
+   * Resolve a file store path relative to project root.
+   */
+  resolvePath(path2) {
+    if (isAbsolute(path2)) {
+      return path2;
+    }
+    return resolve(this.projectRoot, path2);
+  }
+  /**
+   * Get the config file path.
+   */
+  getConfigPath() {
+    return this.configPath;
+  }
+  /**
+   * Get the project root.
+   */
+  getProjectRoot() {
+    return this.projectRoot;
+  }
+  /**
+   * Clear the cached config (useful for testing).
+   */
+  clearCache() {
+    this.config = null;
+  }
+};
+
+// src/mcp/commands/sync.commands.ts
+async function handleStoresSync(args, context) {
+  const { services, options } = context;
+  const projectRoot = options.projectRoot;
+  if (projectRoot === void 0) {
+    throw new Error("Project root is required for stores:sync");
+  }
+  const defService = new StoreDefinitionService(projectRoot);
+  const config = await defService.load();
+  const result = {
+    created: [],
+    skipped: [],
+    failed: [],
+    orphans: []
+  };
+  if (args.dryRun === true) {
+    result.dryRun = true;
+    result.wouldCreate = [];
+    result.wouldPrune = [];
+  }
+  const existingStores = await services.store.list();
+  const existingNames = new Set(existingStores.map((s) => s.name));
+  for (const def of config.stores) {
+    if (existingNames.has(def.name)) {
+      result.skipped.push(def.name);
+      continue;
+    }
+    if (args.dryRun === true) {
+      result.wouldCreate?.push(def.name);
+      continue;
+    }
+    const createResult = await createStoreFromDefinition(def, defService, services, context);
+    if (createResult.success) {
+      result.created.push(def.name);
+    } else {
+      result.failed.push({ name: def.name, error: createResult.error });
+    }
+  }
+  const definedNames = new Set(config.stores.map((d) => d.name));
+  for (const store of existingStores) {
+    if (!definedNames.has(store.name)) {
+      result.orphans.push(store.name);
+    }
+  }
+  if (args.prune === true && result.orphans.length > 0) {
+    if (args.dryRun === true) {
+      result.wouldPrune = [...result.orphans];
+    } else {
+      result.pruned = [];
+      for (const orphanName of result.orphans) {
+        const store = await services.store.getByName(orphanName);
+        if (store !== void 0) {
+          const deleteResult = await services.store.delete(store.id, { skipDefinitionSync: true });
+          if (deleteResult.success) {
+            result.pruned.push(orphanName);
+          }
+        }
+      }
+    }
+  }
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result, null, 2)
+      }
+    ]
+  };
+}
+async function createStoreFromDefinition(def, defService, services, _context) {
+  try {
+    if (isFileStoreDefinition(def)) {
+      const resolvedPath = defService.resolvePath(def.path);
+      const createResult = await services.store.create(
+        {
+          name: def.name,
+          type: "file",
+          path: resolvedPath,
+          description: def.description,
+          tags: def.tags
+        },
+        { skipDefinitionSync: true }
+        // Don't re-add to definitions
+      );
+      if (!createResult.success) {
+        return { success: false, error: createResult.error.message };
+      }
+      return { success: true };
+    }
+    if (isRepoStoreDefinition(def)) {
+      const createResult = await services.store.create(
+        {
+          name: def.name,
+          type: "repo",
+          url: def.url,
+          branch: def.branch,
+          depth: def.depth,
+          description: def.description,
+          tags: def.tags
+        },
+        { skipDefinitionSync: true }
+      );
+      if (!createResult.success) {
+        return { success: false, error: createResult.error.message };
+      }
+      return { success: true };
+    }
+    if (isWebStoreDefinition(def)) {
+      const createResult = await services.store.create(
+        {
+          name: def.name,
+          type: "web",
+          url: def.url,
+          depth: def.depth,
+          description: def.description,
+          tags: def.tags
+        },
+        { skipDefinitionSync: true }
+      );
+      if (!createResult.success) {
+        return { success: false, error: createResult.error.message };
+      }
+      return { success: true };
+    }
+    return { success: false, error: "Unknown store definition type" };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+var syncCommands = [
+  {
+    name: "stores:sync",
+    description: "Sync stores from definitions config (bootstrap on fresh clone)",
+    argsSchema: z7.object({
+      reindex: z7.boolean().optional().describe("Re-index existing stores after sync"),
+      prune: z7.boolean().optional().describe("Remove stores not in definitions"),
+      dryRun: z7.boolean().optional().describe("Show what would happen without making changes")
+    }),
+    handler: (args, context) => {
+      const syncArgs = {};
+      if (typeof args["reindex"] === "boolean") {
+        syncArgs.reindex = args["reindex"];
+      }
+      if (typeof args["prune"] === "boolean") {
+        syncArgs.prune = args["prune"];
+      }
+      if (typeof args["dryRun"] === "boolean") {
+        syncArgs.dryRun = args["dryRun"];
+      }
+      return handleStoresSync(syncArgs, context);
+    }
+  }
+];
+
 // src/mcp/commands/index.ts
 commandRegistry.registerAll(storeCommands);
 commandRegistry.registerAll(jobCommands);
 commandRegistry.registerAll(metaCommands);
+commandRegistry.registerAll(syncCommands);
 
 // src/mcp/handlers/execute.handler.ts
 var handleExecute = async (args, context) => {
@@ -1092,7 +1458,11 @@ if (isMCPServerEntry) {
 }
 
 export {
+  isFileStoreDefinition,
+  isRepoStoreDefinition,
+  isWebStoreDefinition,
+  StoreDefinitionService,
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-CUHYSPRV.js.map
+//# sourceMappingURL=chunk-DP5XBPQV.js.map

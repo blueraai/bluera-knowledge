@@ -16,6 +16,7 @@ import { createSearchCommand } from './cli/commands/search.js';
 import { createServeCommand } from './cli/commands/serve.js';
 import { createSetupCommand } from './cli/commands/setup.js';
 import { createStoreCommand } from './cli/commands/store.js';
+import { createSyncCommand } from './cli/commands/sync.js';
 import { createProgram, getGlobalOptions } from './cli/program.js';
 
 // Default paths
@@ -105,6 +106,7 @@ program.addCommand(createIndexCommand(() => getGlobalOptions(program)));
 program.addCommand(createServeCommand(() => getGlobalOptions(program)));
 program.addCommand(createCrawlCommand(() => getGlobalOptions(program)));
 program.addCommand(createSetupCommand(() => getGlobalOptions(program)));
+program.addCommand(createSyncCommand(() => getGlobalOptions(program)));
 program.addCommand(createMCPCommand(() => getGlobalOptions(program)));
 
 // Show comprehensive help when no arguments provided

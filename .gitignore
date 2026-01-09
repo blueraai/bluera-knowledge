@@ -8,7 +8,11 @@ coverage/
 .vscode/
 *.local.md
 .claude/settings.local.json
+# Bluera Knowledge - data directory (not committed)
+# Store definitions at .bluera/bluera-knowledge/stores.config.json ARE committed for team sharing
 .bluera/
+!.bluera/bluera-knowledge/
+!.bluera/bluera-knowledge/stores.config.json
 
 # Test debugging and temporary files
 test_*.cjs

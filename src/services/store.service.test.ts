@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { StoreService } from './store.service.js';
-import { rm, mkdtemp, writeFile, access } from 'node:fs/promises';
+import { StoreDefinitionService } from './store-definition.service.js';
+import { rm, mkdtemp, writeFile, readFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -536,6 +537,283 @@ describe('StoreService', () => {
       await expect(freshService.initialize()).rejects.toThrow(/JSON|parse|registry/i);
 
       await rm(corruptDir, { recursive: true, force: true });
+    });
+  });
+
+  describe('store definition auto-update', () => {
+    let projectRoot: string;
+    let dataDir: string;
+    let serviceWithDefs: StoreService;
+    let defService: StoreDefinitionService;
+
+    beforeEach(async () => {
+      projectRoot = await mkdtemp(join(tmpdir(), 'store-def-auto-'));
+      dataDir = join(projectRoot, '.bluera/bluera-knowledge/data');
+      defService = new StoreDefinitionService(projectRoot);
+      serviceWithDefs = new StoreService(dataDir, { definitionService: defService });
+      await serviceWithDefs.initialize();
+    });
+
+    afterEach(async () => {
+      await rm(projectRoot, { recursive: true, force: true });
+    });
+
+    describe('create adds definition', () => {
+      it('adds file store definition when creating file store', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'file-store-'));
+        const result = await serviceWithDefs.create({
+          name: 'my-docs',
+          type: 'file',
+          path: storeDir,
+          description: 'My documentation',
+          tags: ['docs'],
+        });
+
+        expect(result.success).toBe(true);
+
+        const def = await defService.getByName('my-docs');
+        expect(def).toBeDefined();
+        expect(def?.type).toBe('file');
+        expect(def?.name).toBe('my-docs');
+        if (def?.type === 'file') {
+          expect(def.path).toBe(storeDir);
+        }
+        expect(def?.description).toBe('My documentation');
+        expect(def?.tags).toEqual(['docs']);
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+
+      it('adds repo store definition when creating repo store with path', async () => {
+        const repoDir = await mkdtemp(join(tmpdir(), 'repo-store-'));
+        const result = await serviceWithDefs.create({
+          name: 'my-repo',
+          type: 'repo',
+          path: repoDir,
+          branch: 'main',
+          description: 'Example repo',
+        });
+
+        expect(result.success).toBe(true);
+
+        const def = await defService.getByName('my-repo');
+        expect(def).toBeDefined();
+        expect(def?.type).toBe('repo');
+        if (def?.type === 'repo') {
+          expect(def.branch).toBe('main');
+        }
+
+        await rm(repoDir, { recursive: true, force: true });
+      });
+
+      it('adds web store definition when creating web store', async () => {
+        const result = await serviceWithDefs.create({
+          name: 'my-site',
+          type: 'web',
+          url: 'https://example.com/docs',
+          depth: 2,
+          description: 'Example site',
+        });
+
+        expect(result.success).toBe(true);
+
+        const def = await defService.getByName('my-site');
+        expect(def).toBeDefined();
+        expect(def?.type).toBe('web');
+        if (def?.type === 'web') {
+          expect(def.url).toBe('https://example.com/docs');
+          expect(def.depth).toBe(2);
+        }
+      });
+
+      it('does not add definition when store creation fails', async () => {
+        const result = await serviceWithDefs.create({
+          name: 'bad-store',
+          type: 'file',
+          path: '/nonexistent/path',
+        });
+
+        expect(result.success).toBe(false);
+
+        const def = await defService.getByName('bad-store');
+        expect(def).toBeUndefined();
+      });
+
+      it('does not add definition when skipDefinitionSync is true', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'skip-def-'));
+        const result = await serviceWithDefs.create(
+          {
+            name: 'skip-store',
+            type: 'file',
+            path: storeDir,
+          },
+          { skipDefinitionSync: true }
+        );
+
+        expect(result.success).toBe(true);
+
+        const def = await defService.getByName('skip-store');
+        expect(def).toBeUndefined();
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+    });
+
+    describe('delete removes definition', () => {
+      it('removes definition when store is deleted', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'del-store-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'to-delete',
+          type: 'file',
+          path: storeDir,
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        // Verify definition exists
+        let def = await defService.getByName('to-delete');
+        expect(def).toBeDefined();
+
+        // Delete the store
+        const deleteResult = await serviceWithDefs.delete(createResult.data.id);
+        expect(deleteResult.success).toBe(true);
+
+        // Definition should be removed
+        def = await defService.getByName('to-delete');
+        expect(def).toBeUndefined();
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+
+      it('does not remove definition when skipDefinitionSync is true', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'del-skip-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'keep-def',
+          type: 'file',
+          path: storeDir,
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        // Delete with skipDefinitionSync
+        const deleteResult = await serviceWithDefs.delete(createResult.data.id, {
+          skipDefinitionSync: true,
+        });
+        expect(deleteResult.success).toBe(true);
+
+        // Definition should still exist
+        const def = await defService.getByName('keep-def');
+        expect(def).toBeDefined();
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+    });
+
+    describe('update syncs definition', () => {
+      it('updates definition when store description is updated', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'upd-store-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'to-update',
+          type: 'file',
+          path: storeDir,
+          description: 'Original description',
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        const updateResult = await serviceWithDefs.update(createResult.data.id, {
+          description: 'Updated description',
+        });
+        expect(updateResult.success).toBe(true);
+
+        const def = await defService.getByName('to-update');
+        expect(def?.description).toBe('Updated description');
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+
+      it('updates definition when store tags are updated', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'upd-tags-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'tag-store',
+          type: 'file',
+          path: storeDir,
+          tags: ['old'],
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        const updateResult = await serviceWithDefs.update(createResult.data.id, {
+          tags: ['new', 'tags'],
+        });
+        expect(updateResult.success).toBe(true);
+
+        const def = await defService.getByName('tag-store');
+        expect(def?.tags).toEqual(['new', 'tags']);
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+
+      it('does not update definition when skipDefinitionSync is true', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'upd-skip-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'skip-update',
+          type: 'file',
+          path: storeDir,
+          description: 'Original',
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        const updateResult = await serviceWithDefs.update(
+          createResult.data.id,
+          { description: 'Updated' },
+          { skipDefinitionSync: true }
+        );
+        expect(updateResult.success).toBe(true);
+
+        const def = await defService.getByName('skip-update');
+        expect(def?.description).toBe('Original');
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+    });
+
+    describe('persistence', () => {
+      it('persists definition to config file', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'persist-def-'));
+        await serviceWithDefs.create({
+          name: 'persistent-store',
+          type: 'file',
+          path: storeDir,
+        });
+
+        // Read config file directly
+        const configPath = join(projectRoot, '.bluera/bluera-knowledge/stores.config.json');
+        const content = await readFile(configPath, 'utf-8');
+        const config = JSON.parse(content);
+
+        expect(config.stores).toHaveLength(1);
+        expect(config.stores[0].name).toBe('persistent-store');
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+    });
+
+    describe('without definition service', () => {
+      it('works normally without definition service injected', async () => {
+        // Use the storeService from outer scope (no definition service)
+        const storeDir = await mkdtemp(join(tmpdir(), 'no-def-'));
+        const result = await storeService.create({
+          name: 'no-def-store',
+          type: 'file',
+          path: storeDir,
+        });
+
+        expect(result.success).toBe(true);
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
     });
   });
 });

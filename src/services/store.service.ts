@@ -4,8 +4,15 @@ import { join, resolve } from 'node:path';
 import { cloneRepository } from '../plugin/git-clone.js';
 import { createStoreId } from '../types/brands.js';
 import { ok, err } from '../types/result.js';
+import type { StoreDefinitionService } from './store-definition.service.js';
 import type { StoreId } from '../types/brands.js';
 import type { Result } from '../types/result.js';
+import type {
+  StoreDefinition,
+  FileStoreDefinition,
+  RepoStoreDefinition,
+  WebStoreDefinition,
+} from '../types/store-definition.js';
 import type { Store, FileStore, RepoStore, WebStore, StoreType } from '../types/store.js';
 
 /**
@@ -31,16 +38,28 @@ export interface CreateStoreInput {
   depth?: number | undefined;
 }
 
+export interface StoreServiceOptions {
+  /** Optional definition service for auto-updating git-committable config */
+  definitionService?: StoreDefinitionService;
+}
+
+export interface OperationOptions {
+  /** Skip syncing to store definitions (used by stores:sync command) */
+  skipDefinitionSync?: boolean;
+}
+
 interface StoreRegistry {
   stores: Store[];
 }
 
 export class StoreService {
   private readonly dataDir: string;
+  private readonly definitionService: StoreDefinitionService | undefined;
   private registry: StoreRegistry = { stores: [] };
 
-  constructor(dataDir: string) {
+  constructor(dataDir: string, options?: StoreServiceOptions) {
     this.dataDir = dataDir;
+    this.definitionService = options?.definitionService ?? undefined;
   }
 
   async initialize(): Promise<void> {
@@ -48,7 +67,54 @@ export class StoreService {
     await this.loadRegistry();
   }
 
-  async create(input: CreateStoreInput): Promise<Result<Store>> {
+  /**
+   * Convert a Store and CreateStoreInput to a StoreDefinition for persistence.
+   */
+  private createDefinitionFromStore(store: Store, input: CreateStoreInput): StoreDefinition {
+    // Copy tags array to convert from readonly to mutable
+    const tags = store.tags !== undefined ? [...store.tags] : undefined;
+    const base = {
+      name: store.name,
+      description: store.description,
+      tags,
+    };
+
+    switch (store.type) {
+      case 'file': {
+        const fileStore = store;
+        const fileDef: FileStoreDefinition = {
+          ...base,
+          type: 'file',
+          // Use original input path if provided (may be relative), otherwise use normalized
+          path: input.path ?? fileStore.path,
+        };
+        return fileDef;
+      }
+      case 'repo': {
+        const repoStore = store;
+        const repoDef: RepoStoreDefinition = {
+          ...base,
+          type: 'repo',
+          url: repoStore.url ?? '',
+          branch: repoStore.branch,
+          depth: input.depth,
+        };
+        return repoDef;
+      }
+      case 'web': {
+        const webStore = store;
+        const webDef: WebStoreDefinition = {
+          ...base,
+          type: 'web',
+          url: webStore.url,
+          depth: webStore.depth,
+        };
+        return webDef;
+      }
+    }
+  }
+
+  async create(input: CreateStoreInput, options?: OperationOptions): Promise<Result<Store>> {
     if (!input.name || input.name.trim() === '') {
       return err(new Error('Store name cannot be empty'));
     }
@@ -157,6 +223,12 @@ export class StoreService {
     this.registry.stores.push(store);
     await this.saveRegistry();
 
+    // Sync to store definitions if service is available and not skipped
+    if (this.definitionService !== undefined && options?.skipDefinitionSync !== true) {
+      const definition = this.createDefinitionFromStore(store, input);
+      await this.definitionService.addDefinition(definition);
+    }
+
     return ok(store);
   }
 
@@ -183,7 +255,8 @@ export class StoreService {
 
   async update(
     id: StoreId,
-    updates: Partial<Pick<Store, 'name' | 'description' | 'tags'>>
+    updates: Partial<Pick<Store, 'name' | 'description' | 'tags'>>,
+    options?: OperationOptions
   ): Promise<Result<Store>> {
     const index = this.registry.stores.findIndex((s) => s.id === id);
     if (index === -1) {
@@ -205,17 +278,41 @@ export class StoreService {
     this.registry.stores[index] = updated;
     await this.saveRegistry();
 
+    // Sync to store definitions if service is available and not skipped
+    if (this.definitionService !== undefined && options?.skipDefinitionSync !== true) {
+      const defUpdates: { description?: string; tags?: string[] } = {};
+      if (updates.description !== undefined) {
+        defUpdates.description = updates.description;
+      }
+      if (updates.tags !== undefined) {
+        // Copy tags array to convert from readonly to mutable
+        defUpdates.tags = [...updates.tags];
+      }
+      await this.definitionService.updateDefinition(store.name, defUpdates);
+    }
+
     return ok(updated);
   }
 
-  async delete(id: StoreId): Promise<Result<void>> {
+  async delete(id: StoreId, options?: OperationOptions): Promise<Result<void>> {
     const index = this.registry.stores.findIndex((s) => s.id === id);
     if (index === -1) {
       return err(new Error(`Store not found: ${id}`));
     }
 
+    const store = this.registry.stores[index];
+    if (store === undefined) {
+      return err(new Error(`Store not found: ${id}`));
+    }
+
+    const storeName = store.name;
     this.registry.stores.splice(index, 1);
     await this.saveRegistry();
+
+    // Sync to store definitions if service is available and not skipped
+    if (this.definitionService !== undefined && options?.skipDefinitionSync !== true) {
+      await this.definitionService.removeDefinition(storeName);
+    }
 
     return ok(undefined);
   }

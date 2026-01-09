@@ -3554,15 +3554,61 @@ async function fileExists2(path3) {
 }
 var StoreService = class {
   dataDir;
+  definitionService;
   registry = { stores: [] };
-  constructor(dataDir) {
+  constructor(dataDir, options) {
     this.dataDir = dataDir;
+    this.definitionService = options?.definitionService ?? void 0;
   }
   async initialize() {
     await mkdir4(this.dataDir, { recursive: true });
     await this.loadRegistry();
   }
-  async create(input) {
+  /**
+   * Convert a Store and CreateStoreInput to a StoreDefinition for persistence.
+   */
+  createDefinitionFromStore(store, input) {
+    const tags = store.tags !== void 0 ? [...store.tags] : void 0;
+    const base = {
+      name: store.name,
+      description: store.description,
+      tags
+    };
+    switch (store.type) {
+      case "file": {
+        const fileStore = store;
+        const fileDef = {
+          ...base,
+          type: "file",
+          // Use original input path if provided (may be relative), otherwise use normalized
+          path: input.path ?? fileStore.path
+        };
+        return fileDef;
+      }
+      case "repo": {
+        const repoStore = store;
+        const repoDef = {
+          ...base,
+          type: "repo",
+          url: repoStore.url ?? "",
+          branch: repoStore.branch,
+          depth: input.depth
+        };
+        return repoDef;
+      }
+      case "web": {
+        const webStore = store;
+        const webDef = {
+          ...base,
+          type: "web",
+          url: webStore.url,
+          depth: webStore.depth
+        };
+        return webDef;
+      }
+    }
+  }
+  async create(input, options) {
     if (!input.name || input.name.trim() === "") {
       return err(new Error("Store name cannot be empty"));
     }
@@ -3654,6 +3700,10 @@ var StoreService = class {
     }
     this.registry.stores.push(store);
     await this.saveRegistry();
+    if (this.definitionService !== void 0 && options?.skipDefinitionSync !== true) {
+      const definition = this.createDefinitionFromStore(store, input);
+      await this.definitionService.addDefinition(definition);
+    }
     return ok(store);
   }
   async list(type) {
@@ -3673,7 +3723,7 @@ var StoreService = class {
       this.registry.stores.find((s) => s.id === idOrName || s.name === idOrName)
     );
   }
-  async update(id, updates) {
+  async update(id, updates, options) {
     const index = this.registry.stores.findIndex((s) => s.id === id);
     if (index === -1) {
       return err(new Error(`Store not found: ${id}`));
@@ -3689,15 +3739,33 @@ var StoreService = class {
     };
     this.registry.stores[index] = updated;
     await this.saveRegistry();
+    if (this.definitionService !== void 0 && options?.skipDefinitionSync !== true) {
+      const defUpdates = {};
+      if (updates.description !== void 0) {
+        defUpdates.description = updates.description;
+      }
+      if (updates.tags !== void 0) {
+        defUpdates.tags = [...updates.tags];
+      }
+      await this.definitionService.updateDefinition(store.name, defUpdates);
+    }
     return ok(updated);
   }
-  async delete(id) {
+  async delete(id, options) {
     const index = this.registry.stores.findIndex((s) => s.id === id);
     if (index === -1) {
       return err(new Error(`Store not found: ${id}`));
     }
+    const store = this.registry.stores[index];
+    if (store === void 0) {
+      return err(new Error(`Store not found: ${id}`));
+    }
+    const storeName = store.name;
     this.registry.stores.splice(index, 1);
     await this.saveRegistry();
+    if (this.definitionService !== void 0 && options?.skipDefinitionSync !== true) {
+      await this.definitionService.removeDefinition(storeName);
+    }
     return ok(void 0);
   }
   async loadRegistry() {
@@ -4257,6 +4325,7 @@ export {
   PythonBridge,
   ChunkingService,
   ASTParser,
+  ProjectRootService,
   createStoreId,
   createDocumentId,
   ok,
@@ -4267,4 +4336,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-DWAIT2OD.js.map
+//# sourceMappingURL=chunk-UE4ZIJYA.js.map
