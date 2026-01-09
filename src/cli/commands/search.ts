@@ -132,11 +132,38 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
                     console.log(`   ${r.summary.location}`);
                     console.log(`   ${r.summary.purpose}`);
 
+                    // Contextual: Show imports, concepts, and usage stats
                     if (r.context && options.detail !== 'minimal') {
-                      console.log(`   Imports: ${r.context.keyImports.slice(0, 3).join(', ')}`);
-                      console.log(
-                        `   Related: ${r.context.relatedConcepts.slice(0, 3).join(', ')}`
-                      );
+                      if (r.context.keyImports.length > 0) {
+                        console.log(`   Imports: ${r.context.keyImports.slice(0, 3).join(', ')}`);
+                      }
+                      if (r.context.relatedConcepts.length > 0) {
+                        console.log(
+                          `   Related: ${r.context.relatedConcepts.slice(0, 3).join(', ')}`
+                        );
+                      }
+                      // Show usage stats from code graph
+                      const { calledBy, calls } = r.context.usage;
+                      if (calledBy > 0 || calls > 0) {
+                        console.log(
+                          `   Usage: Called by ${String(calledBy)} | Calls ${String(calls)}`
+                        );
+                      }
+                    }
+
+                    // Full: Show complete code and documentation
+                    if (r.full && options.detail === 'full') {
+                      if (r.full.completeCode) {
+                        console.log(`   ---`);
+                        const codeLines = r.full.completeCode.split('\n');
+                        console.log(`   ${codeLines.slice(0, 10).join('\n   ')}`);
+                        if (codeLines.length > 10) {
+                          console.log(`   ... (truncated)`);
+                        }
+                      }
+                      if (r.full.documentation) {
+                        console.log(`   Doc: ${r.full.documentation.slice(0, 100)}`);
+                      }
                     }
 
                     console.log();
@@ -159,7 +186,9 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
         }
 
         if (exitCode !== 0) {
-          process.exit(exitCode);
+          // Set exit code and let Node.js exit naturally after event loop drains
+          // Using process.exit() causes mutex crashes from native code (LanceDB, tree-sitter)
+          process.exitCode = exitCode;
         }
       }
     );
