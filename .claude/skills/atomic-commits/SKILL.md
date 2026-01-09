@@ -26,7 +26,7 @@ Before committing, evaluate if changes need documentation updates.
 
 **Trigger files → check README.md:**
 - `src/mcp/server.ts` - MCP tool surface
-- `plugin.json` - Plugin metadata
+- `.claude-plugin/plugin.json` - Plugin metadata
 - `commands/*.md` - Command documentation
 
 ### CLAUDE.md (Claude Code memory - hierarchical)
