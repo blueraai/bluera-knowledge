@@ -251,7 +251,7 @@ export class BackgroundWorker {
       } = {
         maxPages: resolvedMaxPages,
         simple: simple ?? false,
-        useHeadless: useHeadless ?? false,
+        useHeadless: useHeadless ?? true, // Default to headless for reliability
       };
       if (crawlInstruction !== undefined) {
         crawlOptions.crawlInstruction = crawlInstruction;

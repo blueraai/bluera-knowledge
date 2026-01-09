@@ -14,6 +14,29 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # =====================
+# Helper Functions
+# =====================
+
+# Install Playwright browser (called after crawl4ai is confirmed installed)
+install_playwright_browser() {
+    # Check if Playwright Chromium is already installed by testing if browser can be launched
+    if python3 -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); b = p.chromium.launch(); b.close(); p.stop()" 2>/dev/null; then
+        echo -e "${GREEN}[bluera-knowledge] Playwright Chromium ready ✓${NC}"
+        return 0
+    fi
+
+    echo -e "${YELLOW}[bluera-knowledge] Installing Playwright browser (one-time setup)...${NC}"
+    if python3 -m playwright install chromium 2>/dev/null; then
+        echo -e "${GREEN}[bluera-knowledge] Playwright Chromium installed ✓${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}[bluera-knowledge] Playwright browser install failed.${NC}"
+        echo -e "${YELLOW}Manual fix: python3 -m playwright install chromium${NC}"
+        return 1
+    fi
+}
+
+# =====================
 # Node.js Dependencies
 # =====================
 
@@ -60,6 +83,8 @@ if python3 -c "import crawl4ai" 2>/dev/null; then
     # Already installed - get version
     crawl4ai_version=$(python3 -c "import crawl4ai; print(crawl4ai.__version__)" 2>/dev/null || echo "unknown")
     echo -e "${GREEN}[bluera-knowledge] crawl4ai ${crawl4ai_version} is installed ✓${NC}"
+    # Ensure Playwright browser is installed for headless crawling
+    install_playwright_browser
     exit 0
 fi
 
@@ -87,12 +112,16 @@ if command -v pip3 &> /dev/null || command -v pip &> /dev/null; then
         echo -e "${GREEN}[bluera-knowledge] Successfully installed crawl4ai ✓${NC}"
         crawl4ai_version=$(python3 -c "import crawl4ai; print(crawl4ai.__version__)" 2>/dev/null || echo "installed")
         echo -e "${GREEN}[bluera-knowledge] crawl4ai ${crawl4ai_version} ready${NC}"
+        # Install Playwright browser for headless crawling
+        install_playwright_browser
     else
         # Fallback: try without --break-system-packages for older Python
         if $PIP_CMD install --quiet --user crawl4ai 2>/dev/null; then
             echo -e "${GREEN}[bluera-knowledge] Successfully installed crawl4ai ✓${NC}"
             crawl4ai_version=$(python3 -c "import crawl4ai; print(crawl4ai.__version__)" 2>/dev/null || echo "installed")
             echo -e "${GREEN}[bluera-knowledge] crawl4ai ${crawl4ai_version} ready${NC}"
+            # Install Playwright browser for headless crawling
+            install_playwright_browser
         else
             echo -e "${RED}[bluera-knowledge] Auto-installation failed${NC}"
             echo ""

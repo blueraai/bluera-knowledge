@@ -4,7 +4,7 @@ import {
 } from "./chunk-CUHYSPRV.js";
 import {
   IntelligentCrawler
-} from "./chunk-54RTBE4V.js";
+} from "./chunk-ITH6FWQY.js";
 import {
   ASTParser,
   ChunkingService,
@@ -34,7 +34,7 @@ function createCrawlCommand(getOptions) {
   ).option(
     "--extract <instruction>",
     'Natural language instruction for what to extract (e.g., "extract API references")'
-  ).option("--simple", "Use simple BFS mode instead of intelligent crawling").option("--max-pages <number>", "Maximum number of pages to crawl", "50").option("--headless", "Use headless browser for JavaScript-rendered sites").action(
+  ).option("--simple", "Use simple BFS mode instead of intelligent crawling").option("--max-pages <number>", "Maximum number of pages to crawl", "50").option("--fast", "Use fast axios-only mode (may fail on JavaScript-heavy sites)").action(
     async (url, storeIdOrName, cmdOptions) => {
       const globalOpts = getOptions();
       const services = await createServices(globalOpts.config, globalOpts.dataDir);
@@ -105,7 +105,8 @@ function createCrawlCommand(getOptions) {
           ...cmdOptions.extract !== void 0 && { extractInstruction: cmdOptions.extract },
           maxPages,
           ...cmdOptions.simple !== void 0 && { simple: cmdOptions.simple },
-          useHeadless: cmdOptions.headless ?? false
+          useHeadless: !(cmdOptions.fast ?? false)
+          // Default true (headless), --fast disables
         })) {
           const contentToProcess = result.extracted ?? result.markdown;
           const chunks = webChunker.chunk(contentToProcess, `${result.url}.md`);

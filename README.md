@@ -734,7 +734,7 @@ Removed:
 - `--extract "<instruction>"` - Natural language instruction for what content to extract
 - `--simple` - Use simple BFS mode instead of intelligent crawling
 - `--max-pages <n>` - Maximum pages to crawl (default: 50)
-- `--headless` - Use headless browser for JavaScript-rendered sites (Next.js, React, Vue)
+- `--fast` - Use fast axios-only mode (may fail on JavaScript-heavy sites)
 
 **⚙️ Requirements:**
 - 🐍 Python 3 with `crawl4ai` package installed
@@ -756,8 +756,11 @@ Removed:
   --crawl "standard library modules" \
   --extract "function signatures and examples"
 
-# JavaScript-rendered sites (Next.js, React, etc.)
-/bluera-knowledge:crawl https://nextjs.org/docs nextjs-docs --headless --max-pages 30
+# JavaScript-rendered sites work by default (uses headless browser)
+/bluera-knowledge:crawl https://nextjs.org/docs nextjs-docs --max-pages 30
+
+# Fast mode for static HTML sites (axios-only, faster but may miss JS content)
+/bluera-knowledge:crawl https://example.com/static static-docs --fast --max-pages 100
 
 # Simple BFS mode (no AI guidance)
 /bluera-knowledge:crawl https://example.com/docs docs --simple --max-pages 100
@@ -769,11 +772,11 @@ The crawler converts pages to markdown and indexes them for semantic search.
 
 ## 🕷️ Crawler Architecture
 
-The crawler supports two modes: **standard mode** for static sites (fast) and **headless mode** for JavaScript-rendered sites (powerful).
+The crawler defaults to **headless mode** (Playwright) for maximum compatibility with modern JavaScript-rendered sites. Use `--fast` for static HTML sites when speed is critical.
 
-### ⚡ Standard Mode (Static Sites)
+### 🎭 Default Mode (Headless - JavaScript-Rendered Sites)
 
-For static HTML sites, the crawler uses axios for fast HTTP requests:
+By default, the crawler uses Playwright via crawl4ai to render JavaScript content:
 
 ```mermaid
 sequenceDiagram
@@ -784,33 +787,6 @@ sequenceDiagram
     participant Claude
 
     User->>CLI: crawl URL --crawl "instruction"
-    CLI->>IntelligentCrawler: crawl(url, options)
-    IntelligentCrawler->>Axios: fetchHtml(url)
-    Axios-->>IntelligentCrawler: Static HTML
-    IntelligentCrawler->>Claude: determineCrawlUrls(html, instruction)
-    Claude-->>IntelligentCrawler: [urls to crawl]
-    loop For each URL
-        IntelligentCrawler->>Axios: fetchHtml(url)
-        Axios-->>IntelligentCrawler: HTML
-        IntelligentCrawler->>IntelligentCrawler: Convert to markdown & index
-    end
-```
-
-### 🎭 Headless Mode (JavaScript-Rendered Sites)
-
-For JavaScript-rendered sites (Next.js, React, Vue), use `--headless` to render content with Playwright:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant CLI
-    participant IntelligentCrawler
-    participant PythonBridge
-    participant crawl4ai
-    participant Playwright
-    participant Claude
-
-    User->>CLI: crawl URL --crawl "instruction" --headless
     CLI->>IntelligentCrawler: crawl(url, {useHeadless: true})
     IntelligentCrawler->>PythonBridge: fetchHeadless(url)
     PythonBridge->>crawl4ai: AsyncWebCrawler.arun(url)
@@ -830,11 +806,36 @@ sequenceDiagram
     end
 ```
 
+### ⚡ Fast Mode (Static Sites - `--fast`)
+
+For static HTML sites, use `--fast` for faster crawling with axios:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant IntelligentCrawler
+    participant Axios
+    participant Claude
+
+    User->>CLI: crawl URL --crawl "instruction" --fast
+    CLI->>IntelligentCrawler: crawl(url, {useHeadless: false})
+    IntelligentCrawler->>Axios: fetchHtml(url)
+    Axios-->>IntelligentCrawler: Static HTML
+    IntelligentCrawler->>Claude: determineCrawlUrls(html, instruction)
+    Claude-->>IntelligentCrawler: [urls to crawl]
+    loop For each URL
+        IntelligentCrawler->>Axios: fetchHtml(url)
+        Axios-->>IntelligentCrawler: HTML
+        IntelligentCrawler->>IntelligentCrawler: Convert to markdown & index
+    end
+```
+
 ### 🔑 Key Points
 
-- **🧠 Intelligent crawling preserved** - Claude Code CLI analyzes pages and selects URLs based on natural language instructions in both modes
-- **🎭 crawl4ai role** - ONLY renders JavaScript to get HTML - doesn't replace Claude's intelligent URL selection
-- **⚡ Hybrid approach** - Fast axios for static sites, Playwright for JS-rendered sites
+- **🎭 Default to headless** - Maximum compatibility with modern JavaScript-rendered sites (React, Vue, Next.js)
+- **⚡ Fast mode available** - Use `--fast` for static HTML sites when speed is critical
+- **🧠 Intelligent crawling preserved** - Claude Code CLI analyzes pages and selects URLs in both modes
 - **🔄 Automatic fallback** - If headless fetch fails, automatically falls back to axios
 
 ### 🤖 Intelligent Mode vs Simple Mode
@@ -1017,7 +1018,7 @@ Combine canonical library code with project-specific patterns:
 >
 > **The `--crawl` instruction isn't marketing**—it actually uses Claude Code CLI to analyze each page and intelligently select which links to follow. I can tell it "crawl all API reference pages but skip blog posts" and it understands the intent.
 >
-> For JavaScript-rendered sites (Next.js, React docs), the `--headless` mode renders pages with Playwright while I still control the crawl strategy with natural language.
+> For JavaScript-rendered sites (Next.js, React docs), the default headless mode renders pages with Playwright while I still control the crawl strategy with natural language. Use `--fast` when you need speed on static sites.
 >
 > ---
 >
@@ -1056,22 +1057,22 @@ The plugin automatically checks for and attempts to install Python dependencies 
 
 **Required:**
 - **🐍 Python 3.8+** - Required for web crawling functionality
-- **🕷️ crawl4ai** - Required for web crawling (auto-installed via SessionStart hook, includes playwright)
-- **🎭 Playwright browser binaries** - Required for `--headless` mode on JavaScript-rendered sites (**manual install required**)
+- **🕷️ crawl4ai** - Required for web crawling (auto-installed via SessionStart hook)
+- **🎭 Playwright browser binaries** - Required for default headless mode (auto-installed via SessionStart hook)
 
 **What the SessionStart hook installs:**
 - ✅ crawl4ai Python package (includes playwright as dependency)
-- ❌ Playwright browser binaries (you must run `playwright install` manually)
+- ✅ Playwright Chromium browser binaries (auto-installed after crawl4ai)
 
-If auto-installation of crawl4ai fails, install manually:
+If auto-installation fails, install manually:
 
 ```bash
 pip install crawl4ai
-playwright install  # Required for --headless mode (Next.js, React, Vue sites)
+playwright install chromium
 ```
 
-> [!WARNING]
-> The plugin will work without crawl4ai/playwright, but web crawling features (`/bluera-knowledge:crawl`) will be unavailable. For JavaScript-rendered sites (Next.js, React, Vue), use the `--headless` flag which requires playwright browser binaries.
+> [!NOTE]
+> The plugin will work without crawl4ai/playwright, but web crawling features (`/bluera-knowledge:crawl`) will be unavailable. The default mode uses headless browser for maximum compatibility with JavaScript-rendered sites. Use `--fast` for static sites when speed is critical.
 
 **Update Plugin:**
 ```bash

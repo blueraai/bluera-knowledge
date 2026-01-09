@@ -990,7 +990,7 @@ describe('IntelligentCrawler', () => {
         (e) => e.type === 'error' && e.message?.includes('Only crawled 1 page')
       );
       expect(warningEvents).toHaveLength(1);
-      expect(warningEvents[0]?.message).toContain('--headless');
+      expect(warningEvents[0]?.message).toContain('--fast');
       expect(warningEvents[0]?.message).toContain('maxPages=50');
     });
 
