@@ -106,6 +106,37 @@ describe('ClaudeClient', () => {
       expect(result.reasoning).toBe('Found documentation pages');
     });
 
+    it('should extract structured_output from Claude CLI wrapper format', async () => {
+      const promise = client.determineCrawlUrls(
+        'https://example.com',
+        '<html>test</html>',
+        'Find all docs'
+      );
+
+      // Claude CLI with --json-schema returns this wrapper format
+      setTimeout(() => {
+        mockProcess.stdout.emit(
+          'data',
+          Buffer.from(
+            JSON.stringify({
+              type: 'result',
+              subtype: 'success',
+              result: '',
+              structured_output: {
+                urls: ['https://example.com/page1', 'https://example.com/page2'],
+                reasoning: 'Found documentation pages',
+              },
+            })
+          )
+        );
+        mockProcess.emit('close', 0);
+      }, 10);
+
+      const result = await promise;
+      expect(result.urls).toEqual(['https://example.com/page1', 'https://example.com/page2']);
+      expect(result.reasoning).toBe('Found documentation pages');
+    });
+
     it('should call spawn with correct arguments for determineCrawlUrls', async () => {
       const promise = client.determineCrawlUrls(
         'https://example.com',
