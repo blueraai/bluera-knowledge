@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "bluera-knowledge": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
+      "env": {
+        "DATA_DIR": ".bluera/bluera-knowledge/data",
+        "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
+      }
+    }
+  }
+}
