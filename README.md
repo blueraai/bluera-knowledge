@@ -429,6 +429,7 @@ Background jobs include significant performance optimizations:
 | 🔄 `/bluera-knowledge:index` | Re-index a store | `<store-name-or-id>` |
 | 🗑️ `/bluera-knowledge:remove-store` | Delete a store and all data | `<store-name-or-id>` |
 | 🌐 `/bluera-knowledge:crawl` | Crawl web pages | `<url> <store-name> [--crawl "<instruction>"]` |
+| 🔁 `/bluera-knowledge:sync` | Sync stores from definitions config | `[--dry-run] [--prune]` |
 
 ---
 
@@ -767,6 +768,44 @@ Removed:
 ```
 
 The crawler converts pages to markdown and indexes them for semantic search.
+
+---
+
+### 🔁 `/bluera-knowledge:sync`
+
+**Sync stores from definitions config (bootstrap on fresh clone)**
+
+```bash
+/bluera-knowledge:sync [options]
+```
+
+**Options:**
+- `--dry-run` - Show what would happen without making changes
+- `--prune` - Remove stores not in definitions
+- `--reindex` - Re-index existing stores after sync
+
+**Use cases:**
+- **Fresh clone**: Recreate all stores defined by the team
+- **Check status**: See which stores exist vs. defined
+- **Clean up**: Remove orphan stores not in config
+
+**Examples:**
+```bash
+# Preview what would be synced
+/bluera-knowledge:sync --dry-run
+
+# Sync all stores from definitions
+/bluera-knowledge:sync
+
+# Sync and remove orphan stores
+/bluera-knowledge:sync --prune
+```
+
+**How it works:**
+1. Reads store definitions from `.bluera/bluera-knowledge/stores.config.json`
+2. Creates any stores that don't exist locally
+3. Reports orphan stores (local stores not in definitions)
+4. Optionally prunes orphans with `--prune`
 
 ---
 
@@ -1164,6 +1203,7 @@ The plugin exposes 3 MCP tools optimized for minimal context overhead:
 | `store:create` | `name`, `type`, `source`, `branch?`, `description?` | Create a new store |
 | `store:index` | `store` | Re-index an existing store |
 | `store:delete` | `store` | Delete a store and all data |
+| `stores:sync` | `dryRun?`, `prune?`, `reindex?` | Sync stores from definitions config |
 | `jobs` | `activeOnly?`, `status?` | List background jobs |
 | `job:status` | `jobId` | Check specific job status |
 | `job:cancel` | `jobId` | Cancel a running job |
@@ -1351,11 +1391,42 @@ Knowledge stores are stored in your project root:
 │   ├── repos/<store-id>/       # Cloned Git repositories
 │   ├── documents_*.lance/      # Vector indices (Lance DB)
 │   └── stores.json             # Store registry
+├── stores.config.json          # Store definitions (git-committable!)
 └── config.json                 # Configuration
 ```
 
-> [!CAUTION]
-> **Important**: Add `.bluera/` to your `.gitignore` to avoid committing large repositories and vector indices to version control.
+### 📋 Store Definitions (Team Sharing)
+
+Store definitions are automatically saved to `.bluera/bluera-knowledge/stores.config.json`. This file is designed to be **committed to git**, allowing teams to share store configurations.
+
+**Example `stores.config.json`:**
+```json
+{
+  "version": 1,
+  "stores": [
+    { "type": "file", "name": "my-docs", "path": "./docs" },
+    { "type": "repo", "name": "react", "url": "https://github.com/facebook/react" },
+    { "type": "web", "name": "api-docs", "url": "https://api.example.com/docs", "depth": 2 }
+  ]
+}
+```
+
+When a teammate clones the repo, they can run `/bluera-knowledge:sync` to recreate all stores locally.
+
+### 🚫 Recommended `.gitignore` Patterns
+
+When you first create a store, the plugin automatically updates your `.gitignore` with:
+
+```gitignore
+# Bluera Knowledge - data directory (not committed)
+.bluera/
+!.bluera/bluera-knowledge/
+!.bluera/bluera-knowledge/stores.config.json
+```
+
+This ensures:
+- Vector indices and cloned repos are **NOT committed** (they're large and can be recreated)
+- Store definitions **ARE committed** (small JSON file for team sharing)
 
 ---
 

@@ -53,3 +53,21 @@ export {
 
 // Progress types
 export { type ProgressEvent, type ProgressCallback } from './progress.js';
+
+// Store definition types (for git-committable config)
+export {
+  type StoreDefinition,
+  type FileStoreDefinition,
+  type RepoStoreDefinition,
+  type WebStoreDefinition,
+  type StoreDefinitionsConfig,
+  StoreDefinitionSchema,
+  FileStoreDefinitionSchema,
+  RepoStoreDefinitionSchema,
+  WebStoreDefinitionSchema,
+  StoreDefinitionsConfigSchema,
+  isFileStoreDefinition,
+  isRepoStoreDefinition,
+  isWebStoreDefinition,
+  DEFAULT_STORE_DEFINITIONS_CONFIG,
+} from './store-definition.js';
