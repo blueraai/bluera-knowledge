@@ -115,7 +115,7 @@ export class IntelligentCrawler extends EventEmitter {
         type: 'error',
         pagesVisited: this.visited.size,
         totalPages: maxPages,
-        message: `Warning: Only crawled 1 page despite maxPages=${String(maxPages)}. Link discovery may have failed. Try --headless for JavaScript-heavy sites.`,
+        message: `Warning: Only crawled 1 page despite maxPages=${String(maxPages)}. Link discovery may have failed. If using --fast mode, try without it for JavaScript-heavy sites.`,
         error: new Error('Low page discovery'),
       };
       this.emit('progress', warningProgress);

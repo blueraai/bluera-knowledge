@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-54RTBE4V.js";
+} from "../chunk-ITH6FWQY.js";
 import {
   JobService,
   createDocumentId,
@@ -186,7 +186,8 @@ var BackgroundWorker = class {
       const crawlOptions = {
         maxPages: resolvedMaxPages,
         simple: simple ?? false,
-        useHeadless: useHeadless ?? false
+        useHeadless: useHeadless ?? true
+        // Default to headless for reliability
       };
       if (crawlInstruction !== void 0) {
         crawlOptions.crawlInstruction = crawlInstruction;

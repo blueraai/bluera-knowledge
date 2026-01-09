@@ -25,7 +25,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
     )
     .option('--simple', 'Use simple BFS mode instead of intelligent crawling')
     .option('--max-pages <number>', 'Maximum number of pages to crawl', '50')
-    .option('--headless', 'Use headless browser for JavaScript-rendered sites')
+    .option('--fast', 'Use fast axios-only mode (may fail on JavaScript-heavy sites)')
     .action(
       async (
         url: string,
@@ -35,7 +35,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
           extract?: string;
           simple?: boolean;
           maxPages?: string;
-          headless?: boolean;
+          fast?: boolean;
         }
       ) => {
         const globalOpts = getOptions();
@@ -125,7 +125,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
             ...(cmdOptions.extract !== undefined && { extractInstruction: cmdOptions.extract }),
             maxPages,
             ...(cmdOptions.simple !== undefined && { simple: cmdOptions.simple }),
-            useHeadless: cmdOptions.headless ?? false,
+            useHeadless: !(cmdOptions.fast ?? false), // Default true (headless), --fast disables
           })) {
             // Use extracted content if available, otherwise markdown
             const contentToProcess = result.extracted ?? result.markdown;

@@ -132,7 +132,7 @@ describe('crawl command execution', () => {
       expect(mockCrawler.crawl).toHaveBeenCalledWith('https://example.com', {
         crawlInstruction: 'all documentation pages',
         maxPages: 50,
-        useHeadless: false,
+        useHeadless: true,
       });
       expect(mockServices.embeddings.embed).toHaveBeenCalledTimes(2);
       expect(mockServices.lance.addDocuments).toHaveBeenCalledWith(
@@ -160,6 +160,46 @@ describe('crawl command execution', () => {
       );
       expect(mockCrawler.stop).toHaveBeenCalled();
       expect(processExitSpy).not.toHaveBeenCalled();
+    });
+
+    it('uses axios-only mode when --fast flag is provided', async () => {
+      const mockStore: WebStore = {
+        id: createStoreId('store-1'),
+        name: 'test-store',
+        type: 'web',
+        url: 'https://example.com',
+        depth: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockServices.store.getByIdOrName.mockResolvedValue(mockStore);
+      mockServices.lance.initialize.mockResolvedValue(undefined);
+      mockServices.embeddings.embed.mockResolvedValue([0.1, 0.2, 0.3]);
+      mockServices.lance.addDocuments.mockResolvedValue(undefined);
+
+      mockCrawler.crawl.mockReturnValue(
+        (async function* () {
+          yield {
+            url: 'https://example.com/page1',
+            title: 'Page 1',
+            markdown: '# Page 1',
+            depth: 0,
+          };
+        })()
+      );
+
+      const command = createCrawlCommand(getOptions);
+      command.parseOptions(['--fast', '--max-pages', '25']);
+      const actionHandler = command._actionHandler;
+
+      await actionHandler(['https://example.com', 'test-store']);
+
+      expect(mockCrawler.crawl).toHaveBeenCalledWith('https://example.com', {
+        maxPages: 25,
+        useHeadless: false, // --fast disables headless
+      });
+      expect(mockCrawler.stop).toHaveBeenCalled();
     });
 
     it('successfully crawls in simple mode', async () => {
@@ -198,7 +238,7 @@ describe('crawl command execution', () => {
       expect(mockCrawler.crawl).toHaveBeenCalledWith('https://example.com', {
         maxPages: 25,
         simple: true,
-        useHeadless: false,
+        useHeadless: true,
       });
       expect(mockCrawler.stop).toHaveBeenCalled();
     });
@@ -295,7 +335,7 @@ describe('crawl command execution', () => {
         crawlInstruction: 'all Getting Started pages',
         extractInstruction: 'code examples',
         maxPages: 100,
-        useHeadless: false,
+        useHeadless: true,
       });
     });
   });
