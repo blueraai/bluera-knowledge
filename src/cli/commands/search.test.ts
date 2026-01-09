@@ -373,7 +373,7 @@ describe('search command execution', () => {
   });
 
   describe('error handling', () => {
-    it('exits with code 3 when specified store not found', async () => {
+    it('sets exitCode to 3 when specified store not found', async () => {
       const { destroyServices } = await import('../../services/index.js');
 
       mockServices.store.list.mockResolvedValue([]);
@@ -383,16 +383,20 @@ describe('search command execution', () => {
       const actionHandler = command._actionHandler;
       command.parseOptions(['--stores', 'nonexistent']);
 
-      await expect(actionHandler(['test query'])).rejects.toThrow('process.exit: 3');
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['test query']);
+
+      expect(process.exitCode).toBe(3);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Store not found: nonexistent');
-      expect(processExitSpy).toHaveBeenCalledWith(3);
       expect(mockServices.search.search).not.toHaveBeenCalled();
-      // Must call destroyServices before process.exit per CLAUDE.md
+      // Must call destroyServices before setting exitCode per CLAUDE.md
       expect(destroyServices).toHaveBeenCalled();
     });
 
-    it('exits with code 1 when no stores exist', async () => {
+    it('sets exitCode to 1 when no stores exist', async () => {
       const { destroyServices } = await import('../../services/index.js');
 
       mockServices.store.list.mockResolvedValue([]);
@@ -400,16 +404,20 @@ describe('search command execution', () => {
       const command = createSearchCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['test query'])).rejects.toThrow('process.exit: 1');
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['test query']);
+
+      expect(process.exitCode).toBe(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith('No stores to search. Create a store first.');
-      expect(processExitSpy).toHaveBeenCalledWith(1);
       expect(mockServices.search.search).not.toHaveBeenCalled();
-      // Must call destroyServices before process.exit per CLAUDE.md
+      // Must call destroyServices before setting exitCode per CLAUDE.md
       expect(destroyServices).toHaveBeenCalled();
     });
 
-    it('exits with code 3 when one of multiple stores not found', async () => {
+    it('sets exitCode to 3 when one of multiple stores not found', async () => {
       const { destroyServices } = await import('../../services/index.js');
 
       const mockStores = [{ id: createStoreId('store-1'), name: 'store1', type: 'file' as const }];
@@ -424,11 +432,15 @@ describe('search command execution', () => {
       const actionHandler = command._actionHandler;
       command.parseOptions(['--stores', 'store1,nonexistent']);
 
-      await expect(actionHandler(['test query'])).rejects.toThrow('process.exit: 3');
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['test query']);
+
+      expect(process.exitCode).toBe(3);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Store not found: nonexistent');
-      expect(processExitSpy).toHaveBeenCalledWith(3);
-      // Must call destroyServices before process.exit per CLAUDE.md
+      // Must call destroyServices before setting exitCode per CLAUDE.md
       expect(destroyServices).toHaveBeenCalled();
     });
   });
@@ -699,6 +711,121 @@ describe('search command execution', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Related: testing, mocking, assertions')
       );
+    });
+
+    it('displays usage stats in contextual detail mode', async () => {
+      const mockStores = [{ id: createStoreId('store-1'), name: 'store1', type: 'file' as const }];
+
+      const mockSearchResponse: SearchResponse = {
+        query: 'test query',
+        mode: 'hybrid',
+        stores: [createStoreId('store-1')],
+        results: [
+          {
+            id: createDocumentId('doc-1'),
+            score: 0.95,
+            content: 'Test content',
+            metadata: {
+              type: 'file',
+              storeId: createStoreId('store-1'),
+              path: '/test/file.ts',
+            },
+            summary: {
+              type: 'function',
+              name: 'testFunction',
+              signature: 'function testFunction(): void',
+              purpose: 'Tests something',
+              location: '/test/file.ts:10',
+              relevanceReason: 'Matches test query',
+            },
+            context: {
+              interfaces: [],
+              keyImports: [],
+              relatedConcepts: [],
+              usage: {
+                calledBy: 5,
+                calls: 3,
+              },
+            },
+          },
+        ],
+        totalResults: 1,
+        timeMs: 50,
+      };
+
+      mockServices.store.list.mockResolvedValue(mockStores);
+      mockServices.lance.initialize.mockResolvedValue(undefined);
+      mockServices.search.search.mockResolvedValue(mockSearchResponse);
+
+      const command = createSearchCommand(getOptions);
+      const actionHandler = command._actionHandler;
+      command.parseOptions(['--detail', 'contextual']);
+
+      await actionHandler(['test query']);
+
+      // Should display usage stats from code graph
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringMatching(/Called by.*5/));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringMatching(/Calls.*3/));
+    });
+
+    it('displays complete code in full detail mode', async () => {
+      const mockStores = [{ id: createStoreId('store-1'), name: 'store1', type: 'file' as const }];
+
+      const mockSearchResponse: SearchResponse = {
+        query: 'test query',
+        mode: 'hybrid',
+        stores: [createStoreId('store-1')],
+        results: [
+          {
+            id: createDocumentId('doc-1'),
+            score: 0.95,
+            content: 'Test content',
+            metadata: {
+              type: 'file',
+              storeId: createStoreId('store-1'),
+              path: '/test/file.ts',
+            },
+            summary: {
+              type: 'function',
+              name: 'testFunction',
+              signature: 'function testFunction(): void',
+              purpose: 'Tests something',
+              location: '/test/file.ts:10',
+              relevanceReason: 'Matches test query',
+            },
+            context: {
+              interfaces: [],
+              keyImports: [],
+              relatedConcepts: [],
+              usage: { calledBy: 0, calls: 0 },
+            },
+            full: {
+              completeCode: 'function testFunction(): void {\n  console.log("test");\n  return;\n}',
+              relatedCode: { callers: [], callees: [] },
+              documentation: 'This function tests something important.',
+            },
+          },
+        ],
+        totalResults: 1,
+        timeMs: 50,
+      };
+
+      mockServices.store.list.mockResolvedValue(mockStores);
+      mockServices.lance.initialize.mockResolvedValue(undefined);
+      mockServices.search.search.mockResolvedValue(mockSearchResponse);
+
+      const command = createSearchCommand(getOptions);
+      const actionHandler = command._actionHandler;
+      command.parseOptions(['--detail', 'full']);
+
+      await actionHandler(['test query']);
+
+      // Should display complete code
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('function testFunction()')
+      );
+      // Should display documentation
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Doc:'));
     });
 
     it('handles results with fallback path display when path is missing', async () => {
