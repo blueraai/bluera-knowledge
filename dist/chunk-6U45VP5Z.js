@@ -292,7 +292,8 @@ Look for navigation menus, sidebars, headers, and link structures that match the
 Return only URLs that are relevant to the instruction. If the instruction mentions specific sections (e.g., "Getting Started"), find links in those sections.`;
     try {
       const result = await this.callClaude(prompt, CRAWL_STRATEGY_SCHEMA);
-      const parsed = JSON.parse(result);
+      const rawParsed = JSON.parse(result);
+      const parsed = this.extractStructuredOutput(rawParsed);
       if (typeof parsed !== "object" || parsed === null || !("urls" in parsed) || !("reasoning" in parsed) || !Array.isArray(parsed.urls) || parsed.urls.length === 0 || typeof parsed.reasoning !== "string" || !parsed.urls.every((url) => typeof url === "string")) {
         throw new Error("Claude returned invalid crawl strategy");
       }
@@ -397,6 +398,26 @@ ${this.truncateMarkdown(markdown, 1e5)}`;
     return `${markdown.substring(0, maxLength)}
 
 [... content truncated ...]`;
+  }
+  /**
+   * Type guard to check if value is a record (plain object)
+   */
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  /**
+   * Extract structured_output from Claude CLI wrapper format if present.
+   * Claude CLI with --json-schema returns: {type, result, structured_output: {...}}
+   * This method extracts the inner structured_output, or returns the raw value if not wrapped.
+   */
+  extractStructuredOutput(rawParsed) {
+    if (this.isRecord(rawParsed) && "structured_output" in rawParsed) {
+      const structuredOutput = rawParsed["structured_output"];
+      if (typeof structuredOutput === "object") {
+        return structuredOutput;
+      }
+    }
+    return rawParsed;
   }
 };
 
@@ -780,4 +801,4 @@ var IntelligentCrawler = class extends EventEmitter {
 export {
   IntelligentCrawler
 };
-//# sourceMappingURL=chunk-XNO27JNB.js.map
+//# sourceMappingURL=chunk-6U45VP5Z.js.map

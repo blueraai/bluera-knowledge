@@ -96,7 +96,11 @@ Return only URLs that are relevant to the instruction. If the instruction mentio
 
     try {
       const result = await this.callClaude(prompt, CRAWL_STRATEGY_SCHEMA);
-      const parsed: unknown = JSON.parse(result);
+      const rawParsed: unknown = JSON.parse(result);
+
+      // Claude CLI with --json-schema returns wrapper: {type, result, structured_output: {...}}
+      // Extract structured_output if present, otherwise use raw response
+      const parsed = this.extractStructuredOutput(rawParsed);
 
       // Validate and narrow type
       if (
@@ -231,5 +235,27 @@ ${this.truncateMarkdown(markdown, 100000)}`;
     if (markdown.length <= maxLength) return markdown;
 
     return `${markdown.substring(0, maxLength)}\n\n[... content truncated ...]`;
+  }
+
+  /**
+   * Type guard to check if value is a record (plain object)
+   */
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  /**
+   * Extract structured_output from Claude CLI wrapper format if present.
+   * Claude CLI with --json-schema returns: {type, result, structured_output: {...}}
+   * This method extracts the inner structured_output, or returns the raw value if not wrapped.
+   */
+  private extractStructuredOutput(rawParsed: unknown): unknown {
+    if (this.isRecord(rawParsed) && 'structured_output' in rawParsed) {
+      const structuredOutput = rawParsed['structured_output'];
+      if (typeof structuredOutput === 'object') {
+        return structuredOutput;
+      }
+    }
+    return rawParsed;
   }
 }
