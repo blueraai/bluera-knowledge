@@ -1601,6 +1601,22 @@ Note: The version command runs full quality checks (format, lint, deadcode, type
 
 > 💡 **That's it!** No manual tagging needed. Just push to `main` and the release happens automatically when CI passes.
 
+### 🔍 Post-Release Validation
+
+After a release, validate the npm package works correctly:
+
+```bash
+bun run validate:npm
+```
+
+This script:
+- Installs the latest `bluera-knowledge` from npm globally
+- Exercises all CLI commands (stores, add-folder, search, index, delete)
+- Writes detailed logs to `logs/validation/npm-validation-*.log`
+- Returns exit code 0 on success, 1 on failure
+
+Use this to catch any packaging or runtime issues after npm publish.
+
 ### 🧪 Testing Locally
 
 **Option 1: Development MCP Server (Recommended)**
@@ -1619,7 +1635,7 @@ cd /path/to/bluera-knowledge
 claude --plugin-dir .
 ```
 
-The MCP config in `mcp.plugin.json` is only loaded when the directory is loaded as a plugin (via `--plugin-dir` or marketplace install), so there's no conflict with project-level MCP config.
+The MCP config in `plugin.json` is only loaded when the directory is loaded as a plugin (via `--plugin-dir` or marketplace install), so there's no conflict with project-level MCP config.
 
 **Option 3: CLI Tool Testing**
 

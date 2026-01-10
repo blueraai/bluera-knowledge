@@ -38,7 +38,8 @@
     "version:patch": "bun run prerelease && commit-and-tag-version --release-as patch --skip.commit --skip.tag",
     "release:patch": "commit-and-tag-version --release-as patch && git push --follow-tags",
     "release:minor": "commit-and-tag-version --release-as minor && git push --follow-tags",
-    "release:major": "commit-and-tag-version --release-as major && git push --follow-tags"
+    "release:major": "commit-and-tag-version --release-as major && git push --follow-tags",
+    "validate:npm": "./scripts/validate-npm-release.sh"
   },
   "keywords": [
     "knowledge",
