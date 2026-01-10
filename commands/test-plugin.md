@@ -6,6 +6,16 @@ Comprehensive test of all Bluera Knowledge plugin functionality (MCP tools + sla
 
 !`echo "=== BK Plugin Test ===" && ls -la .bluera/bluera-knowledge/ 2>/dev/null || echo "No BK data dir yet (will be created)"`
 
+## Pre-Test Cleanup
+
+First, clean up any leftover artifacts from previous test runs (ignore errors if they don't exist):
+
+1. Delete test store if exists: Call MCP tool `execute` with `{ command: "store:delete", args: { store: "bk-test-store" } }` - ignore "not found" errors
+2. Remove test content directory:
+   ```bash
+   rm -rf .bluera/bluera-knowledge/test-content
+   ```
+
 ## Test Content Setup
 
 First, create test content for indexing:
@@ -42,7 +52,7 @@ Execute each test in order. Mark each as PASS or FAIL.
 
 3. **Create Store**: Call MCP tool `execute` with:
    ```json
-   { "command": "store:create", "args": { "name": "bk-test-store", "type": "file", "path": ".bluera/bluera-knowledge/test-content" } }
+   { "command": "store:create", "args": { "name": "bk-test-store", "type": "file", "source": ".bluera/bluera-knowledge/test-content" } }
    ```
    - Expected: Store created successfully
    - PASS if response indicates success
@@ -54,12 +64,12 @@ Execute each test in order. Mark each as PASS or FAIL.
    - Expected: Returns store metadata including name, type, path
    - PASS if response contains store details
 
-5. **Index Store**: Call MCP tool `execute` with:
-   ```json
-   { "command": "store:index", "args": { "store": "bk-test-store" } }
+5. **Index Store**: Run CLI command via Bash (MCP's store:index spawns background jobs that don't complete reliably):
+   ```bash
+   node dist/index.js index bk-test-store
    ```
-   - Expected: Indexing completes (may take a few seconds)
-   - PASS if response indicates indexing succeeded
+   - Expected: Output shows "Indexed X documents, Y chunks"
+   - PASS if indexing completes successfully
 
 6. **Search (MCP)**: Call MCP tool `search` with:
    ```json
