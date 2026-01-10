@@ -202,10 +202,14 @@ const scriptPath = process.argv[1] ?? '';
 const isMCPServerEntry = scriptPath.endsWith('mcp/server.js') || scriptPath.endsWith('mcp/server');
 
 if (isMCPServerEntry) {
+  const projectRoot = process.env['PROJECT_ROOT'];
+  if (projectRoot === undefined) {
+    throw new Error('PROJECT_ROOT environment variable is required');
+  }
   runMCPServer({
     dataDir: process.env['DATA_DIR'],
     config: process.env['CONFIG_PATH'],
-    projectRoot: process.env['PROJECT_ROOT'] ?? process.env['PWD'],
+    projectRoot,
   }).catch((error: unknown) => {
     logger.error(
       { error: error instanceof Error ? error.message : String(error) },
