@@ -24,6 +24,29 @@ describe('JobService', () => {
       const jobsDir = join(tempDir, 'jobs');
       expect(existsSync(jobsDir)).toBe(true);
     });
+
+    it('throws when dataDir not provided and HOME/USERPROFILE undefined', () => {
+      const originalHome = process.env['HOME'];
+      const originalUserProfile = process.env['USERPROFILE'];
+
+      try {
+        delete process.env['HOME'];
+        delete process.env['USERPROFILE'];
+
+        // Should throw instead of falling back to current directory
+        expect(() => new JobService()).toThrow(
+          'HOME or USERPROFILE environment variable is required'
+        );
+      } finally {
+        // Restore environment
+        if (originalHome !== undefined) {
+          process.env['HOME'] = originalHome;
+        }
+        if (originalUserProfile !== undefined) {
+          process.env['USERPROFILE'] = originalUserProfile;
+        }
+      }
+    });
   });
 
   describe('createJob', () => {
