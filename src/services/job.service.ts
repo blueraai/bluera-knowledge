@@ -9,12 +9,16 @@ export class JobService {
 
   constructor(dataDir?: string) {
     // Default to ~/.local/share/bluera-knowledge/jobs
-    const baseDir =
-      dataDir ??
-      path.join(
-        process.env['HOME'] ?? process.env['USERPROFILE'] ?? '.',
-        '.local/share/bluera-knowledge'
-      );
+    let baseDir: string;
+    if (dataDir !== undefined) {
+      baseDir = dataDir;
+    } else {
+      const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'];
+      if (homeDir === undefined) {
+        throw new Error('HOME or USERPROFILE environment variable is required');
+      }
+      baseDir = path.join(homeDir, '.local/share/bluera-knowledge');
+    }
     this.jobsDir = path.join(baseDir, 'jobs');
 
     // Ensure jobs directory exists
