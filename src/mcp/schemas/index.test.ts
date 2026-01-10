@@ -29,8 +29,44 @@ describe('MCP Schema Validation', () => {
     it('should use defaults for optional fields', () => {
       const result = SearchArgsSchema.parse({ query: 'test' });
 
+      expect(result.mode).toBe('hybrid');
       expect(result.detail).toBe('minimal');
       expect(result.limit).toBe(10);
+    });
+
+    it('should validate mode enum', () => {
+      expect(() => SearchArgsSchema.parse({ query: 'test', mode: 'invalid' })).toThrow();
+
+      const vector = SearchArgsSchema.parse({ query: 'test', mode: 'vector' });
+      expect(vector.mode).toBe('vector');
+
+      const fts = SearchArgsSchema.parse({ query: 'test', mode: 'fts' });
+      expect(fts.mode).toBe('fts');
+
+      const hybrid = SearchArgsSchema.parse({ query: 'test', mode: 'hybrid' });
+      expect(hybrid.mode).toBe('hybrid');
+    });
+
+    it('should validate threshold', () => {
+      const result = SearchArgsSchema.parse({ query: 'test', threshold: 0.5 });
+      expect(result.threshold).toBe(0.5);
+
+      // Edge cases
+      const min = SearchArgsSchema.parse({ query: 'test', threshold: 0 });
+      expect(min.threshold).toBe(0);
+
+      const max = SearchArgsSchema.parse({ query: 'test', threshold: 1 });
+      expect(max.threshold).toBe(1);
+    });
+
+    it('should reject invalid threshold', () => {
+      expect(() => SearchArgsSchema.parse({ query: 'test', threshold: -0.1 })).toThrow(
+        'threshold must be between 0 and 1'
+      );
+
+      expect(() => SearchArgsSchema.parse({ query: 'test', threshold: 1.1 })).toThrow(
+        'threshold must be between 0 and 1'
+      );
     });
 
     it('should reject empty query', () => {

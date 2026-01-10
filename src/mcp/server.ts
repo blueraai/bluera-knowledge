@@ -61,6 +61,13 @@ export function createMCPServer(options: MCPServerOptions): Server {
                 ],
                 description: 'Search intent for better ranking',
               },
+              mode: {
+                type: 'string',
+                enum: ['vector', 'fts', 'hybrid'],
+                default: 'hybrid',
+                description:
+                  'Search mode: vector (embeddings only), fts (full-text only), hybrid (both, default)',
+              },
               detail: {
                 type: 'string',
                 enum: ['minimal', 'contextual', 'full'],
@@ -77,6 +84,10 @@ export function createMCPServer(options: MCPServerOptions): Server {
                 type: 'array',
                 items: { type: 'string' },
                 description: 'Specific store IDs to search (optional)',
+              },
+              threshold: {
+                type: 'number',
+                description: 'Minimum normalized score (0-1). Filters out low-relevance results.',
               },
               minRelevance: {
                 type: 'number',

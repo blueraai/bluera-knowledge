@@ -25,9 +25,15 @@ export const SearchArgsSchema = z.object({
       'find-documentation',
     ])
     .optional(),
+  mode: z.enum(['vector', 'fts', 'hybrid']).default('hybrid'),
   detail: z.enum(['minimal', 'contextual', 'full']).default('minimal'),
   limit: z.number().int().positive().default(10),
   stores: z.array(z.string()).optional(),
+  threshold: z
+    .number()
+    .min(0, 'threshold must be between 0 and 1')
+    .max(1, 'threshold must be between 0 and 1')
+    .optional(),
   minRelevance: z
     .number()
     .min(0, 'minRelevance must be between 0 and 1')
