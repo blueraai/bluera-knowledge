@@ -30,11 +30,12 @@ describe('destroyServices', () => {
     expect(mockPythonBridge.stop).toHaveBeenCalledTimes(1);
   });
 
-  it('handles stop errors gracefully', async () => {
+  it('throws on stop errors', async () => {
     mockPythonBridge.stop.mockRejectedValue(new Error('stop failed'));
 
-    // destroyServices catches and logs errors instead of propagating (Bug #2 fix)
-    await expect(destroyServices(mockServices)).resolves.not.toThrow();
+    await expect(destroyServices(mockServices)).rejects.toThrow(
+      'Service shutdown failed: stop failed'
+    );
   });
 
   it('is idempotent - multiple calls work correctly', async () => {
@@ -52,11 +53,23 @@ describe('destroyServices', () => {
     expect(mockLance.close).not.toHaveBeenCalled();
   });
 
-  it('handles LanceStore closeAsync errors gracefully', async () => {
+  it('throws on LanceStore closeAsync errors', async () => {
     mockLance.closeAsync.mockRejectedValue(new Error('closeAsync failed'));
 
-    // Should not throw even if closeAsync fails
-    await expect(destroyServices(mockServices)).resolves.not.toThrow();
+    await expect(destroyServices(mockServices)).rejects.toThrow(
+      'Service shutdown failed: closeAsync failed'
+    );
+  });
+
+  it('attempts all cleanup even if first fails, then throws aggregate', async () => {
+    mockLance.closeAsync.mockRejectedValue(new Error('lance failed'));
+    mockPythonBridge.stop.mockRejectedValue(new Error('bridge failed'));
+
+    await expect(destroyServices(mockServices)).rejects.toThrow();
+
+    // Both should have been called even though first failed
+    expect(mockLance.closeAsync).toHaveBeenCalledTimes(1);
+    expect(mockPythonBridge.stop).toHaveBeenCalledTimes(1);
   });
 
   it('waits for LanceStore async cleanup before returning', async () => {

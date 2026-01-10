@@ -3,7 +3,7 @@ import {
   createLogger,
   summarizePayload,
   truncateForLog
-} from "./chunk-GAGGEKE2.js";
+} from "./chunk-QEHSDQTL.js";
 
 // src/crawl/intelligent-crawler.ts
 import { EventEmitter } from "events";
@@ -201,8 +201,7 @@ ${hashes} ${cleanContent}
     );
     return {
       markdown,
-      ...title !== void 0 && { title },
-      success: true
+      ...title !== void 0 && { title }
     };
   } catch (error) {
     logger.error(
@@ -212,11 +211,7 @@ ${hashes} ${cleanContent}
       },
       "HTML to markdown conversion failed"
     );
-    return {
-      markdown: "",
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
 
@@ -498,16 +493,7 @@ var IntelligentCrawler = class extends EventEmitter {
    */
   async *crawlIntelligent(seedUrl, crawlInstruction, extractInstruction, maxPages, useHeadless = false) {
     if (!ClaudeClient.isAvailable()) {
-      const fallbackProgress = {
-        type: "error",
-        pagesVisited: 0,
-        totalPages: maxPages,
-        message: "Claude CLI not found, using simple crawl mode (install Claude Code for intelligent crawling)",
-        error: new Error("Claude CLI not available")
-      };
-      this.emit("progress", fallbackProgress);
-      yield* this.crawlSimple(seedUrl, extractInstruction, maxPages, useHeadless);
-      return;
+      throw new Error("Claude CLI not available: install Claude Code for intelligent crawling");
     }
     let strategy;
     try {
@@ -529,16 +515,7 @@ var IntelligentCrawler = class extends EventEmitter {
       };
       this.emit("progress", strategyCompleteProgress);
     } catch (error) {
-      const errorProgress = {
-        type: "error",
-        pagesVisited: 0,
-        totalPages: maxPages,
-        message: "Claude crawl strategy failed, falling back to simple mode",
-        error: error instanceof Error ? error : new Error(String(error))
-      };
-      this.emit("progress", errorProgress);
-      yield* this.crawlSimple(seedUrl, extractInstruction, maxPages);
-      return;
+      throw error instanceof Error ? error : new Error(String(error));
     }
     let pagesVisited = 0;
     for (const url of strategy.urls) {
@@ -616,12 +593,16 @@ var IntelligentCrawler = class extends EventEmitter {
           }
         }
       } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        if (errorObj.message.includes("Extraction failed") || errorObj.message.includes("Claude CLI not available") || errorObj.message.includes("Headless fetch failed")) {
+          throw errorObj;
+        }
         const simpleErrorProgress = {
           type: "error",
           pagesVisited,
           totalPages: maxPages,
           currentUrl: current.url,
-          error: error instanceof Error ? error : new Error(String(error))
+          error: errorObj
         };
         this.emit("progress", simpleErrorProgress);
       }
@@ -641,10 +622,6 @@ var IntelligentCrawler = class extends EventEmitter {
     this.visited.add(url);
     const html = await this.fetchHtml(url, useHeadless);
     const conversion = await convertHtmlToMarkdown(html, url);
-    if (!conversion.success) {
-      logger2.error({ url, error: conversion.error }, "HTML to markdown conversion failed");
-      throw new Error(`Failed to convert HTML: ${conversion.error ?? "Unknown error"}`);
-    }
     logger2.debug(
       {
         url,
@@ -656,40 +633,16 @@ var IntelligentCrawler = class extends EventEmitter {
     let extracted;
     if (extractInstruction !== void 0 && extractInstruction !== "") {
       if (!ClaudeClient.isAvailable()) {
-        const skipProgress = {
-          type: "error",
-          pagesVisited,
-          totalPages: 0,
-          currentUrl: url,
-          message: "Skipping extraction (Claude CLI not available), storing raw markdown",
-          error: new Error("Claude CLI not available")
-        };
-        this.emit("progress", skipProgress);
-      } else {
-        try {
-          const extractionProgress = {
-            type: "extraction",
-            pagesVisited,
-            totalPages: 0,
-            currentUrl: url
-          };
-          this.emit("progress", extractionProgress);
-          extracted = await this.claudeClient.extractContent(
-            conversion.markdown,
-            extractInstruction
-          );
-        } catch (error) {
-          const extractionErrorProgress = {
-            type: "error",
-            pagesVisited,
-            totalPages: 0,
-            currentUrl: url,
-            message: "Extraction failed, storing raw markdown",
-            error: error instanceof Error ? error : new Error(String(error))
-          };
-          this.emit("progress", extractionErrorProgress);
-        }
+        throw new Error("Claude CLI not available: install Claude Code for extraction");
       }
+      const extractionProgress = {
+        type: "extraction",
+        pagesVisited,
+        totalPages: 0,
+        currentUrl: url
+      };
+      this.emit("progress", extractionProgress);
+      extracted = await this.claudeClient.extractContent(conversion.markdown, extractInstruction);
     }
     return {
       url,
@@ -719,9 +672,8 @@ var IntelligentCrawler = class extends EventEmitter {
         );
         return result.html;
       } catch (error) {
-        logger2.warn(
-          { url, error: error instanceof Error ? error.message : String(error) },
-          "Headless fetch failed, falling back to axios"
+        throw new Error(
+          `Headless fetch failed: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }
@@ -801,4 +753,4 @@ var IntelligentCrawler = class extends EventEmitter {
 export {
   IntelligentCrawler
 };
-//# sourceMappingURL=chunk-MJ26THJV.js.map
+//# sourceMappingURL=chunk-GOAOBPOA.js.map
