@@ -102,8 +102,7 @@ export function createSyncCommand(getOptions: () => GlobalOptions): Command {
   sync
     .option('--dry-run', 'Show what would happen without making changes')
     .option('--prune', 'Remove stores not in definitions')
-    .option('--reindex', 'Re-index existing stores after sync')
-    .action(async (options: { dryRun?: boolean; prune?: boolean; reindex?: boolean }) => {
+    .action(async (options: { dryRun?: boolean; prune?: boolean }) => {
       const globalOpts = getOptions();
       const projectRoot = globalOpts.projectRoot ?? process.cwd();
 

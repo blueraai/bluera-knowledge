@@ -13,7 +13,6 @@ import type { HandlerContext, ToolResponse } from '../types.js';
  * Arguments for stores:sync command
  */
 export interface SyncStoresArgs {
-  reindex?: boolean;
   prune?: boolean;
   dryRun?: boolean;
 }
@@ -39,7 +38,6 @@ interface SyncResult {
  * - Creates missing stores from definitions
  * - Reports stores not in definitions (orphans)
  * - Optionally prunes orphan stores
- * - Optionally re-indexes existing stores
  */
 export async function handleStoresSync(
   args: SyncStoresArgs,
@@ -212,15 +210,11 @@ export const syncCommands: CommandDefinition[] = [
     name: 'stores:sync',
     description: 'Sync stores from definitions config (bootstrap on fresh clone)',
     argsSchema: z.object({
-      reindex: z.boolean().optional().describe('Re-index existing stores after sync'),
       prune: z.boolean().optional().describe('Remove stores not in definitions'),
       dryRun: z.boolean().optional().describe('Show what would happen without making changes'),
     }),
     handler: (args: Record<string, unknown>, context: HandlerContext): Promise<ToolResponse> => {
       const syncArgs: SyncStoresArgs = {};
-      if (typeof args['reindex'] === 'boolean') {
-        syncArgs.reindex = args['reindex'];
-      }
       if (typeof args['prune'] === 'boolean') {
         syncArgs.prune = args['prune'];
       }
