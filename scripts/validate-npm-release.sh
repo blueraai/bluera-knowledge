@@ -130,6 +130,10 @@ log "Test store: $TEST_STORE"
 log "Test folder: $TEST_FOLDER"
 log "Data directory: $DATA_DIR"
 
+# Get expected version from package.json
+EXPECTED_VERSION=$(node -p "require('$REPO_ROOT/package.json').version")
+log "Expected version: $EXPECTED_VERSION"
+
 # Install latest from npm
 log_header "Installing Latest from npm"
 log "Installing bluera-knowledge@latest globally..."
@@ -144,7 +148,24 @@ fi
 # Verify installation
 log_header "Verifying Installation"
 
-run_test_contains "bluera-knowledge --version" "0." "bluera-knowledge --version"
+# Capture and display the installed version
+INSTALLED_VERSION=$(bluera-knowledge --version 2>&1 | head -1)
+log "Installed version: $INSTALLED_VERSION"
+VERSION_TEXT="Installed: bluera-knowledge@$INSTALLED_VERSION"
+VERSION_LEN=${#VERSION_TEXT}
+PADDING=$((VERSION_LEN + 4))
+echo ""
+printf "  ╔"; printf '═%.0s' $(seq 1 $PADDING); printf "╗\n"
+printf "  ║  %s  ║\n" "$VERSION_TEXT"
+printf "  ╚"; printf '═%.0s' $(seq 1 $PADDING); printf "╝\n"
+echo ""
+
+if [ "$INSTALLED_VERSION" != "$EXPECTED_VERSION" ]; then
+    log "WARNING: Version mismatch! Expected $EXPECTED_VERSION but got $INSTALLED_VERSION"
+    log "This may indicate npm cache issues. Try: npm cache clean --force"
+fi
+
+run_test_contains "bluera-knowledge --version" "$INSTALLED_VERSION" "bluera-knowledge --version"
 
 run_test_contains "bluera-knowledge --help" "CLI tool for managing knowledge stores" "bluera-knowledge --help"
 
@@ -169,7 +190,7 @@ run_test_contains "bluera-knowledge store info" "$TEST_STORE" "bluera-knowledge 
 # Test search (may return no results, but should not error)
 log_header "Testing search"
 
-run_test "bluera-knowledge search" "bluera-knowledge search 'test content' --store '$TEST_STORE' -d '$DATA_DIR' -f json"
+run_test "bluera-knowledge search" "bluera-knowledge search 'test content' --stores '$TEST_STORE' -d '$DATA_DIR' -f json"
 
 # Test index command (re-index)
 log_header "Testing index"
@@ -177,7 +198,7 @@ log_header "Testing index"
 run_test "bluera-knowledge index" "bluera-knowledge index '$TEST_STORE' -d '$DATA_DIR'"
 
 # Test search again after re-indexing
-run_test "bluera-knowledge search (after reindex)" "bluera-knowledge search 'validation' --store '$TEST_STORE' -d '$DATA_DIR' -f json"
+run_test "bluera-knowledge search (after reindex)" "bluera-knowledge search 'validation' --stores '$TEST_STORE' -d '$DATA_DIR' -f json"
 
 # Test store delete
 log_header "Testing store delete"
