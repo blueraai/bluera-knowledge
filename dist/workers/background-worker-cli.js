@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-ZDEO4WJT.js";
+} from "../chunk-MJ26THJV.js";
 import {
   JobService,
   createDocumentId,
@@ -9,7 +9,7 @@ import {
   createServices,
   createStoreId,
   shutdownLogger
-} from "../chunk-ZZNABJMQ.js";
+} from "../chunk-GAGGEKE2.js";
 import "../chunk-6FHWC36B.js";
 
 // src/workers/background-worker.ts
