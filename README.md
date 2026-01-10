@@ -1248,9 +1248,12 @@ The plugin exposes 3 MCP tools optimized for minimal context overhead:
 **Parameters:**
 - `query` - Search query (natural language, patterns, or type signatures)
 - `intent` - Search intent: find-pattern, find-implementation, find-usage, find-definition, find-documentation
+- `mode` - Search mode: hybrid (default), vector, or fts
 - `detail` - Context level: minimal, contextual, or full
 - `limit` - Maximum results (default: 10)
 - `stores` - Array of specific store IDs to search (optional, searches all stores if not specified)
+- `threshold` - Minimum normalized score (0-1) for filtering results
+- `minRelevance` - Minimum raw cosine similarity (0-1) for filtering results
 
 #### `get_full_context`
 📖 Retrieve complete code and context for a specific search result by ID.
@@ -1311,6 +1314,9 @@ npm install --save-dev bluera-knowledge
 # Add a Git repository
 bluera-knowledge store create react --type repo --source https://github.com/facebook/react
 
+# Add a Git repository with specific branch
+bluera-knowledge store create react-canary --type repo --source https://github.com/facebook/react --branch canary
+
 # Add a local folder
 bluera-knowledge store create my-docs --type file --source ./docs
 
@@ -1318,11 +1324,32 @@ bluera-knowledge store create my-docs --type file --source ./docs
 bluera-knowledge store create fastapi-docs --type web --source https://fastapi.tiangolo.com
 ```
 
+**Create Options:**
+- `-t, --type <type>` - Store type: `file`, `repo`, or `web` (required)
+- `-s, --source <path>` - Local path or URL (required)
+- `-b, --branch <branch>` - Git branch to clone (repo stores only)
+- `-d, --description <desc>` - Optional store description
+- `--tags <tags>` - Comma-separated tags for filtering
+
 #### Index a Store
 
 ```bash
+# Re-index a store (only changed files)
 bluera-knowledge index react
+
+# Force re-index all files (ignores cache)
+bluera-knowledge index react --force
+
+# Watch for changes and auto-reindex
+bluera-knowledge index watch react
+bluera-knowledge index watch react --debounce 2000  # Custom debounce (default: 1000ms)
 ```
+
+**Index Options:**
+- `-f, --force` - Re-index all files (ignore incremental cache)
+
+**Watch Options:**
+- `--debounce <ms>` - Debounce delay for file changes (default: 1000ms)
 
 #### Search
 
@@ -1368,17 +1395,27 @@ bluera-knowledge store info react
 #### Delete a Store
 
 ```bash
+# Interactive deletion (prompts for confirmation in TTY mode)
 bluera-knowledge store delete old-store
+
+# Force delete without confirmation
+bluera-knowledge store delete old-store --force
+bluera-knowledge store delete old-store -y
 ```
+
+**Delete Options:**
+- `-f, --force` - Delete without confirmation prompt
+- `-y, --yes` - Alias for `--force`
 
 ### Global Options
 
 ```bash
---config <path>      # Custom config file
---data-dir <path>    # Custom data directory
---format <format>    # Output format: json | table | plain
---quiet              # Suppress non-essential output
---verbose            # Enable verbose logging
+--config <path>        # Custom config file
+--data-dir <path>      # Custom data directory
+--project-root <path>  # Project root for store definitions (required for sync)
+--format <format>      # Output format: json | table | plain
+--quiet                # Suppress non-essential output
+--verbose              # Enable verbose logging
 ```
 
 ### When to Use CLI vs Plugin
