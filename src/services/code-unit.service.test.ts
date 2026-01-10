@@ -345,7 +345,7 @@ function testLonger() {
       expect(result?.fullContent).not.toContain('testLonger');
     });
 
-    it('does NOT extract interface definitions (known limitation)', () => {
+    it('extracts interface definitions', () => {
       const code = `
 interface User {
   name: string;
@@ -355,11 +355,31 @@ interface User {
 
       const result = service.extractCodeUnit(code, 'User', 'typescript');
 
-      // Interfaces are not currently supported
-      expect(result).toBeUndefined();
+      expect(result).toBeDefined();
+      expect(result?.type).toBe('interface');
+      expect(result?.name).toBe('User');
+      expect(result?.startLine).toBe(1);
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('name: string');
+      expect(result?.fullContent).toContain('age: number');
     });
 
-    it('does NOT extract type definitions (known limitation)', () => {
+    it('extracts exported interface definitions', () => {
+      const code = `
+export interface Config {
+  host: string;
+  port: number;
+}
+      `.trim();
+
+      const result = service.extractCodeUnit(code, 'Config', 'typescript');
+
+      expect(result).toBeDefined();
+      expect(result?.type).toBe('interface');
+      expect(result?.signature).toBe('interface Config');
+    });
+
+    it('extracts type definitions', () => {
       const code = `
 type Config = {
   host: string;
@@ -369,8 +389,41 @@ type Config = {
 
       const result = service.extractCodeUnit(code, 'Config', 'typescript');
 
-      // Type definitions are not currently supported
-      expect(result).toBeUndefined();
+      expect(result).toBeDefined();
+      expect(result?.type).toBe('type');
+      expect(result?.name).toBe('Config');
+      expect(result?.startLine).toBe(1);
+      expect(result?.endLine).toBe(4);
+      expect(result?.fullContent).toContain('host: string');
+    });
+
+    it('extracts exported type definitions', () => {
+      const code = `
+export type Result<T> = {
+  success: boolean;
+  data: T;
+};
+      `.trim();
+
+      const result = service.extractCodeUnit(code, 'Result', 'typescript');
+
+      expect(result).toBeDefined();
+      expect(result?.type).toBe('type');
+      expect(result?.signature).toContain('type Result');
+    });
+
+    it('extracts type alias (non-object)', () => {
+      const code = `
+type UserId = string;
+      `.trim();
+
+      const result = service.extractCodeUnit(code, 'UserId', 'typescript');
+
+      expect(result).toBeDefined();
+      expect(result?.type).toBe('type');
+      expect(result?.name).toBe('UserId');
+      expect(result?.startLine).toBe(1);
+      expect(result?.endLine).toBe(1);
     });
 
     it('handles function with generics in signature', () => {
