@@ -30,6 +30,7 @@ export const handleSearch: ToolHandler<SearchArgs> = async (
     {
       query: validated.query,
       stores: validated.stores,
+      mode: validated.mode,
       detail: validated.detail,
       limit: validated.limit,
       intent: validated.intent,
@@ -69,9 +70,10 @@ export const handleSearch: ToolHandler<SearchArgs> = async (
   const searchQuery: SearchQuery = {
     query: validated.query,
     stores: storeIds,
-    mode: 'hybrid',
+    mode: validated.mode,
     limit: validated.limit,
     detail: validated.detail,
+    threshold: validated.threshold,
     minRelevance: validated.minRelevance,
   };
 
