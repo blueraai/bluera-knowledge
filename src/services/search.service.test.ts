@@ -2180,3 +2180,115 @@ describe('SearchService - Raw Score and Confidence', () => {
     expect(results.confidence).toBe('high');
   });
 });
+
+describe('SearchService Environment Variables', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('throws if SEARCH_CONFIDENCE_HIGH is not set', async () => {
+    vi.stubEnv('SEARCH_CONFIDENCE_HIGH', undefined as unknown as string);
+    vi.stubEnv('SEARCH_CONFIDENCE_MEDIUM', '0.3');
+    vi.stubEnv('SEARCH_TEST_FILE_BOOST', '0.5');
+
+    const tempDir = await mkdtemp(join(tmpdir(), 'search-env-test-'));
+    const lanceStore = new LanceStore(tempDir);
+    const embeddingEngine = new EmbeddingEngine();
+    await embeddingEngine.initialize();
+
+    const storeId = createStoreId('env-test-store');
+    await lanceStore.initialize(storeId);
+
+    const text = 'test document';
+    const vector = await embeddingEngine.embed(text);
+    await lanceStore.addDocuments(storeId, [
+      {
+        id: createDocumentId('doc-1'),
+        content: text,
+        vector,
+        metadata: { type: 'file', storeId, indexedAt: new Date() },
+      },
+    ]);
+
+    const searchService = new SearchService(lanceStore, embeddingEngine);
+
+    await expect(searchService.search({ query: 'test', stores: [storeId] })).rejects.toThrow(
+      'SEARCH_CONFIDENCE_HIGH environment variable is required'
+    );
+
+    await rm(tempDir, { recursive: true });
+  });
+
+  it('throws if SEARCH_CONFIDENCE_MEDIUM is not set', async () => {
+    vi.stubEnv('SEARCH_CONFIDENCE_HIGH', '0.5');
+    vi.stubEnv('SEARCH_CONFIDENCE_MEDIUM', undefined as unknown as string);
+    vi.stubEnv('SEARCH_TEST_FILE_BOOST', '0.5');
+
+    const tempDir = await mkdtemp(join(tmpdir(), 'search-env-test-'));
+    const lanceStore = new LanceStore(tempDir);
+    const embeddingEngine = new EmbeddingEngine();
+    await embeddingEngine.initialize();
+
+    const storeId = createStoreId('env-test-store');
+    await lanceStore.initialize(storeId);
+
+    const text = 'test document';
+    const vector = await embeddingEngine.embed(text);
+    await lanceStore.addDocuments(storeId, [
+      {
+        id: createDocumentId('doc-1'),
+        content: text,
+        vector,
+        metadata: { type: 'file', storeId, indexedAt: new Date() },
+      },
+    ]);
+
+    const searchService = new SearchService(lanceStore, embeddingEngine);
+
+    await expect(searchService.search({ query: 'test', stores: [storeId] })).rejects.toThrow(
+      'SEARCH_CONFIDENCE_MEDIUM environment variable is required'
+    );
+
+    await rm(tempDir, { recursive: true });
+  });
+
+  it('throws if SEARCH_TEST_FILE_BOOST is not set when ranking test files', async () => {
+    vi.stubEnv('SEARCH_CONFIDENCE_HIGH', '0.5');
+    vi.stubEnv('SEARCH_CONFIDENCE_MEDIUM', '0.3');
+    vi.stubEnv('SEARCH_TEST_FILE_BOOST', undefined as unknown as string);
+
+    const tempDir = await mkdtemp(join(tmpdir(), 'search-env-test-'));
+    const lanceStore = new LanceStore(tempDir);
+    const embeddingEngine = new EmbeddingEngine();
+    await embeddingEngine.initialize();
+
+    const storeId = createStoreId('env-test-store');
+    await lanceStore.initialize(storeId);
+
+    // Add a test file document with fileType: 'test'
+    const text = 'test document content';
+    const vector = await embeddingEngine.embed(text);
+    await lanceStore.addDocuments(storeId, [
+      {
+        id: createDocumentId('test-file'),
+        content: text,
+        vector,
+        metadata: {
+          type: 'file',
+          storeId,
+          indexedAt: new Date(),
+          filePath: 'tests/example.test.ts',
+          fileType: 'test', // Triggers SEARCH_TEST_FILE_BOOST check
+        },
+      },
+    ]);
+
+    const searchService = new SearchService(lanceStore, embeddingEngine);
+
+    await expect(searchService.search({ query: 'test', stores: [storeId] })).rejects.toThrow(
+      'SEARCH_TEST_FILE_BOOST environment variable is required'
+    );
+
+    await rm(tempDir, { recursive: true });
+  });
+});

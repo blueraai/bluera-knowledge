@@ -6,7 +6,7 @@ import {
   createServices,
   createStoreId,
   summarizePayload
-} from "./chunk-TRDMYKGC.js";
+} from "./chunk-B3TR6OBU.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -2070,10 +2070,14 @@ async function runMCPServer(options) {
 var scriptPath = process.argv[1] ?? "";
 var isMCPServerEntry = scriptPath.endsWith("mcp/server.js") || scriptPath.endsWith("mcp/server");
 if (isMCPServerEntry) {
+  const projectRoot = process.env["PROJECT_ROOT"];
+  if (projectRoot === void 0) {
+    throw new Error("PROJECT_ROOT environment variable is required");
+  }
   runMCPServer({
     dataDir: process.env["DATA_DIR"],
     config: process.env["CONFIG_PATH"],
-    projectRoot: process.env["PROJECT_ROOT"] ?? process.env["PWD"]
+    projectRoot
   }).catch((error) => {
     logger2.error(
       { error: error instanceof Error ? error.message : String(error) },
@@ -2092,4 +2096,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-565OVW3C.js.map
+//# sourceMappingURL=chunk-OLKG5576.js.map

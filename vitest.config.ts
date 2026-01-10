@@ -4,6 +4,13 @@ const coverageThreshold = 81;
 
 export default defineConfig({
   test: {
+    // Required environment variables for tests
+    env: {
+      SEARCH_CONFIDENCE_HIGH: '0.5',
+      SEARCH_CONFIDENCE_MEDIUM: '0.3',
+      SEARCH_TEST_FILE_BOOST: '0.5',
+      LOG_LEVEL: 'info',
+    },
     // Separate unit and integration tests with different isolation settings
     // Unit tests: fast parallel execution without isolation (use mocks only)
     // Integration tests: safe execution with isolation (spawn processes, use filesystem)
