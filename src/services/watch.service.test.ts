@@ -330,33 +330,13 @@ describe('WatchService', () => {
   });
 
   describe('watch - Error Handling', () => {
-    it('logs error when reindexing fails', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('calls onError when reindexing fails', async () => {
+      const onError = vi.fn();
+      const indexError = new Error('Index failed');
 
-      mockIndexService.indexStore = vi.fn().mockRejectedValue(new Error('Index failed'));
+      mockIndexService.indexStore = vi.fn().mockRejectedValue(indexError);
 
-      await watchService.watch(mockFileStore);
-
-      const watcher = mockWatchers[0];
-      const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
-        (call: unknown[]) => call[0] === 'all'
-      )?.[1] as (() => void) | undefined;
-
-      allHandler?.();
-      vi.advanceTimersByTime(1100);
-      await vi.runAllTimersAsync();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error during reindexing:', expect.any(Error));
-
-      consoleErrorSpy.mockRestore();
-    });
-
-    it('logs error when lance initialization fails', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      mockLanceStore.initialize = vi.fn().mockRejectedValue(new Error('Init failed'));
-
-      await watchService.watch(mockFileStore);
+      await watchService.watch(mockFileStore, 1000, undefined, onError);
 
       const watcher = mockWatchers[0];
       const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -367,15 +347,33 @@ describe('WatchService', () => {
       vi.advanceTimersByTime(1100);
       await vi.runAllTimersAsync();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error during reindexing:', expect.any(Error));
-
-      consoleErrorSpy.mockRestore();
+      expect(onError).toHaveBeenCalledWith(indexError);
     });
 
-    it('handles watcher errors', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('calls onError when lance initialization fails', async () => {
+      const onError = vi.fn();
+      const initError = new Error('Init failed');
 
-      await watchService.watch(mockFileStore);
+      mockLanceStore.initialize = vi.fn().mockRejectedValue(initError);
+
+      await watchService.watch(mockFileStore, 1000, undefined, onError);
+
+      const watcher = mockWatchers[0];
+      const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'all'
+      )?.[1] as (() => void) | undefined;
+
+      allHandler?.();
+      vi.advanceTimersByTime(1100);
+      await vi.runAllTimersAsync();
+
+      expect(onError).toHaveBeenCalledWith(initError);
+    });
+
+    it('calls onError for watcher errors', async () => {
+      const onError = vi.fn();
+
+      await watchService.watch(mockFileStore, 1000, undefined, onError);
 
       const watcher = mockWatchers[0];
       const errorHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -385,13 +383,24 @@ describe('WatchService', () => {
       const testError = new Error('Watcher error');
       errorHandler?.(testError);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Watcher error:', testError);
+      expect(onError).toHaveBeenCalledWith(testError);
+    });
 
-      consoleErrorSpy.mockRestore();
+    it('throws if no onError provided and watcher has error', async () => {
+      await watchService.watch(mockFileStore);
+
+      const watcher = mockWatchers[0];
+      const errorHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'error'
+      )?.[1] as ((error: Error) => void) | undefined;
+
+      const testError = new Error('Watcher error');
+
+      expect(() => errorHandler?.(testError)).toThrow('Watcher error');
     });
 
     it('continues watching after error during reindex', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const onError = vi.fn();
 
       // First call fails
       mockIndexService.indexStore = vi
@@ -399,7 +408,7 @@ describe('WatchService', () => {
         .mockRejectedValueOnce(new Error('First fail'))
         .mockResolvedValueOnce({ ok: true });
 
-      await watchService.watch(mockFileStore);
+      await watchService.watch(mockFileStore, 1000, undefined, onError);
 
       const watcher = mockWatchers[0];
       const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -417,9 +426,7 @@ describe('WatchService', () => {
       await vi.runAllTimersAsync();
 
       expect(mockIndexService.indexStore).toHaveBeenCalledTimes(2);
-      expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-
-      consoleErrorSpy.mockRestore();
+      expect(onError).toHaveBeenCalledTimes(1);
     });
   });
 

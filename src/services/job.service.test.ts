@@ -111,6 +111,14 @@ describe('JobService', () => {
       const job = jobService.getJob('non-existent-job');
       expect(job).toBeNull();
     });
+
+    it('should throw on corrupted job file', () => {
+      // Create a corrupted job file
+      const jobFile = join(tempDir, 'jobs', 'corrupted-job.json');
+      writeFileSync(jobFile, 'invalid json{{{', 'utf-8');
+
+      expect(() => jobService.getJob('corrupted-job')).toThrow('Failed to read job');
+    });
   });
 
   describe('listJobs', () => {
@@ -138,17 +146,12 @@ describe('JobService', () => {
       expect(activeJobs.length).toBe(2);
     });
 
-    it('should skip corrupted job files', () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
+    it('should throw on corrupted job files', () => {
       // Create a corrupted job file
       const jobFile = join(tempDir, 'jobs', 'corrupted.json');
       writeFileSync(jobFile, 'invalid json{{{', 'utf-8');
 
-      const jobs = jobService.listJobs();
-      expect(jobs.length).toBe(3); // Should skip corrupted file
-
-      consoleErrorSpy.mockRestore();
+      expect(() => jobService.listJobs()).toThrow('Failed to read job file');
     });
 
     it('should skip non-JSON files', () => {

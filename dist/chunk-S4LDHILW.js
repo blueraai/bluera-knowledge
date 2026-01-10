@@ -9,7 +9,7 @@ var WatchService = class {
     this.indexService = indexService;
     this.lanceStore = lanceStore;
   }
-  async watch(store, debounceMs = 1e3, onReindex) {
+  async watch(store, debounceMs = 1e3, onReindex, onError) {
     if (this.watchers.has(store.id)) {
       return Promise.resolve();
     }
@@ -28,16 +28,26 @@ var WatchService = class {
             await this.lanceStore.initialize(store.id);
             await this.indexService.indexStore(store);
             onReindex?.();
-          } catch (error) {
-            console.error("Error during reindexing:", error);
+          } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            if (onError) {
+              onError(error);
+            } else {
+              throw error;
+            }
           }
         })();
       }, debounceMs);
       this.pendingTimeouts.set(store.id, timeout);
     };
     watcher.on("all", reindexHandler);
-    watcher.on("error", (error) => {
-      console.error("Watcher error:", error);
+    watcher.on("error", (e) => {
+      const error = e instanceof Error ? e : new Error(String(e));
+      if (onError) {
+        onError(error);
+      } else {
+        throw error;
+      }
     });
     this.watchers.set(store.id, watcher);
     return Promise.resolve();
@@ -64,4 +74,4 @@ var WatchService = class {
 export {
   WatchService
 };
-//# sourceMappingURL=chunk-6FHWC36B.js.map
+//# sourceMappingURL=chunk-S4LDHILW.js.map

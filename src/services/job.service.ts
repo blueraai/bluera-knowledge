@@ -89,8 +89,9 @@ export class JobService {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       return JSON.parse(content) as Job;
     } catch (error) {
-      console.error(`Error reading job ${jobId}:`, error);
-      return null;
+      throw new Error(
+        `Failed to read job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -124,7 +125,9 @@ export class JobService {
           jobs.push(job);
         }
       } catch (error) {
-        console.error(`Error reading job file ${file}:`, error);
+        throw new Error(
+          `Failed to read job file ${file}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -209,7 +212,9 @@ export class JobService {
           fs.unlinkSync(jobFile);
           cleaned++;
         } catch (error) {
-          console.error(`Error deleting job file ${job.id}:`, error);
+          throw new Error(
+            `Failed to delete job file ${job.id}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     }
@@ -231,8 +236,9 @@ export class JobService {
       fs.unlinkSync(jobFile);
       return true;
     } catch (error) {
-      console.error(`Error deleting job ${jobId}:`, error);
-      return false;
+      throw new Error(
+        `Failed to delete job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

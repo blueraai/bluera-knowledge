@@ -6,10 +6,10 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   runMCPServer
-} from "./chunk-CSHVW452.js";
+} from "./chunk-VP4VZULK.js";
 import {
   IntelligentCrawler
-} from "./chunk-MJ26THJV.js";
+} from "./chunk-GOAOBPOA.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -22,8 +22,8 @@ import {
   err,
   extractRepoName,
   ok
-} from "./chunk-GAGGEKE2.js";
-import "./chunk-6FHWC36B.js";
+} from "./chunk-QEHSDQTL.js";
+import "./chunk-S4LDHILW.js";
 
 // src/index.ts
 import { homedir as homedir2 } from "os";
@@ -263,7 +263,7 @@ function createIndexCommand(getOptions) {
       console.error(`Error: File/repo store not found: ${storeIdOrName}`);
       process.exit(3);
     }
-    const { WatchService } = await import("./watch.service-BJV3TI3F.js");
+    const { WatchService } = await import("./watch.service-JPF3BICM.js");
     const watchService = new WatchService(services.index, services.lance);
     if (globalOpts.quiet !== true) {
       console.log(`Watching ${store.name} for changes...`);

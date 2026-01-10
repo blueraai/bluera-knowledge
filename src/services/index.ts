@@ -73,22 +73,38 @@ export async function createServices(
 /**
  * Cleanly shut down all services, stopping background processes.
  * Call this after CLI commands complete to allow the process to exit.
+ * Attempts all cleanup operations and throws if any fail.
  */
 export async function destroyServices(services: ServiceContainer): Promise<void> {
   logger.info('Shutting down services');
+  const errors: Error[] = [];
+
+  // Use async close to allow native threads time to cleanup
   try {
-    // Use async close to allow native threads time to cleanup
     await services.lance.closeAsync();
   } catch (e) {
-    logger.error({ error: e }, 'Error closing LanceStore');
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error({ error }, 'Error closing LanceStore');
+    errors.push(error);
   }
+
   try {
     await services.pythonBridge.stop();
   } catch (e) {
-    logger.error({ error: e }, 'Error stopping Python bridge');
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error({ error }, 'Error stopping Python bridge');
+    errors.push(error);
   }
+
   // Additional delay to allow native threads (LanceDB, tree-sitter, transformers)
   // to fully complete their cleanup before process exit
   await new Promise((resolve) => setTimeout(resolve, 100));
   await shutdownLogger();
+
+  // Throw if any errors occurred during cleanup
+  if (errors.length === 1 && errors[0] !== undefined) {
+    throw new Error(`Service shutdown failed: ${errors[0].message}`, { cause: errors[0] });
+  } else if (errors.length > 1) {
+    throw new AggregateError(errors, 'Multiple errors during service shutdown');
+  }
 }

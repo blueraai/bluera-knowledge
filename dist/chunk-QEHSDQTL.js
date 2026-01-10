@@ -323,8 +323,9 @@ var JobService = class {
       const content = fs.readFileSync(jobFile, "utf-8");
       return JSON.parse(content);
     } catch (error) {
-      console.error(`Error reading job ${jobId}:`, error);
-      return null;
+      throw new Error(
+        `Failed to read job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
   /**
@@ -352,7 +353,9 @@ var JobService = class {
           jobs.push(job);
         }
       } catch (error) {
-        console.error(`Error reading job file ${file}:`, error);
+        throw new Error(
+          `Failed to read job file ${file}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
     jobs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -413,7 +416,9 @@ var JobService = class {
           fs.unlinkSync(jobFile);
           cleaned++;
         } catch (error) {
-          console.error(`Error deleting job file ${job.id}:`, error);
+          throw new Error(
+            `Failed to delete job file ${job.id}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     }
@@ -431,8 +436,9 @@ var JobService = class {
       fs.unlinkSync(jobFile);
       return true;
     } catch (error) {
-      console.error(`Error deleting job ${jobId}:`, error);
-      return false;
+      throw new Error(
+        `Failed to delete job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
   /**
@@ -4469,18 +4475,28 @@ async function createServices(configPath, dataDir, projectRoot) {
 }
 async function destroyServices(services) {
   logger4.info("Shutting down services");
+  const errors = [];
   try {
     await services.lance.closeAsync();
   } catch (e) {
-    logger4.error({ error: e }, "Error closing LanceStore");
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger4.error({ error }, "Error closing LanceStore");
+    errors.push(error);
   }
   try {
     await services.pythonBridge.stop();
   } catch (e) {
-    logger4.error({ error: e }, "Error stopping Python bridge");
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger4.error({ error }, "Error stopping Python bridge");
+    errors.push(error);
   }
   await new Promise((resolve3) => setTimeout(resolve3, 100));
   await shutdownLogger();
+  if (errors.length === 1 && errors[0] !== void 0) {
+    throw new Error(`Service shutdown failed: ${errors[0].message}`, { cause: errors[0] });
+  } else if (errors.length > 1) {
+    throw new AggregateError(errors, "Multiple errors during service shutdown");
+  }
 }
 
 export {
@@ -4503,4 +4519,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-GAGGEKE2.js.map
+//# sourceMappingURL=chunk-QEHSDQTL.js.map
