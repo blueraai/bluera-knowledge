@@ -58,7 +58,6 @@ describe('IntelligentCrawler', () => {
 
     // Setup convertHtmlToMarkdown mock
     vi.mocked(articleConverter.convertHtmlToMarkdown).mockResolvedValue({
-      success: true,
       markdown: '# Test\n\nContent',
       title: 'Test Page',
     });
@@ -581,24 +580,20 @@ describe('IntelligentCrawler', () => {
     });
   });
 
-  describe('Intelligent Mode Fallback', () => {
-    it('should fallback to simple mode when Claude strategy fails', async () => {
+  describe('Intelligent Mode Error Handling', () => {
+    it('should throw when Claude strategy fails', async () => {
       mockClaudeClient.determineCrawlUrls.mockRejectedValue(new Error('Claude API error'));
-      mockPythonBridge.crawl.mockResolvedValue({ pages: [{ links: [] }] });
 
       const results = [];
-      for await (const result of crawler.crawl('https://example.com', {
-        crawlInstruction: 'Find all docs',
-      })) {
-        results.push(result);
-      }
+      await expect(async () => {
+        for await (const result of crawler.crawl('https://example.com', {
+          crawlInstruction: 'Find all docs',
+        })) {
+          results.push(result);
+        }
+      }).rejects.toThrow('Claude API error');
 
-      // Should still crawl using simple mode
-      expect(results).toHaveLength(1);
-      const errorEvents = progressEvents.filter((e) => e.type === 'error');
-      expect(errorEvents.some((e) => e.message?.includes('falling back to simple mode'))).toBe(
-        true
-      );
+      expect(results).toHaveLength(0);
     });
   });
 
@@ -623,22 +618,21 @@ describe('IntelligentCrawler', () => {
       );
     });
 
-    it('should continue without extraction if extraction fails', async () => {
+    it('should throw when extraction fails', async () => {
       mockClaudeClient.extractContent.mockRejectedValue(new Error('Extraction failed'));
       mockPythonBridge.crawl.mockResolvedValue({ pages: [{ links: [] }] });
 
       const results = [];
-      for await (const result of crawler.crawl('https://example.com', {
-        simple: true,
-        extractInstruction: 'Extract pricing',
-      })) {
-        results.push(result);
-      }
+      await expect(async () => {
+        for await (const result of crawler.crawl('https://example.com', {
+          simple: true,
+          extractInstruction: 'Extract pricing',
+        })) {
+          results.push(result);
+        }
+      }).rejects.toThrow('Extraction failed');
 
-      expect(results).toHaveLength(1);
-      expect(results[0]?.extracted).toBeUndefined();
-      const errorEvents = progressEvents.filter((e) => e.type === 'error');
-      expect(errorEvents.some((e) => e.message?.includes('storing raw markdown'))).toBe(true);
+      expect(results).toHaveLength(0);
     });
 
     it('should not extract when extractInstruction is empty', async () => {
@@ -824,7 +818,6 @@ describe('IntelligentCrawler', () => {
     it('should include title when available', async () => {
       mockPythonBridge.crawl.mockResolvedValue({ pages: [{ links: [] }] });
       vi.mocked(articleConverter.convertHtmlToMarkdown).mockResolvedValue({
-        success: true,
         markdown: '# Test',
         title: 'Test Page Title',
       });
@@ -839,11 +832,9 @@ describe('IntelligentCrawler', () => {
 
     it('should handle conversion failures', async () => {
       mockPythonBridge.crawl.mockResolvedValue({ pages: [{ links: [] }] });
-      vi.mocked(articleConverter.convertHtmlToMarkdown).mockResolvedValue({
-        success: false,
-        markdown: '',
-        error: 'Conversion error',
-      });
+      vi.mocked(articleConverter.convertHtmlToMarkdown).mockRejectedValue(
+        new Error('Conversion error')
+      );
 
       const results = [];
       for await (const result of crawler.crawl('https://example.com', { simple: true })) {
@@ -905,69 +896,67 @@ describe('IntelligentCrawler', () => {
     });
   });
 
-  describe('npm Package Mode (Claude CLI Not Installed)', () => {
-    it('should use simple mode when Claude CLI is not available', async () => {
+  describe('Headless Mode Error Handling', () => {
+    it('should throw when headless fetch fails', async () => {
+      mockPythonBridge.fetchHeadless.mockRejectedValue(new Error('Browser crashed'));
+
+      const results = [];
+      await expect(async () => {
+        for await (const result of crawler.crawl('https://example.com', {
+          simple: true,
+          useHeadless: true,
+        })) {
+          results.push(result);
+        }
+      }).rejects.toThrow('Headless fetch failed: Browser crashed');
+
+      expect(results).toHaveLength(0);
+      // Should not have fallen back to axios
+      expect(axios.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Claude CLI Not Installed', () => {
+    it('should throw when intelligent mode requested but Claude CLI not available', async () => {
       // Simulate npm package usage without Claude Code installed
       vi.mocked(ClaudeClient.isAvailable).mockReturnValue(false);
-
-      // Setup link extraction for simple mode
-      mockPythonBridge.crawl.mockResolvedValue({
-        pages: [{ links: [] }],
-      });
 
       const results: { url: string }[] = [];
 
-      for await (const result of crawler.crawl('https://example.com', {
-        crawlInstruction: 'Find all documentation pages', // Would use intelligent mode
-        maxPages: 5,
-      })) {
-        results.push(result);
-      }
+      await expect(async () => {
+        for await (const result of crawler.crawl('https://example.com', {
+          crawlInstruction: 'Find all documentation pages', // Requires intelligent mode
+          maxPages: 5,
+        })) {
+          results.push(result);
+        }
+      }).rejects.toThrow('Claude CLI not available');
 
-      // Should have crawled using simple BFS mode
-      expect(results.length).toBeGreaterThan(0);
-      expect(results[0]?.url).toBe('https://example.com');
-
-      // Should have emitted progress event about mode switch
-      const modeEvent = progressEvents.find(
-        (e) => e.type === 'error' && e.message?.includes('Claude CLI not found')
-      );
-      expect(modeEvent).toBeDefined();
-      expect(modeEvent?.message).toContain('using simple crawl mode');
-
-      // Should NOT have called Claude's determineCrawlUrls
+      expect(results).toHaveLength(0);
       expect(mockClaudeClient.determineCrawlUrls).not.toHaveBeenCalled();
     });
 
-    it('should skip extraction when Claude CLI is not available', async () => {
+    it('should throw when extraction requested but Claude CLI not available', async () => {
       // Simulate npm package usage without Claude Code installed
       vi.mocked(ClaudeClient.isAvailable).mockReturnValue(false);
 
-      // Setup for simple mode
       mockPythonBridge.crawl.mockResolvedValue({
         pages: [{ links: [] }],
       });
 
       const results: { url: string; extracted?: string }[] = [];
 
-      for await (const result of crawler.crawl('https://example.com', {
-        simple: true,
-        extractInstruction: 'Extract pricing info', // Would use Claude
-        maxPages: 1,
-      })) {
-        results.push(result);
-      }
+      await expect(async () => {
+        for await (const result of crawler.crawl('https://example.com', {
+          simple: true,
+          extractInstruction: 'Extract pricing info', // Requires Claude
+          maxPages: 1,
+        })) {
+          results.push(result);
+        }
+      }).rejects.toThrow('Claude CLI not available');
 
-      expect(results.length).toBe(1);
-      expect(results[0]?.extracted).toBeUndefined(); // Should not have extracted
-
-      // Should have emitted skip extraction progress event
-      const skipEvent = progressEvents.find(
-        (e) => e.type === 'error' && e.message?.includes('Skipping extraction')
-      );
-      expect(skipEvent).toBeDefined();
-
-      // Should NOT have called Claude's extractContent
+      expect(results).toHaveLength(0);
       expect(mockClaudeClient.extractContent).not.toHaveBeenCalled();
     });
   });
