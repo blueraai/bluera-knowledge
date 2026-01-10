@@ -345,6 +345,27 @@ describe('sync.commands', () => {
         expect(response.reindexJobs).toBeUndefined();
         expect(response.wouldReindex).toBeUndefined();
       });
+
+      it('throws error when dataDir is undefined during reindex', async () => {
+        const docsDir = join(projectRoot, 'docs');
+        await mkdir(docsDir, { recursive: true });
+
+        await storeService.create({
+          name: 'error-store',
+          type: 'file',
+          path: docsDir,
+        });
+
+        // Create context without dataDir
+        const contextWithoutDataDir: HandlerContext = {
+          services: createMockServices(storeService),
+          options: { projectRoot },
+        };
+
+        await expect(handleStoresSync({ reindex: true }, contextWithoutDataDir)).rejects.toThrow(
+          'dataDir is required for reindexing'
+        );
+      });
     });
   });
 });

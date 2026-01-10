@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.11.21](https://github.com/blueraai/bluera-knowledge/compare/v0.11.20...v0.11.21) (2026-01-10)
+
+
+### Features
+
+* **cli:** add --branch option to store create command ([8b3209f](https://github.com/blueraai/bluera-knowledge/commit/8b3209f34e22f78df54fc6a64cf1d8b91833dabc))
+* **mcp:** add mode and threshold params to search tool ([18acdb5](https://github.com/blueraai/bluera-knowledge/commit/18acdb590944b9e1ebf1851d0eab32f746ac1758))
+* **sync:** add --reindex flag to sync command ([1344d98](https://github.com/blueraai/bluera-knowledge/commit/1344d984fdc5a75b25687d55ad186416d14203a9))
+
+
+### Bug Fixes
+
+* **code-graph:** preserve confidence in serialized edges ([d88c342](https://github.com/blueraai/bluera-knowledge/commit/d88c342e4225f984db02691437ab1c54d29ad07d))
+* **job-service:** throw on missing HOME/USERPROFILE env vars ([b0a79fb](https://github.com/blueraai/bluera-knowledge/commit/b0a79fbe996c5e4e333ce4ad7a338cdda4af2d70))
+* **store:** clean up all resources on store deletion ([fbcff02](https://github.com/blueraai/bluera-knowledge/commit/fbcff02f304e8b330c1656db32f6b237a63f3295))
+
 ## [0.11.20](https://github.com/blueraai/bluera-knowledge/compare/v0.11.6...v0.11.20) (2026-01-10)
 
 
