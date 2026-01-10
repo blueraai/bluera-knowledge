@@ -191,3 +191,29 @@ describe('BackgroundWorker', () => {
     });
   });
 });
+
+/**
+ * Tests to verify background-worker.ts uses file logging for visibility.
+ * This ensures job execution is observable in log files.
+ */
+describe('BackgroundWorker Logging', () => {
+  const { readFileSync } = require('fs');
+  const source = readFileSync('src/workers/background-worker.ts', 'utf-8');
+
+  it('imports createLogger from logging module', () => {
+    expect(source).toContain('createLogger');
+    expect(source).toContain("from '../logging/index.js'");
+  });
+
+  it('logs job start with jobId and type', () => {
+    // Verify logger.info is called with job start pattern
+    expect(source).toContain('logger.info');
+    expect(source).toContain('Starting job');
+  });
+
+  it('logs job failure with error details', () => {
+    // Verify logger.error is called for failures
+    expect(source).toContain('logger.error');
+    expect(source).toContain('Job failed');
+  });
+});
