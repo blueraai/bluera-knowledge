@@ -5,6 +5,7 @@ node_modules/
 *.log
 .DS_Store
 coverage/
+logs/
 .vscode/
 *.local.md
 .claude/settings.local.json
