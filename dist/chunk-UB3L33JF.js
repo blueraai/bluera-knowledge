@@ -4449,6 +4449,7 @@ async function destroyServices(services) {
 export {
   AdapterRegistry,
   createLogger,
+  shutdownLogger,
   summarizePayload,
   truncateForLog,
   PythonBridge,
@@ -4465,4 +4466,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-B3TR6OBU.js.map
+//# sourceMappingURL=chunk-UB3L33JF.js.map

@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-SLLKH3VQ.js";
+} from "../chunk-TTV7P7HG.js";
 import {
   JobService,
   createDocumentId,
+  createLogger,
   createServices,
-  createStoreId
-} from "../chunk-B3TR6OBU.js";
+  createStoreId,
+  shutdownLogger
+} from "../chunk-UB3L33JF.js";
 import "../chunk-6FHWC36B.js";
 
 // src/workers/background-worker.ts
 import { createHash } from "crypto";
+var logger = createLogger("background-worker");
 function calculateIndexProgress(current, total, scale = 100) {
   if (total === 0) return 0;
   return current / total * scale;
@@ -33,6 +36,7 @@ var BackgroundWorker = class {
       throw new Error(`Job ${jobId} not found`);
     }
     try {
+      logger.info({ jobId, type: job.type }, "Starting job execution");
       this.jobService.updateJob(jobId, {
         status: "running",
         message: `Starting ${job.type} operation...`,
@@ -59,6 +63,10 @@ var BackgroundWorker = class {
         details: { completedAt: (/* @__PURE__ */ new Date()).toISOString() }
       });
     } catch (error) {
+      logger.error(
+        { jobId, error: error instanceof Error ? error.message : String(error) },
+        "Job failed"
+      );
       const errorDetails = {
         completedAt: (/* @__PURE__ */ new Date()).toISOString()
       };
@@ -268,12 +276,13 @@ function buildPidFilePath(jobsDir, jobId) {
 }
 
 // src/workers/background-worker-cli.ts
+var logger2 = createLogger("background-worker-cli");
 async function main() {
   const jobId = process.argv[2];
   const dataDir = process.env["BLUERA_DATA_DIR"];
   if (jobId === void 0 || jobId === "") {
-    console.error("Error: Job ID required");
-    console.error("Usage: background-worker-cli <job-id>");
+    logger2.error("Job ID required. Usage: background-worker-cli <job-id>");
+    await shutdownLogger();
     process.exit(1);
   }
   const jobService = new JobService(dataDir);
@@ -286,22 +295,27 @@ async function main() {
   try {
     writePidFile(pidFile, process.pid);
   } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
+    logger2.error(
+      { error: error instanceof Error ? error.message : String(error) },
+      "Failed to write PID file"
+    );
+    await shutdownLogger();
     process.exit(1);
   }
   process.on("SIGTERM", () => {
-    console.log(`[${jobId}] Received SIGTERM, cancelling job...`);
+    logger2.info({ jobId }, "Received SIGTERM, cancelling job");
     jobService.updateJob(jobId, {
       status: "cancelled",
       message: "Job cancelled by user"
     });
     const deleteResult = deletePidFile(pidFile, "sigterm");
     if (!deleteResult.success && deleteResult.error !== void 0) {
-      console.error(
-        `Warning: Could not remove PID file during SIGTERM: ${deleteResult.error.message}`
+      logger2.warn(
+        { jobId, error: deleteResult.error.message },
+        "Could not remove PID file during SIGTERM"
       );
     }
-    process.exit(0);
+    void shutdownLogger().finally(() => process.exit(0));
   });
   const worker = new BackgroundWorker(
     jobService,
@@ -314,25 +328,36 @@ async function main() {
     await worker.executeJob(jobId);
     const successCleanup = deletePidFile(pidFile, "success");
     if (!successCleanup.success && successCleanup.error !== void 0) {
-      console.error(
-        `Warning: Could not remove PID file after success: ${successCleanup.error.message}`
+      logger2.warn(
+        { jobId, error: successCleanup.error.message },
+        "Could not remove PID file after success"
       );
     }
-    console.log(`[${jobId}] Job completed successfully`);
+    logger2.info({ jobId }, "Job completed successfully");
+    await shutdownLogger();
     process.exit(0);
   } catch (error) {
-    console.error(`[${jobId}] Job failed:`, error);
+    logger2.error(
+      { jobId, error: error instanceof Error ? error.message : String(error) },
+      "Job failed"
+    );
     const failureCleanup = deletePidFile(pidFile, "failure");
     if (!failureCleanup.success && failureCleanup.error !== void 0) {
-      console.error(
-        `Warning: Could not remove PID file after failure: ${failureCleanup.error.message}`
+      logger2.warn(
+        { jobId, error: failureCleanup.error.message },
+        "Could not remove PID file after failure"
       );
     }
+    await shutdownLogger();
     process.exit(1);
   }
 }
-main().catch((error) => {
-  console.error("Fatal error in background worker:", error);
+main().catch(async (error) => {
+  logger2.error(
+    { error: error instanceof Error ? error.message : String(error) },
+    "Fatal error in background worker"
+  );
+  await shutdownLogger();
   process.exit(1);
 });
 //# sourceMappingURL=background-worker-cli.js.map

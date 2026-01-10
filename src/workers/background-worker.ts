@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { IntelligentCrawler, type CrawlProgress } from '../crawl/intelligent-crawler.js';
+import { createLogger } from '../logging/index.js';
 import { IndexService } from '../services/index.service.js';
 import { JobService } from '../services/job.service.js';
 import { StoreService } from '../services/store.service.js';
@@ -8,6 +9,8 @@ import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
 import type { Document } from '../types/document.js';
 import type { Job } from '../types/job.js';
+
+const logger = createLogger('background-worker');
 
 /**
  * Calculate index progress as a percentage, handling division by zero.
@@ -45,6 +48,8 @@ export class BackgroundWorker {
     }
 
     try {
+      logger.info({ jobId, type: job.type }, 'Starting job execution');
+
       // Update to running status
       this.jobService.updateJob(jobId, {
         status: 'running',
@@ -76,6 +81,11 @@ export class BackgroundWorker {
         details: { completedAt: new Date().toISOString() },
       });
     } catch (error) {
+      logger.error(
+        { jobId, error: error instanceof Error ? error.message : String(error) },
+        'Job failed'
+      );
+
       // Mark as failed
       const errorDetails: Record<string, unknown> = {
         completedAt: new Date().toISOString(),
