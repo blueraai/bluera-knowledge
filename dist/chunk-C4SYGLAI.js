@@ -262,10 +262,16 @@ function err(error) {
 var JobService = class {
   jobsDir;
   constructor(dataDir) {
-    const baseDir = dataDir ?? path.join(
-      process.env["HOME"] ?? process.env["USERPROFILE"] ?? ".",
-      ".local/share/bluera-knowledge"
-    );
+    let baseDir;
+    if (dataDir !== void 0) {
+      baseDir = dataDir;
+    } else {
+      const homeDir = process.env["HOME"] ?? process.env["USERPROFILE"];
+      if (homeDir === void 0) {
+        throw new Error("HOME or USERPROFILE environment variable is required");
+      }
+      baseDir = path.join(homeDir, ".local/share/bluera-knowledge");
+    }
     this.jobsDir = path.join(baseDir, "jobs");
     if (!fs.existsSync(this.jobsDir)) {
       fs.mkdirSync(this.jobsDir, { recursive: true });
@@ -451,7 +457,7 @@ var JobService = class {
 };
 
 // src/services/code-graph.service.ts
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { readFile, writeFile, mkdir, rm } from "fs/promises";
 import { join as join3, dirname } from "path";
 
 // src/analysis/ast-parser.ts
@@ -763,7 +769,12 @@ var CodeGraph = class {
     }
     return {
       nodes: Array.from(this.nodes.values()),
-      edges: allEdges.map((e) => ({ from: e.from, to: e.to, type: e.type }))
+      edges: allEdges.map((e) => ({
+        from: e.from,
+        to: e.to,
+        type: e.type,
+        confidence: e.confidence
+      }))
     };
   }
 };
@@ -1667,6 +1678,15 @@ var CodeGraphService = class {
     await mkdir(dirname(graphPath), { recursive: true });
     const serialized = graph.toJSON();
     await writeFile(graphPath, JSON.stringify(serialized, null, 2));
+  }
+  /**
+   * Delete the code graph file for a store.
+   * Silently succeeds if the file doesn't exist.
+   */
+  async deleteGraph(storeId) {
+    const graphPath = this.getGraphPath(storeId);
+    await rm(graphPath, { force: true });
+    this.graphCache.delete(storeId);
   }
   /**
    * Load a code graph for a store.
@@ -4518,4 +4538,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-MQGRQ2EG.js.map
+//# sourceMappingURL=chunk-C4SYGLAI.js.map

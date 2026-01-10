@@ -7,7 +7,7 @@ import {
   createStoreId,
   destroyServices,
   summarizePayload
-} from "./chunk-MQGRQ2EG.js";
+} from "./chunk-C4SYGLAI.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -1142,6 +1142,7 @@ var handleDeleteStore = async (args, context) => {
     throw new Error(`Store not found: ${validated.store}`);
   }
   await services.lance.deleteStore(store.id);
+  await services.codeGraph.deleteGraph(store.id);
   if (store.type === "repo" && "url" in store && store.url !== void 0) {
     if (options.dataDir === void 0) {
       throw new Error("dataDir is required to delete cloned repository files");
@@ -1567,15 +1568,11 @@ var syncCommands = [
     name: "stores:sync",
     description: "Sync stores from definitions config (bootstrap on fresh clone)",
     argsSchema: z7.object({
-      reindex: z7.boolean().optional().describe("Re-index existing stores after sync"),
       prune: z7.boolean().optional().describe("Remove stores not in definitions"),
       dryRun: z7.boolean().optional().describe("Show what would happen without making changes")
     }),
     handler: (args, context) => {
       const syncArgs = {};
-      if (typeof args["reindex"] === "boolean") {
-        syncArgs.reindex = args["reindex"];
-      }
       if (typeof args["prune"] === "boolean") {
         syncArgs.prune = args["prune"];
       }
@@ -2099,4 +2096,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-ZSKQIMD7.js.map
+//# sourceMappingURL=chunk-4ZVUY3BM.js.map

@@ -227,7 +227,10 @@ export class CodeGraph {
     return importPath;
   }
 
-  toJSON(): { nodes: GraphNode[]; edges: Array<{ from: string; to: string; type: string }> } {
+  toJSON(): {
+    nodes: GraphNode[];
+    edges: Array<{ from: string; to: string; type: string; confidence: number }>;
+  } {
     const allEdges: GraphEdge[] = [];
     for (const edges of this.edges.values()) {
       allEdges.push(...edges);
@@ -235,7 +238,12 @@ export class CodeGraph {
 
     return {
       nodes: Array.from(this.nodes.values()),
-      edges: allEdges.map((e) => ({ from: e.from, to: e.to, type: e.type })),
+      edges: allEdges.map((e) => ({
+        from: e.from,
+        to: e.to,
+        type: e.type,
+        confidence: e.confidence,
+      })),
     };
   }
 }
