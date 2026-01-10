@@ -2572,6 +2572,16 @@ var CodeUnitService = class {
         type = "class";
         break;
       }
+      if (line.match(new RegExp(`interface\\s+${symbolName}(?:\\s|{|<)`))) {
+        startLine = i + 1;
+        type = "interface";
+        break;
+      }
+      if (line.match(new RegExp(`type\\s+${symbolName}(?:\\s|=|<)`))) {
+        startLine = i + 1;
+        type = "type";
+        break;
+      }
       if (line.match(new RegExp(`(?:const|let|var)\\s+${symbolName}\\s*=`))) {
         startLine = i + 1;
         type = "const";
@@ -2582,6 +2592,23 @@ var CodeUnitService = class {
     let endLine = startLine;
     let braceCount = 0;
     let foundFirstBrace = false;
+    if (type === "type") {
+      const firstLine2 = lines[startLine - 1] ?? "";
+      if (!firstLine2.includes("{") && firstLine2.includes(";")) {
+        endLine = startLine;
+        const fullContent2 = firstLine2;
+        const signature2 = this.extractSignature(firstLine2, symbolName, type);
+        return {
+          type,
+          name: symbolName,
+          signature: signature2,
+          fullContent: fullContent2,
+          startLine,
+          endLine,
+          language
+        };
+      }
+    }
     let inSingleQuote = false;
     let inDoubleQuote = false;
     let inTemplateLiteral = false;
@@ -2671,6 +2698,16 @@ var CodeUnitService = class {
     }
     if (type === "class") {
       return `class ${name}`;
+    }
+    if (type === "interface") {
+      return `interface ${name}`;
+    }
+    if (type === "type") {
+      const typeMatch = sig.match(new RegExp(`type\\s+(${name}(?:<[^>]+>)?)\\s*=`));
+      if (typeMatch?.[1] !== void 0 && typeMatch[1].length > 0) {
+        return `type ${typeMatch[1]}`;
+      }
+      return `type ${name}`;
     }
     if (type === "const") {
       const arrowMatch = sig.match(
@@ -3640,6 +3677,9 @@ async function cloneRepository(options) {
     git.stderr.on("data", (data) => {
       stderr += data.toString();
     });
+    git.on("error", (error) => {
+      resolve3(err(error));
+    });
     git.on("close", (code) => {
       if (code === 0) {
         resolve3(ok(targetDir));
@@ -3993,6 +4033,8 @@ var PythonBridge = class {
   process = null;
   pending = /* @__PURE__ */ new Map();
   stoppingIntentionally = false;
+  stdoutReadline = null;
+  stderrReadline = null;
   start() {
     if (this.process) return Promise.resolve();
     logger3.debug("Starting Python bridge process");
@@ -4015,8 +4057,8 @@ var PythonBridge = class {
       this.stoppingIntentionally = false;
     });
     if (this.process.stderr) {
-      const stderrRl = createInterface({ input: this.process.stderr });
-      stderrRl.on("line", (line) => {
+      this.stderrReadline = createInterface({ input: this.process.stderr });
+      this.stderrReadline.on("line", (line) => {
         logger3.warn({ stderr: line }, "Python bridge stderr output");
       });
     }
@@ -4025,8 +4067,8 @@ var PythonBridge = class {
       this.process = null;
       return Promise.reject(new Error("Python bridge process stdout is null"));
     }
-    const rl = createInterface({ input: this.process.stdout });
-    rl.on("line", (line) => {
+    this.stdoutReadline = createInterface({ input: this.process.stdout });
+    this.stdoutReadline.on("line", (line) => {
       if (!line.trim().startsWith("{")) {
         return;
       }
@@ -4188,6 +4230,14 @@ var PythonBridge = class {
     return new Promise((resolve3) => {
       this.stoppingIntentionally = true;
       this.rejectAllPending(new Error("Python bridge stopped"));
+      if (this.stdoutReadline) {
+        this.stdoutReadline.close();
+        this.stdoutReadline = null;
+      }
+      if (this.stderrReadline) {
+        this.stderrReadline.close();
+        this.stderrReadline = null;
+      }
       const proc = this.process;
       if (proc === null) {
         resolve3();
@@ -4453,4 +4503,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-ZZNABJMQ.js.map
+//# sourceMappingURL=chunk-GAGGEKE2.js.map

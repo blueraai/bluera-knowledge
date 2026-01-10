@@ -29,6 +29,10 @@ export async function cloneRepository(options: CloneOptions): Promise<Result<str
       stderr += data.toString();
     });
 
+    git.on('error', (error: Error) => {
+      resolve(err(error));
+    });
+
     git.on('close', (code: number | null) => {
       if (code === 0) {
         resolve(ok(targetDir));

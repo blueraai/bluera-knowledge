@@ -266,6 +266,50 @@ describe('GitClone - cloneRepository', () => {
       expect(result.error.message).toContain('not found');
     }
   });
+
+  it('handles spawn error when git is not installed', async () => {
+    const mockProcess = new EventEmitter() as ChildProcess;
+    mockProcess.stderr = new EventEmitter() as any;
+
+    mockSpawn.mockImplementation(() => {
+      setImmediate(() => {
+        mockProcess.emit('error', new Error('spawn git ENOENT'));
+      });
+      return mockProcess;
+    });
+
+    const result = await cloneRepository({
+      url: 'https://github.com/user/repo.git',
+      targetDir: join(tempDir, 'repo'),
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain('spawn git ENOENT');
+    }
+  });
+
+  it('handles spawn error with permission denied', async () => {
+    const mockProcess = new EventEmitter() as ChildProcess;
+    mockProcess.stderr = new EventEmitter() as any;
+
+    mockSpawn.mockImplementation(() => {
+      setImmediate(() => {
+        mockProcess.emit('error', new Error('spawn git EACCES'));
+      });
+      return mockProcess;
+    });
+
+    const result = await cloneRepository({
+      url: 'https://github.com/user/repo.git',
+      targetDir: join(tempDir, 'repo'),
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.message).toContain('EACCES');
+    }
+  });
 });
 
 describe('GitClone - isGitUrl', () => {
