@@ -45,7 +45,6 @@ describe('sync.commands', () => {
 
       // Valid with options
       const result2 = syncCmd?.argsSchema?.safeParse({
-        reindex: true,
         prune: true,
         dryRun: true,
       });
