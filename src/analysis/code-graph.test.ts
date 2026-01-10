@@ -328,6 +328,36 @@ describe('CodeGraph', () => {
       expect(edgeTypes).toContain('calls');
     });
 
+    it('includes confidence in serialized edges', () => {
+      const graph = new CodeGraph();
+      const nodes: CodeNode[] = [
+        {
+          type: 'function',
+          name: 'fn',
+          exported: false,
+          startLine: 1,
+          endLine: 2,
+        },
+      ];
+
+      graph.addNodes(nodes, '/src/test.ts');
+      graph.addImport('/src/test.ts', 'module', ['util']); // confidence: 1.0
+      graph.analyzeCallRelationships('other();', '/src/test.ts', 'fn'); // confidence: 0.5
+
+      const json = graph.toJSON();
+
+      // All edges should have confidence property preserved
+      expect(json.edges.every((e) => typeof e.confidence === 'number')).toBe(true);
+
+      // Import edges have confidence 1.0
+      const importEdge = json.edges.find((e) => e.type === 'imports');
+      expect(importEdge?.confidence).toBe(1.0);
+
+      // Call edges from regex detection have confidence 0.5
+      const callEdge = json.edges.find((e) => e.type === 'calls');
+      expect(callEdge?.confidence).toBe(0.5);
+    });
+
     it('handles empty graph', () => {
       const graph = new CodeGraph();
       const json = graph.toJSON();

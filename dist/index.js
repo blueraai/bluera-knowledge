@@ -6,10 +6,10 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   runMCPServer
-} from "./chunk-ZSKQIMD7.js";
+} from "./chunk-4ZVUY3BM.js";
 import {
   IntelligentCrawler
-} from "./chunk-Q2ZGPJ66.js";
+} from "./chunk-QCSFBMYW.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -22,12 +22,12 @@ import {
   err,
   extractRepoName,
   ok
-} from "./chunk-MQGRQ2EG.js";
+} from "./chunk-C4SYGLAI.js";
 import "./chunk-HRQD3MPH.js";
 
 // src/index.ts
 import { homedir as homedir2 } from "os";
-import { join as join4 } from "path";
+import { join as join5 } from "path";
 
 // src/cli/commands/crawl.ts
 import { createHash } from "crypto";
@@ -1465,6 +1465,8 @@ Setting up ${String(repos.length)} repositories...
 }
 
 // src/cli/commands/store.ts
+import { rm } from "fs/promises";
+import { join as join3 } from "path";
 import { Command as Command8 } from "commander";
 function createStoreCommand(getOptions) {
   const store = new Command8("store").description(
@@ -1600,6 +1602,13 @@ Store: ${s.name}`);
           break storeDelete;
         }
       }
+      await services.lance.deleteStore(s.id);
+      await services.codeGraph.deleteGraph(s.id);
+      if (s.type === "repo" && "url" in s && s.url !== void 0) {
+        const dataDir = services.config.resolveDataDir();
+        const repoPath = join3(dataDir, "repos", s.id);
+        await rm(repoPath, { recursive: true, force: true });
+      }
       const result = await services.store.delete(s.id);
       if (result.success) {
         console.log(`Deleted store: ${s.name}`);
@@ -1685,7 +1694,7 @@ function createSyncCommand(getOptions) {
   const sync = new Command9("sync").description(
     "Sync stores from definitions config (bootstrap on fresh clone)"
   );
-  sync.option("--dry-run", "Show what would happen without making changes").option("--prune", "Remove stores not in definitions").option("--reindex", "Re-index existing stores after sync").action(async (options) => {
+  sync.option("--dry-run", "Show what would happen without making changes").option("--prune", "Remove stores not in definitions").action(async (options) => {
     const globalOpts = getOptions();
     const projectRoot = globalOpts.projectRoot ?? process.cwd();
     const defService = new StoreDefinitionService(projectRoot);
@@ -1822,13 +1831,13 @@ function printHumanReadable(result, quiet) {
 
 // src/cli/program.ts
 import { readFileSync } from "fs";
-import { dirname, join as join3 } from "path";
+import { dirname, join as join4 } from "path";
 import { fileURLToPath } from "url";
 import { Command as Command10 } from "commander";
 function getVersion() {
   const __filename2 = fileURLToPath(import.meta.url);
   const __dirname2 = dirname(__filename2);
-  const content = readFileSync(join3(__dirname2, "../package.json"), "utf-8");
+  const content = readFileSync(join4(__dirname2, "../package.json"), "utf-8");
   const pkg = JSON.parse(content);
   return pkg.version;
 }
@@ -1854,9 +1863,9 @@ function getGlobalOptions(program2) {
 // src/index.ts
 var registry = AdapterRegistry.getInstance();
 registry.register(new ZilAdapter());
-var DEFAULT_DATA_DIR = join4(homedir2(), ".bluera", "bluera-knowledge", "data");
-var DEFAULT_CONFIG = join4(homedir2(), ".bluera", "bluera-knowledge", "config.json");
-var DEFAULT_REPOS_DIR2 = join4(homedir2(), ".bluera", "bluera-knowledge", "repos");
+var DEFAULT_DATA_DIR = join5(homedir2(), ".bluera", "bluera-knowledge", "data");
+var DEFAULT_CONFIG = join5(homedir2(), ".bluera", "bluera-knowledge", "config.json");
+var DEFAULT_REPOS_DIR2 = join5(homedir2(), ".bluera", "bluera-knowledge", "repos");
 function formatCommandHelp(cmd, indent = "") {
   const lines = [];
   const name = cmd.name();
