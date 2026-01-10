@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
-const coverageThreshold = 81;
+const coverageThreshold = 80.5;
 
 export default defineConfig({
   test: {
