@@ -1147,7 +1147,7 @@ playwright install chromium
 
 ## 🔌 MCP Integration
 
-The plugin includes a Model Context Protocol server that exposes search tools. This is configured in `mcp.plugin.json`:
+The plugin includes a Model Context Protocol server that exposes search tools. This is configured inline in `.claude-plugin/plugin.json`:
 
 > [!IMPORTANT]
 > **Commands vs MCP Tools**: You interact with the plugin using `/bluera-knowledge:` slash commands. Behind the scenes, these commands instruct Claude Code to use MCP tools (`mcp__bluera-knowledge__*`) which handle the actual operations. Commands provide the user interface, while MCP tools are the backend that AI agents use to access your knowledge stores.
@@ -1159,6 +1159,7 @@ The plugin includes a Model Context Protocol server that exposes search tools. T
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
       "env": {
+        "PROJECT_ROOT": "${PWD}",
         "DATA_DIR": ".bluera/bluera-knowledge/data",
         "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
       }
