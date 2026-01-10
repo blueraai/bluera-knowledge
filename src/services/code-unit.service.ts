@@ -16,8 +16,6 @@ export class CodeUnitService {
     let startLine = -1;
     let type: CodeUnit['type'] = 'function';
 
-    // NOTE: Now supports function declarations, class declarations, and arrow functions (const/let/var).
-    // Does not handle interfaces or type definitions yet.
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? '';
 
@@ -30,6 +28,20 @@ export class CodeUnitService {
       if (line.includes(`class ${symbolName}`)) {
         startLine = i + 1;
         type = 'class';
+        break;
+      }
+
+      // Check for interface declarations
+      if (line.match(new RegExp(`interface\\s+${symbolName}(?:\\s|{|<)`))) {
+        startLine = i + 1;
+        type = 'interface';
+        break;
+      }
+
+      // Check for type declarations
+      if (line.match(new RegExp(`type\\s+${symbolName}(?:\\s|=|<)`))) {
+        startLine = i + 1;
+        type = 'type';
         break;
       }
 
@@ -47,6 +59,26 @@ export class CodeUnitService {
     let endLine = startLine;
     let braceCount = 0;
     let foundFirstBrace = false;
+
+    // For type aliases without braces (e.g., "type UserId = string;"), find semicolon
+    if (type === 'type') {
+      const firstLine = lines[startLine - 1] ?? '';
+      if (!firstLine.includes('{') && firstLine.includes(';')) {
+        // Single-line type alias
+        endLine = startLine;
+        const fullContent = firstLine;
+        const signature = this.extractSignature(firstLine, symbolName, type);
+        return {
+          type,
+          name: symbolName,
+          signature,
+          fullContent,
+          startLine,
+          endLine,
+          language,
+        };
+      }
+    }
 
     // State machine for tracking context
     let inSingleQuote = false;
@@ -166,6 +198,19 @@ export class CodeUnitService {
 
     if (type === 'class') {
       return `class ${name}`;
+    }
+
+    if (type === 'interface') {
+      return `interface ${name}`;
+    }
+
+    if (type === 'type') {
+      // For type aliases, include generics if present
+      const typeMatch = sig.match(new RegExp(`type\\s+(${name}(?:<[^>]+>)?)\\s*=`));
+      if (typeMatch?.[1] !== undefined && typeMatch[1].length > 0) {
+        return `type ${typeMatch[1]}`;
+      }
+      return `type ${name}`;
     }
 
     if (type === 'const') {
