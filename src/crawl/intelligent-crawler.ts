@@ -141,17 +141,7 @@ export class IntelligentCrawler extends EventEmitter {
   ): AsyncIterable<CrawlResult> {
     // Check if Claude CLI is available before attempting intelligent mode
     if (!ClaudeClient.isAvailable()) {
-      const fallbackProgress: CrawlProgress = {
-        type: 'error',
-        pagesVisited: 0,
-        totalPages: maxPages,
-        message:
-          'Claude CLI not found, using simple crawl mode (install Claude Code for intelligent crawling)',
-        error: new Error('Claude CLI not available'),
-      };
-      this.emit('progress', fallbackProgress);
-      yield* this.crawlSimple(seedUrl, extractInstruction, maxPages, useHeadless);
-      return;
+      throw new Error('Claude CLI not available: install Claude Code for intelligent crawling');
     }
 
     let strategy: CrawlStrategy;
@@ -180,18 +170,8 @@ export class IntelligentCrawler extends EventEmitter {
       };
       this.emit('progress', strategyCompleteProgress);
     } catch (error) {
-      // Fallback to simple mode if Claude fails
-      const errorProgress: CrawlProgress = {
-        type: 'error',
-        pagesVisited: 0,
-        totalPages: maxPages,
-        message: 'Claude crawl strategy failed, falling back to simple mode',
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
-      this.emit('progress', errorProgress);
-
-      yield* this.crawlSimple(seedUrl, extractInstruction, maxPages);
-      return;
+      // Re-throw strategy errors - do not fall back silently
+      throw error instanceof Error ? error : new Error(String(error));
     }
 
     // Step 3: Crawl each URL from Claude's strategy
@@ -288,12 +268,25 @@ export class IntelligentCrawler extends EventEmitter {
           }
         }
       } catch (error) {
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+
+        // Re-throw non-recoverable errors (extraction failures, Claude CLI not available, headless failures)
+        // These represent failures in user-requested functionality that should not be silently skipped
+        if (
+          errorObj.message.includes('Extraction failed') ||
+          errorObj.message.includes('Claude CLI not available') ||
+          errorObj.message.includes('Headless fetch failed')
+        ) {
+          throw errorObj;
+        }
+
+        // For recoverable errors (page fetch failures), emit progress and continue
         const simpleErrorProgress: CrawlProgress = {
           type: 'error',
           pagesVisited,
           totalPages: maxPages,
           currentUrl: current.url,
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: errorObj,
         };
         this.emit('progress', simpleErrorProgress);
       }
@@ -324,12 +317,8 @@ export class IntelligentCrawler extends EventEmitter {
     const html = await this.fetchHtml(url, useHeadless);
 
     // Convert to clean markdown using slurp-ai techniques
+    // Note: convertHtmlToMarkdown throws on errors, no need to check success
     const conversion = await convertHtmlToMarkdown(html, url);
-
-    if (!conversion.success) {
-      logger.error({ url, error: conversion.error }, 'HTML to markdown conversion failed');
-      throw new Error(`Failed to convert HTML: ${conversion.error ?? 'Unknown error'}`);
-    }
 
     logger.debug(
       {
@@ -344,44 +333,20 @@ export class IntelligentCrawler extends EventEmitter {
 
     // Optional: Extract specific information using Claude
     if (extractInstruction !== undefined && extractInstruction !== '') {
-      // Skip extraction if Claude CLI isn't available
+      // Throw if extraction requested but Claude CLI isn't available
       if (!ClaudeClient.isAvailable()) {
-        const skipProgress: CrawlProgress = {
-          type: 'error',
-          pagesVisited,
-          totalPages: 0,
-          currentUrl: url,
-          message: 'Skipping extraction (Claude CLI not available), storing raw markdown',
-          error: new Error('Claude CLI not available'),
-        };
-        this.emit('progress', skipProgress);
-      } else {
-        try {
-          const extractionProgress: CrawlProgress = {
-            type: 'extraction',
-            pagesVisited,
-            totalPages: 0,
-            currentUrl: url,
-          };
-          this.emit('progress', extractionProgress);
-
-          extracted = await this.claudeClient.extractContent(
-            conversion.markdown,
-            extractInstruction
-          );
-        } catch (error) {
-          // If extraction fails, just store raw markdown
-          const extractionErrorProgress: CrawlProgress = {
-            type: 'error',
-            pagesVisited,
-            totalPages: 0,
-            currentUrl: url,
-            message: 'Extraction failed, storing raw markdown',
-            error: error instanceof Error ? error : new Error(String(error)),
-          };
-          this.emit('progress', extractionErrorProgress);
-        }
+        throw new Error('Claude CLI not available: install Claude Code for extraction');
       }
+
+      const extractionProgress: CrawlProgress = {
+        type: 'extraction',
+        pagesVisited,
+        totalPages: 0,
+        currentUrl: url,
+      };
+      this.emit('progress', extractionProgress);
+
+      extracted = await this.claudeClient.extractContent(conversion.markdown, extractInstruction);
     }
 
     return {
@@ -414,10 +379,9 @@ export class IntelligentCrawler extends EventEmitter {
         );
         return result.html;
       } catch (error) {
-        // Fallback to axios if headless fails
-        logger.warn(
-          { url, error: error instanceof Error ? error.message : String(error) },
-          'Headless fetch failed, falling back to axios'
+        // Wrap with distinctive message so crawlSimple knows not to recover
+        throw new Error(
+          `Headless fetch failed: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }

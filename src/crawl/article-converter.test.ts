@@ -44,7 +44,7 @@ describe('convertHtmlToMarkdown', () => {
         html,
         'https://example.com'
       );
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should include title from extracted article', async () => {
@@ -71,7 +71,7 @@ describe('convertHtmlToMarkdown', () => {
       const html = '<html><body><h1>Full HTML</h1></body></html>';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       // Should have processed the full HTML through markdown conversion
       expect(vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks)).toHaveBeenCalledWith(html);
     });
@@ -92,7 +92,7 @@ describe('convertHtmlToMarkdown', () => {
       const html = '<html><body><h1>Full HTML</h1></body></html>';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks)).toHaveBeenCalledWith(html);
     });
 
@@ -112,7 +112,7 @@ describe('convertHtmlToMarkdown', () => {
       const html = '<html><body><h1>Full HTML</h1></body></html>';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks)).toHaveBeenCalledWith(html);
     });
 
@@ -122,7 +122,7 @@ describe('convertHtmlToMarkdown', () => {
       const html = '<html><body><h1>Full HTML</h1></body></html>';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks)).toHaveBeenCalledWith(html);
     });
 
@@ -192,7 +192,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(result.markdown).toContain('# Heading 1');
       expect(result.markdown).toContain('## Heading 2');
       expect(result.markdown).toContain('### Heading 3');
@@ -213,7 +213,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(result.markdown).toContain('```');
     });
 
@@ -232,7 +232,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(result.markdown).toContain('[Link Text](https://example.com)');
     });
 
@@ -251,7 +251,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(result.markdown).toContain('|');
     });
 
@@ -270,7 +270,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(result.markdown).toContain('# Heading with Anchor');
       expect(result.markdown).not.toContain('[]()');
     });
@@ -290,7 +290,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(result.markdown).toContain('# Heading with spaces');
     });
 
@@ -309,62 +309,31 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       // Empty heading should not appear in markdown
       expect(result.markdown).not.toMatch(/^#\s*$/m);
     });
   });
 
   describe('Error Handling', () => {
-    it('should return error result when conversion throws error', async () => {
-      vi.mocked(articleExtractor.extractFromHtml).mockImplementation(() => {
-        throw new Error('Fatal conversion error');
-      });
-      vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks).mockImplementation(() => {
-        throw new Error('Fatal conversion error');
-      });
-
-      const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
-
-      expect(result.success).toBe(false);
-      expect(result.markdown).toBe('');
-      expect(result.error).toBe('Fatal conversion error');
-    });
-
-    it('should handle non-Error thrown values', async () => {
-      vi.mocked(articleExtractor.extractFromHtml).mockImplementation(() => {
-        throw 'String error';
-      });
-      vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks).mockImplementation(() => {
-        throw 'String error';
-      });
-
-      const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('String error');
-    });
-
-    it('should return empty markdown on error', async () => {
+    it('should throw when conversion fails due to preprocessing error', async () => {
       vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks).mockImplementation(() => {
         throw new Error('Preprocessing failed');
       });
 
-      const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
-
-      expect(result.success).toBe(false);
-      expect(result.markdown).toBe('');
+      await expect(convertHtmlToMarkdown('<html></html>', 'https://example.com')).rejects.toThrow(
+        'Preprocessing failed'
+      );
     });
 
-    it('should not include title on error', async () => {
+    it('should throw with non-Error values wrapped as Error', async () => {
       vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks).mockImplementation(() => {
-        throw new Error('Preprocessing failed');
+        throw 'String error';
       });
 
-      const result = await convertHtmlToMarkdown('<html></html>', 'https://example.com');
-
-      expect(result.success).toBe(false);
-      expect(result.title).toBeUndefined();
+      await expect(convertHtmlToMarkdown('<html></html>', 'https://example.com')).rejects.toThrow(
+        'String error'
+      );
     });
   });
 
@@ -372,27 +341,27 @@ describe('convertHtmlToMarkdown', () => {
     it('should handle empty HTML string', async () => {
       const result = await convertHtmlToMarkdown('', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should handle whitespace-only HTML', async () => {
       const result = await convertHtmlToMarkdown('   \n  \t  ', 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should handle malformed HTML', async () => {
       const html = '<html><body><div><p>Unclosed tags';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should handle HTML with no content', async () => {
       const html = '<html><head><title>Title</title></head><body></body></html>';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should handle HTML with only navigation elements', async () => {
@@ -411,7 +380,7 @@ describe('convertHtmlToMarkdown', () => {
       const html = '<html><nav><a href="/">Home</a></nav></html>';
       const result = await convertHtmlToMarkdown(html, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
   });
 
@@ -447,7 +416,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown(mkdocsHtml, 'https://example.com/docs');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
       expect(vi.mocked(markdownUtils.preprocessHtmlForCodeBlocks)).toHaveBeenCalledWith(mkdocsHtml);
     });
 
@@ -483,7 +452,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown(sphinxHtml, 'https://example.com/docs');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should handle nested code blocks with syntax highlighting', async () => {
@@ -511,7 +480,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown(complexHtml, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
 
     it('should handle documentation with table of contents', async () => {
@@ -544,7 +513,7 @@ describe('convertHtmlToMarkdown', () => {
 
       const result = await convertHtmlToMarkdown(htmlWithToc, 'https://example.com');
 
-      expect(result.success).toBe(true);
+      // Function throws on error, so reaching here means success
     });
   });
 

@@ -14,8 +14,6 @@ const logger = createLogger('article-converter');
 export interface ConversionResult {
   markdown: string;
   title?: string;
-  success: boolean;
-  error?: string;
 }
 
 /**
@@ -128,7 +126,6 @@ export async function convertHtmlToMarkdown(html: string, url: string): Promise<
     return {
       markdown,
       ...(title !== undefined && { title }),
-      success: true,
     };
   } catch (error) {
     logger.error(
@@ -139,10 +136,7 @@ export async function convertHtmlToMarkdown(html: string, url: string): Promise<
       'HTML to markdown conversion failed'
     );
 
-    return {
-      markdown: '',
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    // Re-throw errors - do not return graceful degradation
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
