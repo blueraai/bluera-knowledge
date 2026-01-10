@@ -52,4 +52,19 @@ describe('validate-npm-release.sh', () => {
 
     expect(hasSilentRedirect).toBe(false);
   });
+
+  it('logs expected and installed versions for debugging', () => {
+    // Script should log both expected (from package.json) and installed versions
+    // This helps diagnose version mismatch issues from npm cache
+    expect(scriptContent).toContain('EXPECTED_VERSION');
+    expect(scriptContent).toContain('INSTALLED_VERSION');
+    expect(scriptContent).toContain('Expected version:');
+    expect(scriptContent).toContain('Installed version:');
+  });
+
+  it('warns on version mismatch', () => {
+    // Script should warn if installed version differs from expected
+    expect(scriptContent).toContain('Version mismatch');
+    expect(scriptContent).toContain('npm cache');
+  });
 });
