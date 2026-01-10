@@ -7,40 +7,85 @@ description: Teaches how to use Bluera Knowledge for accessing library sources a
 
 BK provides access to **definitive library sources** for your project dependencies.
 
-## Purpose: Authoritative References, Not Project Search
+## The Rule: Query BK for External Code
 
-**CKB is for**: Reference material and external sources
-- **Library sources**: Clone Vue.js/Pydantic/Hono for authoritative API reference
-- **Specifications**: Add project requirements, API specs, RFCs
-- **Documentation**: Add design docs, architecture guides, research papers
-- **Reference material**: Best practices, coding standards, examples
+**Any question about libraries, dependencies, or indexed reference material should query BK.**
 
-**CKB is NOT for**: Searching your current project code
-- Use Grep/Read directly on project files
-- BK stores are for external reference material
+BK is:
+- **Cheap**: ~100ms response, unlimited queries, no rate limits
+- **Authoritative**: Actual source code, not blog posts or training data
+- **Complete**: Includes tests, examples, internal APIs, configuration
+
+## Always Query BK For:
+
+**Library implementation:**
+- "How does Express handle middleware errors?"
+- "What does React's useEffect cleanup actually do?"
+- "How is Pydantic validation implemented?"
+
+**API signatures and options:**
+- "What parameters does axios.create() accept?"
+- "What options can I pass to hono.use()?"
+- "What's the signature of zod.object()?"
+
+**Error handling:**
+- "What errors can this library throw?"
+- "Why might this function return undefined?"
+- "What validation does Zod perform?"
+
+**Version-specific behavior:**
+- "What changed in React 18?"
+- "Is this deprecated in Express 5?"
+- "Does my version support this?"
+
+**Configuration:**
+- "What config options exist for Vite?"
+- "What are the default values?"
+- "What environment variables does this use?"
+
+**Testing:**
+- "How do the library authors test this?"
+- "How should I mock this in tests?"
+- "What edge cases do the tests cover?"
+
+**Performance:**
+- "Is this cached internally?"
+- "What's the complexity of this operation?"
+- "Does this run async or sync?"
+
+**Security:**
+- "How does this validate input?"
+- "Is this safe against injection?"
+- "How are credentials handled?"
+
+**Integration:**
+- "How do I integrate X with Y?"
+- "What's the idiomatic usage pattern?"
+- "How do examples in the library do this?"
 
 ## Two Ways to Access Library Sources
 
-### 1. Vector Search (MCP or slash command)
-Find concepts and patterns across library docs:
+### 1. Vector Search (Discovery)
+Find concepts and patterns across indexed content:
 ```
 search("vue reactivity system")
 /bluera-knowledge:search "pydantic custom validators"
 ```
 
-### 2. Direct File Access (Grep/Read)
+### 2. Direct File Access (Precision)
 Precise lookups in cloned library source:
 ```
 Grep: pattern="defineReactive" path=".bluera/bluera-knowledge/repos/vue/"
 Read: .bluera/bluera-knowledge/repos/pydantic/pydantic/validators.py
 ```
 
-## Both Are Valid!
+Both are valid! Use vector search for discovery, Grep/Read for specific functions.
 
-You can use **either or both** approaches on the same cloned repo:
-- Vector search to discover relevant files
-- Grep/Read to find specific functions/classes
-- Or just Grep/Read if you know what you're looking for
+## DO NOT Query BK For:
+
+- **Your project code** → Use Grep/Read directly
+- **General concepts** → Use training data ("What is a closure?")
+- **Breaking news** → Use web search ("Latest React release")
 
 ## Example Workflow
 
@@ -52,3 +97,14 @@ Claude:
 3. Read file: `.bluera/bluera-knowledge/repos/vue/packages/reactivity/src/computed.ts`
 4. Grep for implementation: pattern="class ComputedRefImpl"
 5. Explain with authoritative source code examples
+
+## Quick Reference
+
+```
+[library] question        → Query BK
+[your code] question      → Grep/Read directly
+[concept] question        → Training data
+[news/updates] question   → Web search
+```
+
+BK is cheap and fast. Query it liberally for library questions.

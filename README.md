@@ -122,6 +122,47 @@ Bluera Knowledge enables option 3 by building a searchable knowledge base from *
 
 ---
 
+## 🎯 When Claude Code Should Query BK
+
+**The simple rule: Query BK for any question about libraries, dependencies, or reference material.**
+
+BK is cheap (~100ms, no rate limits), authoritative (actual source code), and complete (includes tests and internal APIs). Claude Code should query it frequently for external code questions.
+
+### Always Query BK For:
+
+| Question Type | Examples |
+|--------------|----------|
+| **Library internals** | "How does Express handle middleware errors?", "What does useEffect cleanup do?" |
+| **API signatures** | "What parameters does axios.create() accept?", "What options can I pass to Hono?" |
+| **Error handling** | "What errors can Zod throw?", "Why might this library return undefined?" |
+| **Version behavior** | "What changed in React 18?", "Is this method deprecated?" |
+| **Configuration** | "What config options exist for Vite?", "What are the defaults?" |
+| **Testing patterns** | "How do the library authors test this?", "How should I mock this?" |
+| **Performance/internals** | "Is this cached internally?", "What's the complexity?" |
+| **Security** | "How does this library validate input?", "Is this safe against injection?" |
+| **Integration** | "How do I integrate X with Y?", "What's the idiomatic way to use this?" |
+
+### DO NOT Query BK For:
+
+| Question Type | Use Instead |
+|--------------|-------------|
+| **Your project code** | Grep/Read directly ("Where is OUR auth middleware?") |
+| **General concepts** | Training data ("What is a closure?") |
+| **Breaking news** | Web search ("Latest React release notes") |
+
+### Quick Pattern Matching:
+
+```
+"How does [library] work..."           → Query BK
+"What does [library function] do..."   → Query BK
+"What options does [library] accept..."→ Query BK
+"What errors can [library] throw..."   → Query BK
+"Where is [thing] in OUR code..."      → Grep/Read directly
+"What is [general concept]..."         → Training data
+```
+
+---
+
 ## 💰 Token Efficiency
 
 Beyond speed and accuracy, Bluera Knowledge can **significantly reduce token consumption** for code-related queries—typically saving 60-75% compared to web search approaches.
@@ -196,12 +237,15 @@ Bluera Knowledge isn't always the most token-efficient choice:
 
 ### 💡 Best Practice
 
-Let Claude Code decide when to use Bluera Knowledge:
-- For **library-specific, version-specific, or implementation questions** → BK saves tokens and increases accuracy
-- For **general programming concepts** → Training data is more efficient
-- For **current events** → Web search is necessary
+**Default to BK for library questions.** It's cheap, fast, and authoritative:
 
-The plugin's Skills teach Claude Code these patterns, so it automatically uses the most efficient approach for each question.
+| Question Type | Action | Why |
+|--------------|--------|-----|
+| Library internals, APIs, errors, versions, config | **Query BK first** | Source code is definitive, 60-85% token savings |
+| General programming concepts | Skip BK | Training data is sufficient |
+| Breaking news, release notes | Web search | BK only has indexed content |
+
+The plugin's Skills teach Claude Code these patterns automatically. When in doubt about a dependency, query BK—it's faster and more accurate than guessing or web searching.
 
 ---
 
