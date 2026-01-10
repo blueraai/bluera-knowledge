@@ -249,19 +249,11 @@ export class SearchService {
 
   /**
    * Calculate confidence level based on max raw vector similarity score.
-   * Configurable via environment variables.
+   * Configurable via environment variables, with sensible defaults for CLI usage.
    */
   private calculateConfidence(maxRawScore: number): SearchConfidence {
-    const highEnv = process.env['SEARCH_CONFIDENCE_HIGH'];
-    const mediumEnv = process.env['SEARCH_CONFIDENCE_MEDIUM'];
-    if (highEnv === undefined) {
-      throw new Error('SEARCH_CONFIDENCE_HIGH environment variable is required');
-    }
-    if (mediumEnv === undefined) {
-      throw new Error('SEARCH_CONFIDENCE_MEDIUM environment variable is required');
-    }
-    const highThreshold = parseFloat(highEnv);
-    const mediumThreshold = parseFloat(mediumEnv);
+    const highThreshold = parseFloat(process.env['SEARCH_CONFIDENCE_HIGH'] ?? '0.5');
+    const mediumThreshold = parseFloat(process.env['SEARCH_CONFIDENCE_MEDIUM'] ?? '0.3');
 
     if (maxRawScore >= highThreshold) return 'high';
     if (maxRawScore >= mediumThreshold) return 'medium';
@@ -759,14 +751,9 @@ export class SearchService {
       case 'source-internal':
         baseBoost = 0.75; // Internal implementation files (not too harsh)
         break;
-      case 'test': {
-        const testBoostEnv = process.env['SEARCH_TEST_FILE_BOOST'];
-        if (testBoostEnv === undefined) {
-          throw new Error('SEARCH_TEST_FILE_BOOST environment variable is required');
-        }
-        baseBoost = parseFloat(testBoostEnv);
+      case 'test':
+        baseBoost = parseFloat(process.env['SEARCH_TEST_FILE_BOOST'] ?? '0.5');
         break;
-      }
       case 'config':
         baseBoost = 0.5; // Config files rarely answer questions
         break;

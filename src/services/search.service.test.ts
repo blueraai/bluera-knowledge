@@ -2186,43 +2186,11 @@ describe('SearchService Environment Variables', () => {
     vi.unstubAllEnvs();
   });
 
-  it('throws if SEARCH_CONFIDENCE_HIGH is not set', async () => {
+  it('uses default values when env vars are not set', async () => {
+    // Clear env vars to test defaults
     vi.stubEnv('SEARCH_CONFIDENCE_HIGH', undefined as unknown as string);
-    vi.stubEnv('SEARCH_CONFIDENCE_MEDIUM', '0.3');
-    vi.stubEnv('SEARCH_TEST_FILE_BOOST', '0.5');
-
-    const tempDir = await mkdtemp(join(tmpdir(), 'search-env-test-'));
-    const lanceStore = new LanceStore(tempDir);
-    const embeddingEngine = new EmbeddingEngine();
-    await embeddingEngine.initialize();
-
-    const storeId = createStoreId('env-test-store');
-    await lanceStore.initialize(storeId);
-
-    const text = 'test document';
-    const vector = await embeddingEngine.embed(text);
-    await lanceStore.addDocuments(storeId, [
-      {
-        id: createDocumentId('doc-1'),
-        content: text,
-        vector,
-        metadata: { type: 'file', storeId, indexedAt: new Date() },
-      },
-    ]);
-
-    const searchService = new SearchService(lanceStore, embeddingEngine);
-
-    await expect(searchService.search({ query: 'test', stores: [storeId] })).rejects.toThrow(
-      'SEARCH_CONFIDENCE_HIGH environment variable is required'
-    );
-
-    await rm(tempDir, { recursive: true });
-  });
-
-  it('throws if SEARCH_CONFIDENCE_MEDIUM is not set', async () => {
-    vi.stubEnv('SEARCH_CONFIDENCE_HIGH', '0.5');
     vi.stubEnv('SEARCH_CONFIDENCE_MEDIUM', undefined as unknown as string);
-    vi.stubEnv('SEARCH_TEST_FILE_BOOST', '0.5');
+    vi.stubEnv('SEARCH_TEST_FILE_BOOST', undefined as unknown as string);
 
     const tempDir = await mkdtemp(join(tmpdir(), 'search-env-test-'));
     const lanceStore = new LanceStore(tempDir);
@@ -2245,14 +2213,15 @@ describe('SearchService Environment Variables', () => {
 
     const searchService = new SearchService(lanceStore, embeddingEngine);
 
-    await expect(searchService.search({ query: 'test', stores: [storeId] })).rejects.toThrow(
-      'SEARCH_CONFIDENCE_MEDIUM environment variable is required'
-    );
+    // Should work with defaults (0.5 for high, 0.3 for medium)
+    const results = await searchService.search({ query: 'test', stores: [storeId] });
+    expect(results.results.length).toBeGreaterThan(0);
+    expect(results.confidence).toBeDefined();
 
     await rm(tempDir, { recursive: true });
   });
 
-  it('throws if SEARCH_TEST_FILE_BOOST is not set when ranking test files', async () => {
+  it('uses default test file boost when env var is not set', async () => {
     vi.stubEnv('SEARCH_CONFIDENCE_HIGH', '0.5');
     vi.stubEnv('SEARCH_CONFIDENCE_MEDIUM', '0.3');
     vi.stubEnv('SEARCH_TEST_FILE_BOOST', undefined as unknown as string);
@@ -2278,16 +2247,16 @@ describe('SearchService Environment Variables', () => {
           storeId,
           indexedAt: new Date(),
           filePath: 'tests/example.test.ts',
-          fileType: 'test', // Triggers SEARCH_TEST_FILE_BOOST check
+          fileType: 'test', // Uses default SEARCH_TEST_FILE_BOOST (0.5)
         },
       },
     ]);
 
     const searchService = new SearchService(lanceStore, embeddingEngine);
 
-    await expect(searchService.search({ query: 'test', stores: [storeId] })).rejects.toThrow(
-      'SEARCH_TEST_FILE_BOOST environment variable is required'
-    );
+    // Should work with default test file boost
+    const results = await searchService.search({ query: 'test', stores: [storeId] });
+    expect(results.results.length).toBeGreaterThan(0);
 
     await rm(tempDir, { recursive: true });
   });
