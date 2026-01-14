@@ -1486,6 +1486,28 @@ This hybrid approach reduces unnecessary tool calls and context usage while main
 
 Result: Fewer tool calls, more accurate results, less context consumed.
 
+### 🎯 Skill Auto-Activation
+
+Skills can automatically suggest themselves when your prompt matches certain patterns.
+
+**Toggle via slash command:**
+- `/bluera-knowledge:skill-activation` - Show current status
+- `/bluera-knowledge:skill-activation on` - Enable (default)
+- `/bluera-knowledge:skill-activation off` - Disable
+- `/bluera-knowledge:skill-activation config` - Toggle individual skills
+
+**How it works:**
+When enabled, a UserPromptSubmit hook analyzes your prompt for patterns like:
+- "How does [library] work?" → suggests `knowledge-search`
+- "Should I grep or search?" → suggests `when-to-query`
+- "Too many results" → suggests `search-optimization`
+- "Multi-step workflow" → suggests `advanced-workflows`
+- "Add/delete store" → suggests `store-lifecycle`
+
+Claude evaluates each suggestion and invokes relevant skills before answering. Users who already use BK terminology are excluded (they already know the tool).
+
+**Configuration stored in:** `~/.local/share/bluera-knowledge/skill-activation.json`
+
 ---
 
 ## 💾 Data Storage
