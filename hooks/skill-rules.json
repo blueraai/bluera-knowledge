@@ -1,0 +1,122 @@
+{
+  "description": "bluera-knowledge skill activation rules - technology-agnostic patterns for development scenarios",
+  "version": 2,
+  "globalExclusions": [
+    { "keyword": "bluera-knowledge" },
+    { "keyword": "bluera knowledge" },
+    { "keyword": "/bluera-knowledge:" },
+    { "regex": "mcp__.*bluera" }
+  ],
+  "threshold": 2,
+  "skills": [
+    {
+      "name": "knowledge-search",
+      "description": "How to query Bluera Knowledge for library/dependency questions",
+      "triggers": [
+        { "regex": "the\\s+\\w+(-\\w+)*\\s+(package|library|module|framework|dependency)", "weight": 3 },
+        { "regex": "\\w+(-\\w+)*\\s+(package|library|module)\\s+(is|does|keeps|isn't|won't|doesn't)", "weight": 3 },
+        { "regex": "\\w+(-\\w+)*\\s+(documentation|docs)\\b", "weight": 2 },
+        { "regex": "error\\s+(from|in|with)\\s+(the\\s+)?\\w+(-\\w+)*\\s+(package|library|module)", "weight": 3 },
+        { "regex": "(package|library|dependency|module)\\s+(is\\s+)?(throwing|throws|error|failing)", "weight": 3 },
+        { "regex": "how\\s+does\\s+(the\\s+)?\\w+(-\\w+)*\\s+(package|library|module|framework)\\s+(handle|work|process)", "weight": 3 },
+        { "regex": "what\\s+does\\s+(the\\s+)?\\w+(-\\w+)*\\s+(package|library)\\s+(do|return|accept)", "weight": 3 },
+        { "regex": "why\\s+does\\s+(the\\s+)?\\w+(-\\w+)*\\s+(package|library|module)", "weight": 3 },
+        { "regex": "(configure|config|settings)\\s+(for\\s+)?(the\\s+)?\\w+(-\\w+)*\\s+(package|library)", "weight": 3 },
+        { "regex": "(upgraded?|updated?)\\s+(the\\s+)?\\w+(-\\w+)*\\s+(package|library|dependency)", "weight": 2 },
+        { "regex": "integrate\\s+(the\\s+)?\\w+(-\\w+)*\\s+(package|library)", "weight": 2 },
+        { "regex": "dependency\\s+(is|keeps|isn't|won't|error|issue|problem)", "weight": 2 },
+        { "regex": "third[- ]party\\s+(library|package|code)", "weight": 2 }
+      ],
+      "exclusions": [
+        { "keyword": "my code" },
+        { "keyword": "our code" },
+        { "keyword": "this function" },
+        { "keyword": "this file" },
+        { "keyword": "this component" },
+        { "keyword": "this class" },
+        { "keyword": "this project" },
+        { "keyword": "I wrote" },
+        { "keyword": "we wrote" },
+        { "keyword": "my implementation" },
+        { "keyword": "store" },
+        { "keyword": "index" }
+      ]
+    },
+    {
+      "name": "when-to-query",
+      "description": "Decision guide for Bluera Knowledge vs Grep/Read",
+      "triggers": [
+        { "keyword": "should i grep", "weight": 2 },
+        { "keyword": "where should i look", "weight": 2 },
+        { "keyword": "grep or search", "weight": 2 },
+        { "keyword": "search or grep", "weight": 2 },
+        { "regex": "where\\s+(should|do)\\s+i\\s+(find|look)\\s+.*(library|package|dependency)", "weight": 3 },
+        { "regex": "is\\s+there\\s+a\\s+better\\s+way\\s+to\\s+(search|find)", "weight": 2 },
+        { "regex": "should\\s+i\\s+(use\\s+)?grep\\s+(for|to)", "weight": 2 },
+        { "regex": "how\\s+(do|should)\\s+i\\s+find.*(in|from)\\s+(a\\s+)?(library|package|dependency)", "weight": 3 }
+      ],
+      "exclusions": [
+        { "keyword": "store" },
+        { "keyword": "index" }
+      ]
+    },
+    {
+      "name": "search-optimization",
+      "description": "Optimizing search parameters and token usage",
+      "triggers": [
+        { "keyword": "too many results", "weight": 2 },
+        { "keyword": "too few results", "weight": 2 },
+        { "keyword": "limit results", "weight": 2 },
+        { "keyword": "reduce tokens", "weight": 2 },
+        { "keyword": "token usage", "weight": 2 },
+        { "keyword": "optimize search", "weight": 2 },
+        { "keyword": "detail level", "weight": 2 },
+        { "regex": "\\b(minimal|contextual|full)\\s+detail", "weight": 2 },
+        { "regex": "\\b(vector|fts|hybrid)\\s+(search|mode)", "weight": 2 },
+        { "regex": "narrow\\s+(down\\s+)?(the\\s+)?results", "weight": 2 },
+        { "regex": "search\\s+(is\\s+)?(returning|giving)\\s+(too\\s+)?(many|few)", "weight": 2 }
+      ],
+      "exclusions": [
+        { "regex": "--?(limit|detail|mode|threshold)\\s*=" }
+      ]
+    },
+    {
+      "name": "advanced-workflows",
+      "description": "Multi-tool orchestration patterns",
+      "triggers": [
+        { "keyword": "multi-step", "weight": 2 },
+        { "keyword": "orchestration", "weight": 2 },
+        { "keyword": "job monitoring", "weight": 2 },
+        { "keyword": "background job", "weight": 2 },
+        { "keyword": "combine tools", "weight": 2 },
+        { "keyword": "chain operations", "weight": 2 },
+        { "regex": "chain.*searches", "weight": 2 },
+        { "regex": "multiple.*searches", "weight": 2 },
+        { "regex": "search.*then\\s+(summarize|extract|filter)", "weight": 2 },
+        { "regex": "for\\s+each\\s+(search\\s+)?(result|match)", "weight": 2 }
+      ],
+      "exclusions": []
+    },
+    {
+      "name": "store-lifecycle",
+      "description": "Managing knowledge stores",
+      "triggers": [
+        { "keyword": "add store", "weight": 2 },
+        { "keyword": "create store", "weight": 2 },
+        { "keyword": "delete store", "weight": 2 },
+        { "keyword": "remove store", "weight": 2 },
+        { "keyword": "index store", "weight": 2 },
+        { "keyword": "re-index", "weight": 2 },
+        { "keyword": "reindex", "weight": 2 },
+        { "keyword": "knowledge store", "weight": 2 },
+        { "regex": "add\\s+(a\\s+)?(repo|repository|folder|directory)\\s+(to|for)\\s+(knowledge|indexing|search)", "weight": 3 },
+        { "regex": "index\\s+(a|the|my)\\s+(repo|repository|folder|directory|library|package)", "weight": 2 },
+        { "regex": "set\\s+up.*(knowledge|search)\\s*(store|index)", "weight": 2 },
+        { "regex": "(backup|snapshot|archive).*(knowledge|search)\\s*(store|index)", "weight": 2 }
+      ],
+      "exclusions": [
+        { "regex": "/bluera-knowledge:(add-repo|add-folder|remove-store|index)" }
+      ]
+    }
+  ]
+}
