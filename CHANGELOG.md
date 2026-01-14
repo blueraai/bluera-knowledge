@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.12.0](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.0) (2026-01-14)
+
+
+### Features
+
+* **hooks:** add skill auto-activation system ([2b4e96b](https://github.com/blueraai/bluera-knowledge/commit/2b4e96bd29f28df63377cdaacab922d4f4321a8f))
+
 ## [0.11.21](https://github.com/blueraai/bluera-knowledge/compare/v0.11.20...v0.11.21) (2026-01-10)
 
 
