@@ -1,6 +1,28 @@
 {
-  "description": "bluera-knowledge plugin hooks - automatic dependency checking and job status monitoring",
+  "description": "bluera-knowledge plugin hooks - dependency checking, job monitoring, and BK suggestions",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/pretooluse-bk-reminder.py",
+            "timeout": 3
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/pretooluse-bk-reminder.py",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
