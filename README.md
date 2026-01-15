@@ -1647,15 +1647,18 @@ This creates a separate `bluera-knowledge-dev` MCP server that runs source TypeS
 | `bun test` | 🧪 Run tests in watch mode | During TDD/active development |
 | `bun run test:run` | ✅ Run tests once | Quick verification |
 | `bun run test:coverage` | 📊 Run tests with coverage | Before committing, CI checks |
-| `bun run lint` | 🔍 Run ESLint | Check code style issues |
-| `bun run typecheck` | 🔒 Run TypeScript type checking | Verify type safety |
+| `bun run lint` | 🔍 Run ESLint (quiet by default) | Check code style issues |
+| `bun run typecheck` | 🔒 Run TypeScript type checking (quiet by default) | Verify type safety |
 | `bun run precommit` | ✨ Smart validation (file-type aware) | Runs only relevant checks based on changed files |
 | `bun run prepush` | 📊 Smart coverage (skips for docs/config) | Runs coverage only when src/tests changed |
-| `bun run lint:quiet` | 🔇 ESLint (minimal output) | Used by git hooks |
-| `bun run typecheck:quiet` | 🔇 Type check (minimal output) | Used by git hooks |
-| `bun run test:changed:quiet` | 🔇 Test changed files (minimal output) | Used by git hooks |
-| `bun run test:coverage:quiet` | 🔇 Coverage (minimal output) | Used by git hooks |
-| `bun run build:quiet` | 🔇 Build (minimal output) | Used by git hooks |
+| `bun run lint:verbose` | 📢 ESLint (full output) | Debugging lint issues |
+| `bun run typecheck:verbose` | 📢 Type check (full output) | Debugging type errors |
+| `bun run test:changed:verbose` | 📢 Test changed files (full output) | Debugging test failures |
+| `bun run test:coverage:verbose` | 📢 Coverage (full output) | Reviewing detailed coverage |
+| `bun run build:verbose` | 📢 Build (full output) | Debugging build issues |
+| `bun run gh:status` | 📋 List recent GitHub Actions runs | Monitor CI/CD status |
+| `bun run gh:watch` | 👁️ Watch latest workflow run | Wait for CI completion |
+| `bun run gh:releases` | 🏷️ List recent GitHub releases | Check release history |
 
 ### 🔄 Automatic Build & Dist Commit
 
