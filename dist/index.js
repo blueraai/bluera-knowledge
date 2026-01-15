@@ -7,7 +7,7 @@ import {
   isWebStoreDefinition,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-4ZBK7V54.js";
+} from "./chunk-JET33NMA.js";
 import {
   IntelligentCrawler
 } from "./chunk-6777ULXC.js";

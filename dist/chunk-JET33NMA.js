@@ -945,20 +945,27 @@ import { join } from "path";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+var logger = createLogger("spawn-worker");
 function spawnBackgroundWorker(jobId, dataDir) {
-  const __dirname2 = path.dirname(fileURLToPath(import.meta.url));
-  const isProduction = __dirname2.includes("/dist/");
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const currentDir = path.dirname(currentFilePath);
+  const isProduction = currentFilePath.includes("/dist/");
   let command;
   let args;
   if (isProduction) {
-    const workerScript = path.join(__dirname2, "background-worker-cli.js");
+    const distIndex = currentFilePath.indexOf("/dist/");
+    const distDir = currentFilePath.substring(0, distIndex + 6);
+    const workerScript = path.join(distDir, "workers", "background-worker-cli.js");
     command = process.execPath;
     args = [workerScript, jobId];
+    logger.debug({ workerScript, distDir, currentFilePath }, "Production worker path");
   } else {
-    const workerScript = path.join(__dirname2, "background-worker-cli.ts");
+    const workerScript = path.join(currentDir, "background-worker-cli.ts");
     command = "npx";
     args = ["tsx", workerScript, jobId];
+    logger.debug({ workerScript, currentDir }, "Development worker path");
   }
+  logger.info({ jobId, command, args, dataDir, isProduction }, "Spawning background worker");
   const worker = spawn(command, args, {
     detached: true,
     // Detach from parent process
@@ -971,6 +978,10 @@ function spawnBackgroundWorker(jobId, dataDir) {
       // Only set if provided
     }
   });
+  worker.on("error", (err) => {
+    logger.error({ jobId, error: err.message }, "Failed to spawn background worker");
+  });
+  logger.info({ jobId, pid: worker.pid }, "Background worker spawned");
   worker.unref();
 }
 
@@ -1722,11 +1733,11 @@ var LRUCache = class {
 };
 
 // src/mcp/handlers/search.handler.ts
-var logger = createLogger("mcp-search");
+var logger2 = createLogger("mcp-search");
 var resultCache = new LRUCache(1e3);
 var handleSearch = async (args, context) => {
   const validated = SearchArgsSchema.parse(args);
-  logger.info(
+  logger2.info(
     {
       query: validated.query,
       stores: validated.stores,
@@ -1803,7 +1814,7 @@ var handleSearch = async (args, context) => {
   const header = `Search: "${validated.query}" | Results: ${String(results.totalResults)} | ${formatTokenCount(responseTokens)} tokens | ${String(results.timeMs)}ms${confidenceInfo}
 
 `;
-  logger.info(
+  logger2.info(
     {
       query: validated.query,
       totalResults: results.totalResults,
@@ -1824,7 +1835,7 @@ var handleSearch = async (args, context) => {
 };
 var handleGetFullContext = async (args, context) => {
   const validated = GetFullContextArgsSchema.parse(args);
-  logger.info({ resultId: validated.resultId }, "Get full context requested");
+  logger2.info({ resultId: validated.resultId }, "Get full context requested");
   const resultId = validated.resultId;
   const cachedResult = resultCache.get(resultId);
   if (!cachedResult) {
@@ -1842,7 +1853,7 @@ var handleGetFullContext = async (args, context) => {
       null,
       2
     );
-    logger.info(
+    logger2.info(
       {
         resultId,
         cached: true,
@@ -1908,7 +1919,7 @@ var handleGetFullContext = async (args, context) => {
     null,
     2
   );
-  logger.info(
+  logger2.info(
     {
       resultId,
       cached: false,
@@ -1944,7 +1955,7 @@ var tools = [
 ];
 
 // src/mcp/server.ts
-var logger2 = createLogger("mcp-server");
+var logger3 = createLogger("mcp-server");
 var registry = AdapterRegistry.getInstance();
 if (!registry.hasExtension(".zil")) {
   registry.register(new ZilAdapter());
@@ -2060,7 +2071,7 @@ function createMCPServer(options) {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     const startTime = Date.now();
-    logger2.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
+    logger3.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
     const services = await createServices(options.config, options.dataDir, options.projectRoot);
     const context = { services, options };
     try {
@@ -2077,11 +2088,11 @@ function createMCPServer(options) {
         result = await tool.handler(validated, context);
       }
       const durationMs = Date.now() - startTime;
-      logger2.info({ tool: name, durationMs }, "Tool completed");
+      logger3.info({ tool: name, durationMs }, "Tool completed");
       return result;
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      logger2.error(
+      logger3.error(
         {
           tool: name,
           durationMs,
@@ -2097,7 +2108,7 @@ function createMCPServer(options) {
   return server;
 }
 async function runMCPServer(options) {
-  logger2.info(
+  logger3.info(
     {
       dataDir: options.dataDir,
       projectRoot: options.projectRoot
@@ -2107,7 +2118,7 @@ async function runMCPServer(options) {
   const server = createMCPServer(options);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  logger2.info("MCP server connected to stdio transport");
+  logger3.info("MCP server connected to stdio transport");
 }
 var scriptPath = process.argv[1] ?? "";
 var isMCPServerEntry = scriptPath.endsWith("mcp/server.js") || scriptPath.endsWith("mcp/server");
@@ -2121,7 +2132,7 @@ if (isMCPServerEntry) {
     config: process.env["CONFIG_PATH"],
     projectRoot
   }).catch((error) => {
-    logger2.error(
+    logger3.error(
       { error: error instanceof Error ? error.message : String(error) },
       "Failed to start MCP server"
     );
@@ -2139,4 +2150,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-4ZBK7V54.js.map
+//# sourceMappingURL=chunk-JET33NMA.js.map
