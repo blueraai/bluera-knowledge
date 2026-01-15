@@ -42,6 +42,7 @@ export const handleCheckJobStatus: ToolHandler<CheckJobStatusArgs> = (
  * Handle list_jobs requests
  *
  * Lists all jobs with optional filtering by status or active status.
+ * Automatically cleans up stale pending jobs (>2 hours old) before listing.
  */
 export const handleListJobs: ToolHandler<ListJobsArgs> = (args, context): Promise<ToolResponse> => {
   // Validate arguments with Zod
@@ -50,6 +51,10 @@ export const handleListJobs: ToolHandler<ListJobsArgs> = (args, context): Promis
   const { options } = context;
 
   const jobService = new JobService(options.dataDir);
+
+  // Auto-cleanup: mark stale pending jobs as failed (>2 hours with no progress)
+  // This handles jobs where the worker never started or crashed
+  jobService.cleanupStalePendingJobs(2, { markAsFailed: true });
 
   let jobs;
   if (validated.activeOnly === true) {

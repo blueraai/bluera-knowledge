@@ -465,6 +465,40 @@ var JobService = class {
     return cleaned;
   }
   /**
+   * Clean up stale pending jobs that never started or got stuck
+   *
+   * @param olderThanHours - Consider pending jobs stale after this many hours (default 2)
+   * @param options - Options for cleanup behavior
+   * @param options.markAsFailed - If true, mark jobs as failed instead of deleting
+   * @returns Number of jobs cleaned up or marked as failed
+   */
+  cleanupStalePendingJobs(olderThanHours = 2, options = {}) {
+    const jobs = this.listJobs();
+    const cutoffTime = Date.now() - olderThanHours * 60 * 60 * 1e3;
+    let cleaned = 0;
+    for (const job of jobs) {
+      if (job.status === "pending" && new Date(job.updatedAt).getTime() < cutoffTime) {
+        const jobFile = path.join(this.jobsDir, `${job.id}.json`);
+        if (options.markAsFailed === true) {
+          this.updateJob(job.id, {
+            status: "failed",
+            message: `Job marked as stale - pending for over ${String(olderThanHours)} hours without progress`
+          });
+        } else {
+          try {
+            fs.unlinkSync(jobFile);
+          } catch (error) {
+            throw new Error(
+              `Failed to delete stale job ${job.id}: ${error instanceof Error ? error.message : String(error)}`
+            );
+          }
+        }
+        cleaned++;
+      }
+    }
+    return cleaned;
+  }
+  /**
    * Delete a specific job
    */
   deleteJob(jobId) {
@@ -4617,4 +4651,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-VTATT3IR.js.map
+//# sourceMappingURL=chunk-7DZZHYDU.js.map

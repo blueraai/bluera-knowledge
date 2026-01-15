@@ -7,7 +7,7 @@ import {
   createStoreId,
   destroyServices,
   summarizePayload
-} from "./chunk-VTATT3IR.js";
+} from "./chunk-7DZZHYDU.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -715,6 +715,7 @@ var handleListJobs = (args, context) => {
   const validated = ListJobsArgsSchema.parse(args);
   const { options } = context;
   const jobService = new JobService(options.dataDir);
+  jobService.cleanupStalePendingJobs(2, { markAsFailed: true });
   let jobs;
   if (validated.activeOnly === true) {
     jobs = jobService.listActiveJobs();
@@ -2150,4 +2151,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-JET33NMA.js.map
+//# sourceMappingURL=chunk-XVVMSRLO.js.map
