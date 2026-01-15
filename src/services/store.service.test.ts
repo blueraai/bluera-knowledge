@@ -538,6 +538,30 @@ describe('StoreService', () => {
 
       await rm(corruptDir, { recursive: true, force: true });
     });
+
+    it('filters out null entries from stores array on load', async () => {
+      const nullDir = await mkdtemp(join(tmpdir(), 'null-entry-'));
+      const registryPath = join(nullDir, 'stores.json');
+      const validStore = {
+        id: 'test-id',
+        type: 'file',
+        name: 'valid-store',
+        path: '/some/path',
+        status: 'ready',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await writeFile(registryPath, JSON.stringify({ stores: [null, validStore, null] }));
+
+      const freshService = new StoreService(nullDir);
+      await freshService.initialize();
+
+      const stores = await freshService.list();
+      expect(stores).toHaveLength(1);
+      expect(stores[0]?.name).toBe('valid-store');
+
+      await rm(nullDir, { recursive: true, force: true });
+    });
   });
 
   describe('store definition auto-update', () => {

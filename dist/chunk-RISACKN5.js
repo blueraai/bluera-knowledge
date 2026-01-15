@@ -250,6 +250,40 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 
+// src/types/job.ts
+import { z } from "zod";
+var JobTypeSchema = z.enum(["clone", "index", "crawl"]);
+var JobStatusSchema = z.enum(["pending", "running", "completed", "failed", "cancelled"]);
+var JobDetailsSchema = z.object({
+  storeName: z.string().optional(),
+  storeId: z.string().optional(),
+  url: z.string().optional(),
+  path: z.string().optional(),
+  filesProcessed: z.number().optional(),
+  totalFiles: z.number().optional(),
+  startedAt: z.string().optional(),
+  completedAt: z.string().optional(),
+  cancelledAt: z.string().optional(),
+  error: z.string().optional(),
+  // Crawl-specific fields
+  crawlInstruction: z.string().optional(),
+  extractInstruction: z.string().optional(),
+  maxPages: z.number().optional(),
+  simple: z.boolean().optional(),
+  useHeadless: z.boolean().optional(),
+  pagesCrawled: z.number().optional()
+});
+var JobSchema = z.object({
+  id: z.string(),
+  type: JobTypeSchema,
+  status: JobStatusSchema,
+  progress: z.number().min(0).max(100),
+  message: z.string(),
+  details: JobDetailsSchema.default({}),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
 // src/types/result.ts
 function ok(data) {
   return { success: true, data };
@@ -327,7 +361,7 @@ var JobService = class {
     }
     try {
       const content = fs.readFileSync(jobFile, "utf-8");
-      return JSON.parse(content);
+      return JobSchema.parse(JSON.parse(content));
     } catch (error) {
       throw new Error(
         `Failed to read job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
@@ -349,7 +383,7 @@ var JobService = class {
       }
       try {
         const content = fs.readFileSync(path.join(this.jobsDir, file), "utf-8");
-        const job = JSON.parse(content);
+        const job = JobSchema.parse(JSON.parse(content));
         if (statusFilter !== void 0) {
           const filters = Array.isArray(statusFilter) ? statusFilter : [statusFilter];
           if (filters.includes(job.status)) {
@@ -3881,6 +3915,10 @@ var StoreService = class {
           updatedAt: now
         };
         break;
+      default: {
+        const invalidType = input.type;
+        return err(new Error(`Invalid store type: ${String(invalidType)}`));
+      }
     }
     this.registry.stores.push(store);
     await this.saveRegistry();
@@ -3964,7 +4002,7 @@ var StoreService = class {
     try {
       const data = JSON.parse(content);
       this.registry = {
-        stores: data.stores.map((s) => ({
+        stores: data.stores.filter((s) => s !== null).map((s) => ({
           ...s,
           id: createStoreId(s.id),
           createdAt: new Date(s.createdAt),
@@ -3990,33 +4028,33 @@ import { createInterface } from "readline";
 import { ZodError } from "zod";
 
 // src/crawl/schemas.ts
-import { z } from "zod";
-var CrawledLinkSchema = z.object({
-  href: z.string(),
-  text: z.string(),
-  title: z.string().optional(),
-  base_domain: z.string().optional(),
-  head_data: z.unknown().optional(),
-  head_extraction_status: z.unknown().optional(),
-  head_extraction_error: z.unknown().optional(),
-  intrinsic_score: z.number().optional(),
-  contextual_score: z.unknown().optional(),
-  total_score: z.unknown().optional()
+import { z as z2 } from "zod";
+var CrawledLinkSchema = z2.object({
+  href: z2.string(),
+  text: z2.string(),
+  title: z2.string().optional(),
+  base_domain: z2.string().optional(),
+  head_data: z2.unknown().optional(),
+  head_extraction_status: z2.unknown().optional(),
+  head_extraction_error: z2.unknown().optional(),
+  intrinsic_score: z2.number().optional(),
+  contextual_score: z2.unknown().optional(),
+  total_score: z2.unknown().optional()
 });
-var CrawlPageSchema = z.object({
-  url: z.string(),
-  title: z.string(),
-  content: z.string(),
-  links: z.array(z.string()),
-  crawledAt: z.string()
+var CrawlPageSchema = z2.object({
+  url: z2.string(),
+  title: z2.string(),
+  content: z2.string(),
+  links: z2.array(z2.string()),
+  crawledAt: z2.string()
 });
-var CrawlResultSchema = z.object({
-  pages: z.array(CrawlPageSchema)
+var CrawlResultSchema = z2.object({
+  pages: z2.array(CrawlPageSchema)
 });
-var HeadlessResultSchema = z.object({
-  html: z.string(),
-  markdown: z.string(),
-  links: z.array(z.union([CrawledLinkSchema, z.string()]))
+var HeadlessResultSchema = z2.object({
+  html: z2.string(),
+  markdown: z2.string(),
+  links: z2.array(z2.union([CrawledLinkSchema, z2.string()]))
 });
 function validateHeadlessResult(data) {
   return HeadlessResultSchema.parse(data);
@@ -4024,33 +4062,33 @@ function validateHeadlessResult(data) {
 function validateCrawlResult(data) {
   return CrawlResultSchema.parse(data);
 }
-var MethodInfoSchema = z.object({
-  name: z.string(),
-  async: z.boolean(),
-  signature: z.string(),
-  startLine: z.number(),
-  endLine: z.number(),
-  calls: z.array(z.string())
+var MethodInfoSchema = z2.object({
+  name: z2.string(),
+  async: z2.boolean(),
+  signature: z2.string(),
+  startLine: z2.number(),
+  endLine: z2.number(),
+  calls: z2.array(z2.string())
 });
-var CodeNodeSchema = z.object({
-  type: z.enum(["function", "class"]),
-  name: z.string(),
-  exported: z.boolean(),
-  startLine: z.number(),
-  endLine: z.number(),
-  async: z.boolean().optional(),
-  signature: z.string().optional(),
-  calls: z.array(z.string()).optional(),
-  methods: z.array(MethodInfoSchema).optional()
+var CodeNodeSchema = z2.object({
+  type: z2.enum(["function", "class"]),
+  name: z2.string(),
+  exported: z2.boolean(),
+  startLine: z2.number(),
+  endLine: z2.number(),
+  async: z2.boolean().optional(),
+  signature: z2.string().optional(),
+  calls: z2.array(z2.string()).optional(),
+  methods: z2.array(MethodInfoSchema).optional()
 });
-var ImportInfoSchema = z.object({
-  source: z.string(),
-  imported: z.string(),
-  alias: z.string().optional().nullable()
+var ImportInfoSchema = z2.object({
+  source: z2.string(),
+  imported: z2.string(),
+  alias: z2.string().optional().nullable()
 });
-var ParsePythonResultSchema = z.object({
-  nodes: z.array(CodeNodeSchema),
-  imports: z.array(ImportInfoSchema)
+var ParsePythonResultSchema = z2.object({
+  nodes: z2.array(CodeNodeSchema),
+  imports: z2.array(ImportInfoSchema)
 });
 function validateParsePythonResult(data) {
   return ParsePythonResultSchema.parse(data);
@@ -4349,6 +4387,22 @@ var EmbeddingEngine = class {
 
 // src/db/lance.ts
 import * as lancedb from "@lancedb/lancedb";
+
+// src/types/document.ts
+import { z as z3 } from "zod";
+var DocumentTypeSchema = z3.enum(["file", "chunk", "web"]);
+var DocumentMetadataSchema = z3.object({
+  path: z3.string().optional(),
+  url: z3.string().optional(),
+  type: DocumentTypeSchema,
+  storeId: z3.string(),
+  indexedAt: z3.union([z3.string(), z3.date()]),
+  fileHash: z3.string().optional(),
+  chunkIndex: z3.number().optional(),
+  totalChunks: z3.number().optional()
+}).loose();
+
+// src/db/lance.ts
 var LanceStore = class {
   connection = null;
   tables = /* @__PURE__ */ new Map();
@@ -4395,13 +4449,17 @@ var LanceStore = class {
     const table = await this.getTable(storeId);
     const query = table.vectorSearch(vector).limit(limit).distanceType("cosine");
     const results = await query.toArray();
-    return results.map((r) => ({
-      id: createDocumentId(r.id),
-      content: r.content,
-      score: 1 - r._distance,
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      metadata: JSON.parse(r.metadata)
-    }));
+    return results.map((r) => {
+      const metadata = DocumentMetadataSchema.parse(JSON.parse(r.metadata));
+      return {
+        id: createDocumentId(r.id),
+        content: r.content,
+        score: 1 - r._distance,
+        // Schema validates structure, cast to branded type
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        metadata
+      };
+    });
   }
   async createFtsIndex(storeId) {
     const table = await this.getTable(storeId);
@@ -4412,13 +4470,17 @@ var LanceStore = class {
   async fullTextSearch(storeId, query, limit) {
     const table = await this.getTable(storeId);
     const results = await table.search(query, "fts").limit(limit).toArray();
-    return results.map((r) => ({
-      id: createDocumentId(r.id),
-      content: r.content,
-      score: r._score,
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      metadata: JSON.parse(r.metadata)
-    }));
+    return results.map((r) => {
+      const metadata = DocumentMetadataSchema.parse(JSON.parse(r.metadata));
+      return {
+        id: createDocumentId(r.id),
+        content: r.content,
+        score: r._score,
+        // Schema validates structure, cast to branded type
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        metadata
+      };
+    });
   }
   async deleteStore(storeId) {
     const tableName = this.getTableName(storeId);
@@ -4538,4 +4600,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-C4SYGLAI.js.map
+//# sourceMappingURL=chunk-RISACKN5.js.map
