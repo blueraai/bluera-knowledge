@@ -74,9 +74,8 @@ def main() -> int:
     if not trigger_reason:
         return 0
 
-    # Output reminder
-    reminder = f"""<system-reminder>
-BLUERA-KNOWLEDGE SUGGESTION
+    # Output structured JSON for reliable context injection
+    reminder_text = f"""BLUERA-KNOWLEDGE SUGGESTION
 
 You're about to {trigger_reason} which appears to be dependency/library code.
 
@@ -86,10 +85,15 @@ Consider querying Bluera Knowledge instead:
 
 BK provides indexed, searchable access to library sources - faster and more context-efficient than grepping through node_modules.
 
-If you don't have this library indexed, continue with your current approach.
-</system-reminder>"""
+If you don't have this library indexed, continue with your current approach."""
 
-    print(reminder)
+    output = {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "additionalContext": reminder_text,
+        }
+    }
+    print(json.dumps(output))
     return 0
 
 
