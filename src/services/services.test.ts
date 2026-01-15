@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { destroyServices, type ServiceContainer } from './index.js';
 import type { PythonBridge } from '../crawl/bridge.js';
+import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
 
 describe('destroyServices', () => {
   let mockPythonBridge: { stop: ReturnType<typeof vi.fn> };
   let mockLance: { closeAsync: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> };
+  let mockEmbeddings: { dispose: ReturnType<typeof vi.fn> };
   let mockServices: ServiceContainer;
 
   beforeEach(() => {
@@ -18,9 +20,14 @@ describe('destroyServices', () => {
       close: vi.fn(),
     };
 
+    mockEmbeddings = {
+      dispose: vi.fn().mockResolvedValue(undefined),
+    };
+
     mockServices = {
       pythonBridge: mockPythonBridge as unknown as PythonBridge,
       lance: mockLance as unknown as LanceStore,
+      embeddings: mockEmbeddings as unknown as EmbeddingEngine,
     } as unknown as ServiceContainer;
   });
 
@@ -83,5 +90,19 @@ describe('destroyServices', () => {
 
     // Should have waited for closeAsync to complete
     expect(closeCompleted).toBe(true);
+  });
+
+  it('calls dispose on EmbeddingEngine to free ONNX runtime resources', async () => {
+    await destroyServices(mockServices);
+
+    expect(mockEmbeddings.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws on EmbeddingEngine dispose errors', async () => {
+    mockEmbeddings.dispose.mockRejectedValue(new Error('dispose failed'));
+
+    await expect(destroyServices(mockServices)).rejects.toThrow(
+      'Service shutdown failed: dispose failed'
+    );
   });
 });

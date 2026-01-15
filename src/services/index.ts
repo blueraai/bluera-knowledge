@@ -88,6 +88,15 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
     errors.push(error);
   }
 
+  // Dispose embedding engine to free ONNX runtime resources
+  try {
+    await services.embeddings.dispose();
+  } catch (e) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error({ error }, 'Error disposing EmbeddingEngine');
+    errors.push(error);
+  }
+
   try {
     await services.pythonBridge.stop();
   } catch (e) {
