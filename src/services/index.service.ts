@@ -25,6 +25,7 @@ interface IndexOptions {
   chunkSize?: number;
   chunkOverlap?: number;
   codeGraphService?: CodeGraphService;
+  concurrency?: number;
 }
 
 const TEXT_EXTENSIONS = new Set([
@@ -62,6 +63,7 @@ export class IndexService {
   private readonly embeddingEngine: EmbeddingEngine;
   private readonly chunker: ChunkingService;
   private readonly codeGraphService: CodeGraphService | undefined;
+  private readonly concurrency: number;
 
   constructor(
     lanceStore: LanceStore,
@@ -75,6 +77,7 @@ export class IndexService {
       chunkOverlap: options.chunkOverlap ?? 100,
     });
     this.codeGraphService = options.codeGraphService;
+    this.concurrency = options.concurrency ?? 4;
   }
 
   async indexStore(store: Store, onProgress?: ProgressCallback): Promise<Result<IndexResult>> {
@@ -123,6 +126,7 @@ export class IndexService {
         storeId: store.id,
         path: store.path,
         fileCount: files.length,
+        concurrency: this.concurrency,
       },
       'Files scanned for indexing'
     );
@@ -138,59 +142,30 @@ export class IndexService {
       message: 'Starting index',
     });
 
-    for (const filePath of files) {
-      const content = await readFile(filePath, 'utf-8');
-      const fileHash = createHash('md5').update(content).digest('hex');
-      // Pass file path for semantic Markdown chunking
-      const chunks = this.chunker.chunk(content, filePath);
+    // Process files in parallel batches
+    for (let i = 0; i < files.length; i += this.concurrency) {
+      const batch = files.slice(i, i + this.concurrency);
 
-      // Determine file type for ranking
-      const ext = extname(filePath).toLowerCase();
-      const fileName = basename(filePath).toLowerCase();
-      const fileType = this.classifyFileType(ext, fileName, filePath);
+      const batchResults = await Promise.all(
+        batch.map((filePath) => this.processFile(filePath, store))
+      );
 
-      // Collect source files for code graph
-      if (['.ts', '.tsx', '.js', '.jsx'].includes(ext)) {
-        sourceFiles.push({ path: filePath, content });
+      // Collect results from batch
+      for (const result of batchResults) {
+        documents.push(...result.documents);
+        if (result.sourceFile !== undefined) {
+          sourceFiles.push(result.sourceFile);
+        }
       }
 
-      for (const chunk of chunks) {
-        const vector = await this.embeddingEngine.embed(chunk.content);
-        const chunkId =
-          chunks.length > 1
-            ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}`
-            : `${store.id}-${fileHash}`;
+      filesProcessed += batch.length;
 
-        const doc: Document = {
-          id: createDocumentId(chunkId),
-          content: chunk.content,
-          vector,
-          metadata: {
-            type: chunks.length > 1 ? 'chunk' : 'file',
-            storeId: store.id,
-            path: filePath,
-            indexedAt: new Date(),
-            fileHash,
-            chunkIndex: chunk.chunkIndex,
-            totalChunks: chunk.totalChunks,
-            // New metadata for ranking
-            fileType,
-            sectionHeader: chunk.sectionHeader,
-            functionName: chunk.functionName,
-            hasDocComments: /\/\*\*[\s\S]*?\*\//.test(chunk.content),
-            docSummary: chunk.docSummary,
-          },
-        };
-        documents.push(doc);
-      }
-      filesProcessed++;
-
-      // Emit progress event
+      // Emit progress event after each batch
       onProgress?.({
         type: 'progress',
         current: filesProcessed,
         total: files.length,
-        message: `Indexing ${filePath}`,
+        message: `Indexed ${String(filesProcessed)}/${String(files.length)} files`,
       });
     }
 
@@ -233,6 +208,80 @@ export class IndexService {
       chunksCreated: documents.length,
       timeMs,
     });
+  }
+
+  /**
+   * Process a single file: read, chunk, embed, and return documents.
+   * Extracted for parallel processing.
+   */
+  private async processFile(
+    filePath: string,
+    store: FileStore | RepoStore
+  ): Promise<{
+    documents: Document[];
+    sourceFile: { path: string; content: string } | undefined;
+  }> {
+    const content = await readFile(filePath, 'utf-8');
+    const fileHash = createHash('md5').update(content).digest('hex');
+    const chunks = this.chunker.chunk(content, filePath);
+
+    const ext = extname(filePath).toLowerCase();
+    const fileName = basename(filePath).toLowerCase();
+    const fileType = this.classifyFileType(ext, fileName, filePath);
+
+    // Track source file for code graph
+    const sourceFile = ['.ts', '.tsx', '.js', '.jsx'].includes(ext)
+      ? { path: filePath, content }
+      : undefined;
+
+    // Skip files with no chunks (empty files)
+    if (chunks.length === 0) {
+      return { documents: [], sourceFile };
+    }
+
+    // Batch embed all chunks from this file
+    const chunkContents = chunks.map((c) => c.content);
+    const vectors = await this.embeddingEngine.embedBatch(chunkContents);
+
+    const documents: Document[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const vector = vectors[i];
+
+      // Fail fast if chunk/vector mismatch (should never happen)
+      if (chunk === undefined || vector === undefined) {
+        throw new Error(
+          `Chunk/vector mismatch at index ${String(i)}: chunk=${String(chunk !== undefined)}, vector=${String(vector !== undefined)}`
+        );
+      }
+
+      const chunkId =
+        chunks.length > 1
+          ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}`
+          : `${store.id}-${fileHash}`;
+
+      documents.push({
+        id: createDocumentId(chunkId),
+        content: chunk.content,
+        vector,
+        metadata: {
+          type: chunks.length > 1 ? 'chunk' : 'file',
+          storeId: store.id,
+          path: filePath,
+          indexedAt: new Date(),
+          fileHash,
+          chunkIndex: chunk.chunkIndex,
+          totalChunks: chunk.totalChunks,
+          fileType,
+          sectionHeader: chunk.sectionHeader,
+          functionName: chunk.functionName,
+          hasDocComments: /\/\*\*[\s\S]*?\*\//.test(chunk.content),
+          docSummary: chunk.docSummary,
+        },
+      });
+    }
+
+    return { documents, sourceFile };
   }
 
   private async scanDirectory(dir: string): Promise<string[]> {
