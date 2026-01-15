@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.12.6](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.6) (2026-01-15)
+
+
+### Features
+
+* **hooks:** add PreToolUse hooks for BK suggestions ([23d3fa4](https://github.com/blueraai/bluera-knowledge/commit/23d3fa493dd16427d6bda3ea80064622c6244bba))
+* **hooks:** add skill auto-activation system ([2b4e96b](https://github.com/blueraai/bluera-knowledge/commit/2b4e96bd29f28df63377cdaacab922d4f4321a8f))
+* **hooks:** improve skill activation with forced evaluation pattern ([f044077](https://github.com/blueraai/bluera-knowledge/commit/f044077d260b78b55a00ebf735b68a2d933f34a7)), closes [#15345](https://github.com/blueraai/bluera-knowledge/issues/15345)
+
+
+### Bug Fixes
+
+* **hooks:** use JSON output for PreToolUse hook context injection ([a73977e](https://github.com/blueraai/bluera-knowledge/commit/a73977e0f8f690d43b9d7c987300522dd501fe38))
+* **tests:** stabilize watch service tests in coverage mode ([fdf6c3a](https://github.com/blueraai/bluera-knowledge/commit/fdf6c3a478adff9e4746b54a9519184ca280f344))
+
 ## [0.12.5](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.5) (2026-01-15)
 
 
