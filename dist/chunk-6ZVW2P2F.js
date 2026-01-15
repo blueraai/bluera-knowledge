@@ -2416,6 +2416,7 @@ var IndexService = class {
   embeddingEngine;
   chunker;
   codeGraphService;
+  concurrency;
   constructor(lanceStore, embeddingEngine, options = {}) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
@@ -2424,6 +2425,7 @@ var IndexService = class {
       chunkOverlap: options.chunkOverlap ?? 100
     });
     this.codeGraphService = options.codeGraphService;
+    this.concurrency = options.concurrency ?? 4;
   }
   async indexStore(store, onProgress) {
     logger.info(
@@ -2463,7 +2465,8 @@ var IndexService = class {
       {
         storeId: store.id,
         path: store.path,
-        fileCount: files.length
+        fileCount: files.length,
+        concurrency: this.concurrency
       },
       "Files scanned for indexing"
     );
@@ -2474,47 +2477,23 @@ var IndexService = class {
       total: files.length,
       message: "Starting index"
     });
-    for (const filePath of files) {
-      const content = await readFile3(filePath, "utf-8");
-      const fileHash = createHash2("md5").update(content).digest("hex");
-      const chunks = this.chunker.chunk(content, filePath);
-      const ext = extname(filePath).toLowerCase();
-      const fileName = basename(filePath).toLowerCase();
-      const fileType = this.classifyFileType(ext, fileName, filePath);
-      if ([".ts", ".tsx", ".js", ".jsx"].includes(ext)) {
-        sourceFiles.push({ path: filePath, content });
+    for (let i = 0; i < files.length; i += this.concurrency) {
+      const batch = files.slice(i, i + this.concurrency);
+      const batchResults = await Promise.all(
+        batch.map((filePath) => this.processFile(filePath, store))
+      );
+      for (const result of batchResults) {
+        documents.push(...result.documents);
+        if (result.sourceFile !== void 0) {
+          sourceFiles.push(result.sourceFile);
+        }
       }
-      for (const chunk of chunks) {
-        const vector = await this.embeddingEngine.embed(chunk.content);
-        const chunkId = chunks.length > 1 ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}` : `${store.id}-${fileHash}`;
-        const doc = {
-          id: createDocumentId(chunkId),
-          content: chunk.content,
-          vector,
-          metadata: {
-            type: chunks.length > 1 ? "chunk" : "file",
-            storeId: store.id,
-            path: filePath,
-            indexedAt: /* @__PURE__ */ new Date(),
-            fileHash,
-            chunkIndex: chunk.chunkIndex,
-            totalChunks: chunk.totalChunks,
-            // New metadata for ranking
-            fileType,
-            sectionHeader: chunk.sectionHeader,
-            functionName: chunk.functionName,
-            hasDocComments: /\/\*\*[\s\S]*?\*\//.test(chunk.content),
-            docSummary: chunk.docSummary
-          }
-        };
-        documents.push(doc);
-      }
-      filesProcessed++;
+      filesProcessed += batch.length;
       onProgress?.({
         type: "progress",
         current: filesProcessed,
         total: files.length,
-        message: `Indexing ${filePath}`
+        message: `Indexed ${String(filesProcessed)}/${String(files.length)} files`
       });
     }
     if (documents.length > 0) {
@@ -2548,6 +2527,55 @@ var IndexService = class {
       chunksCreated: documents.length,
       timeMs
     });
+  }
+  /**
+   * Process a single file: read, chunk, embed, and return documents.
+   * Extracted for parallel processing.
+   */
+  async processFile(filePath, store) {
+    const content = await readFile3(filePath, "utf-8");
+    const fileHash = createHash2("md5").update(content).digest("hex");
+    const chunks = this.chunker.chunk(content, filePath);
+    const ext = extname(filePath).toLowerCase();
+    const fileName = basename(filePath).toLowerCase();
+    const fileType = this.classifyFileType(ext, fileName, filePath);
+    const sourceFile = [".ts", ".tsx", ".js", ".jsx"].includes(ext) ? { path: filePath, content } : void 0;
+    if (chunks.length === 0) {
+      return { documents: [], sourceFile };
+    }
+    const chunkContents = chunks.map((c) => c.content);
+    const vectors = await this.embeddingEngine.embedBatch(chunkContents);
+    const documents = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const vector = vectors[i];
+      if (chunk === void 0 || vector === void 0) {
+        throw new Error(
+          `Chunk/vector mismatch at index ${String(i)}: chunk=${String(chunk !== void 0)}, vector=${String(vector !== void 0)}`
+        );
+      }
+      const chunkId = chunks.length > 1 ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}` : `${store.id}-${fileHash}`;
+      documents.push({
+        id: createDocumentId(chunkId),
+        content: chunk.content,
+        vector,
+        metadata: {
+          type: chunks.length > 1 ? "chunk" : "file",
+          storeId: store.id,
+          path: filePath,
+          indexedAt: /* @__PURE__ */ new Date(),
+          fileHash,
+          chunkIndex: chunk.chunkIndex,
+          totalChunks: chunk.totalChunks,
+          fileType,
+          sectionHeader: chunk.sectionHeader,
+          functionName: chunk.functionName,
+          hasDocComments: /\/\*\*[\s\S]*?\*\//.test(chunk.content),
+          docSummary: chunk.docSummary
+        }
+      });
+    }
+    return { documents, sourceFile };
   }
   async scanDirectory(dir) {
     const files = [];
@@ -4651,4 +4679,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-7DZZHYDU.js.map
+//# sourceMappingURL=chunk-6ZVW2P2F.js.map

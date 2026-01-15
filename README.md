@@ -479,10 +479,11 @@ When you add a repository or index content:
 
 Background jobs include significant performance optimizations:
 
-- **⚡ Parallel Embedding** - Processes 32 chunks simultaneously (~30x faster than sequential)
+- **⚡ Parallel Embedding** - Batch processes up to 32 chunks simultaneously
+- **📂 Parallel File I/O** - Processes multiple files concurrently (configurable, default: 4)
 - **🔓 Non-Blocking** - Continue working while indexing completes
 - **📊 Progress Tracking** - Real-time updates on files processed and progress percentage
-- **🧹 Auto-Cleanup** - Completed jobs are cleaned up after 24 hours
+- **🧹 Auto-Cleanup** - Completed/stale jobs are cleaned up automatically
 
 ---
 
