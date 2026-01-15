@@ -1,6 +1,9 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createLogger } from '../logging/index.js';
+
+const logger = createLogger('spawn-worker');
 
 /**
  * Spawn a background worker process to execute a job
@@ -15,25 +18,35 @@ export function spawnBackgroundWorker(jobId: string, dataDir?: string): void {
   // Determine the worker script path
   // In production, this will be the compiled dist file
   // In development, we need to use tsx to run TypeScript
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const currentDir = path.dirname(currentFilePath);
 
   // Check if we're running from dist (production) or src (development)
-  const isProduction = __dirname.includes('/dist/');
+  // Note: In bundled code, import.meta.url may point to a chunk file in dist root
+  const isProduction = currentFilePath.includes('/dist/');
 
   let command: string;
   let args: string[];
 
   if (isProduction) {
     // Production: Use Node.js directly with compiled file
-    const workerScript = path.join(__dirname, 'background-worker-cli.js');
+    // When bundled, the chunk may be in dist/ root, but worker CLI is in dist/workers/
+    // Find the dist directory and construct the correct path
+    const distIndex = currentFilePath.indexOf('/dist/');
+    const distDir = currentFilePath.substring(0, distIndex + 6); // includes '/dist/'
+    const workerScript = path.join(distDir, 'workers', 'background-worker-cli.js');
     command = process.execPath; // Use the same Node.js binary
     args = [workerScript, jobId];
+    logger.debug({ workerScript, distDir, currentFilePath }, 'Production worker path');
   } else {
     // Development: Use tsx to run TypeScript directly
-    const workerScript = path.join(__dirname, 'background-worker-cli.ts');
+    const workerScript = path.join(currentDir, 'background-worker-cli.ts');
     command = 'npx';
     args = ['tsx', workerScript, jobId];
+    logger.debug({ workerScript, currentDir }, 'Development worker path');
   }
+
+  logger.info({ jobId, command, args, dataDir, isProduction }, 'Spawning background worker');
 
   // Spawn the worker process
   const worker = spawn(command, args, {
@@ -44,6 +57,13 @@ export function spawnBackgroundWorker(jobId: string, dataDir?: string): void {
       ...(dataDir !== undefined && dataDir !== '' ? { BLUERA_DATA_DIR: dataDir } : {}), // Only set if provided
     },
   });
+
+  // Handle spawn errors
+  worker.on('error', (err) => {
+    logger.error({ jobId, error: err.message }, 'Failed to spawn background worker');
+  });
+
+  logger.info({ jobId, pid: worker.pid }, 'Background worker spawned');
 
   // Unref the worker so the parent can exit
   worker.unref();

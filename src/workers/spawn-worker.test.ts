@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock child_process before importing spawn-worker
 const mockUnref = vi.fn();
+const mockOn = vi.fn();
 const mockSpawn = vi.fn(() => ({
   unref: mockUnref,
+  on: mockOn,
+  pid: 12345,
 }));
 
 vi.mock('child_process', () => ({
@@ -17,6 +20,7 @@ describe('spawnBackgroundWorker', () => {
   beforeEach(() => {
     mockSpawn.mockClear();
     mockUnref.mockClear();
+    mockOn.mockClear();
   });
 
   it('should use tsx in development mode (src folder)', () => {
@@ -121,8 +125,11 @@ describe('spawnBackgroundWorker', () => {
 // Test production mode with separate import to get fresh module
 describe('spawnBackgroundWorker (production mode)', () => {
   const mockUnrefProd = vi.fn();
+  const mockOnProd = vi.fn();
   const mockSpawnProd = vi.fn(() => ({
     unref: mockUnrefProd,
+    on: mockOnProd,
+    pid: 12345,
   }));
 
   beforeEach(() => {
@@ -157,6 +164,31 @@ describe('spawnBackgroundWorker (production mode)', () => {
     // In production (dist folder), should use Node.js directly
     expect(command).toBe(process.execPath);
     expect(args[0]).toContain('background-worker-cli.js');
+    expect(args[1]).toBe('test-job');
+  });
+
+  it('should correctly calculate worker path when bundled in chunk file (dist root)', async () => {
+    // Mock child_process
+    vi.doMock('child_process', () => ({
+      spawn: mockSpawnProd,
+    }));
+
+    // Mock url module to return a CHUNK file path in dist root (the bug case)
+    vi.doMock('url', () => ({
+      fileURLToPath: () => '/app/dist/chunk-ABC123.js',
+    }));
+
+    // Import fresh module with chunk path
+    const { spawnBackgroundWorker: spawnChunk } = await import('./spawn-worker.js');
+
+    spawnChunk('test-job', '/test/data');
+
+    expect(mockSpawnProd).toHaveBeenCalledTimes(1);
+    const [command, args] = mockSpawnProd.mock.calls[0] as [string, string[]];
+
+    // Should still correctly point to dist/workers/background-worker-cli.js
+    expect(command).toBe(process.execPath);
+    expect(args[0]).toBe('/app/dist/workers/background-worker-cli.js');
     expect(args[1]).toBe('test-job');
   });
 });
