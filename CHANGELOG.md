@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.12.1](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.1) (2026-01-14)
+
+
+### Features
+
+* **hooks:** add PreToolUse hooks for BK suggestions ([23d3fa4](https://github.com/blueraai/bluera-knowledge/commit/23d3fa493dd16427d6bda3ea80064622c6244bba))
+* **hooks:** add skill auto-activation system ([2b4e96b](https://github.com/blueraai/bluera-knowledge/commit/2b4e96bd29f28df63377cdaacab922d4f4321a8f))
+
 ## [0.12.0](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.0) (2026-01-14)
 
 
