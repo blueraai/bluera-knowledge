@@ -218,6 +218,12 @@ export class StoreService {
           updatedAt: now,
         } satisfies WebStore;
         break;
+
+      default: {
+        // Exhaustive check - if this is reached, input.type is invalid
+        const invalidType: never = input.type;
+        return err(new Error(`Invalid store type: ${String(invalidType)}`));
+      }
     }
 
     this.registry.stores.push(store);
@@ -332,14 +338,16 @@ export class StoreService {
     const content = await readFile(registryPath, 'utf-8');
     try {
       // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      const data = JSON.parse(content) as { stores: Store[] };
+      const data = JSON.parse(content) as { stores: (Store | null)[] };
       this.registry = {
-        stores: data.stores.map((s) => ({
-          ...s,
-          id: createStoreId(s.id),
-          createdAt: new Date(s.createdAt),
-          updatedAt: new Date(s.updatedAt),
-        })),
+        stores: data.stores
+          .filter((s): s is Store => s !== null)
+          .map((s) => ({
+            ...s,
+            id: createStoreId(s.id),
+            createdAt: new Date(s.createdAt),
+            updatedAt: new Date(s.updatedAt),
+          })),
       };
     } catch (error) {
       throw new Error(
