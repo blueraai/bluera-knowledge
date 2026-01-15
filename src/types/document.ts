@@ -1,6 +1,30 @@
+import { z } from 'zod';
 import type { DocumentId, StoreId } from './brands.js';
 
-export type DocumentType = 'file' | 'chunk' | 'web';
+// ============================================================================
+// Zod Schemas
+// ============================================================================
+
+export const DocumentTypeSchema = z.enum(['file', 'chunk', 'web']);
+
+export const DocumentMetadataSchema = z
+  .object({
+    path: z.string().optional(),
+    url: z.string().optional(),
+    type: DocumentTypeSchema,
+    storeId: z.string(),
+    indexedAt: z.union([z.string(), z.date()]),
+    fileHash: z.string().optional(),
+    chunkIndex: z.number().optional(),
+    totalChunks: z.number().optional(),
+  })
+  .loose(); // Allow additional fields per index signature
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export type DocumentType = z.infer<typeof DocumentTypeSchema>;
 
 export interface DocumentMetadata {
   readonly path?: string | undefined;

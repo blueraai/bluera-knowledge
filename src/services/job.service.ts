@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { JobSchema } from '../types/job.js';
 import { Result, ok, err } from '../types/result.js';
 import type { Job, CreateJobParams, UpdateJobParams, JobStatus } from '../types/job.js';
 
@@ -90,8 +91,7 @@ export class JobService {
 
     try {
       const content = fs.readFileSync(jobFile, 'utf-8');
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      return JSON.parse(content) as Job;
+      return JobSchema.parse(JSON.parse(content));
     } catch (error) {
       throw new Error(
         `Failed to read job ${jobId}: ${error instanceof Error ? error.message : String(error)}`
@@ -117,8 +117,7 @@ export class JobService {
 
       try {
         const content = fs.readFileSync(path.join(this.jobsDir, file), 'utf-8');
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        const job = JSON.parse(content) as Job;
+        const job = JobSchema.parse(JSON.parse(content));
 
         if (statusFilter !== undefined) {
           const filters = Array.isArray(statusFilter) ? statusFilter : [statusFilter];
