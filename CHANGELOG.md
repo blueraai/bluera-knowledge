@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.12.10](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.10) (2026-01-15)
+
+
+### Features
+
+* **hooks:** add PreToolUse hooks for BK suggestions ([23d3fa4](https://github.com/blueraai/bluera-knowledge/commit/23d3fa493dd16427d6bda3ea80064622c6244bba))
+* **hooks:** add skill auto-activation system ([2b4e96b](https://github.com/blueraai/bluera-knowledge/commit/2b4e96bd29f28df63377cdaacab922d4f4321a8f))
+* **hooks:** improve skill activation with forced evaluation pattern ([f044077](https://github.com/blueraai/bluera-knowledge/commit/f044077d260b78b55a00ebf735b68a2d933f34a7)), closes [#15345](https://github.com/blueraai/bluera-knowledge/issues/15345)
+* **test-plugin:** add hook tests to plugin test suite ([475a776](https://github.com/blueraai/bluera-knowledge/commit/475a7766fea47767a2dfb8148f7e74581de2c2ee))
+* **types:** add Zod validation for JSON parsing ([41348eb](https://github.com/blueraai/bluera-knowledge/commit/41348eb337c33d52174c22097e6788948ad605f8))
+
+
+### Bug Fixes
+
+* **hooks:** use JSON output for PreToolUse hook context injection ([a73977e](https://github.com/blueraai/bluera-knowledge/commit/a73977e0f8f690d43b9d7c987300522dd501fe38))
+* **store:** harden store registry against null entries and invalid types ([c0fedbc](https://github.com/blueraai/bluera-knowledge/commit/c0fedbc5c7f664e46bc8afc7c58bb6d1e1825711))
+* **tests:** stabilize watch service tests in coverage mode ([fdf6c3a](https://github.com/blueraai/bluera-knowledge/commit/fdf6c3a478adff9e4746b54a9519184ca280f344))
+* **workers:** correct worker path calculation for bundled chunks ([8d692db](https://github.com/blueraai/bluera-knowledge/commit/8d692db3ac9706f5702f64abcff1ce149ec6be27))
+* **workers:** harden dataDir handling with explicit checks and add tests ([691cf50](https://github.com/blueraai/bluera-knowledge/commit/691cf50e0531c4083773eae27e26cb46c3d653b6))
+* **workers:** resolve ONNX runtime mutex crash on macOS ([77b66c6](https://github.com/blueraai/bluera-knowledge/commit/77b66c69c811d72366d49d13f35ec7625450dc98))
+
 ## [0.12.9](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.9) (2026-01-15)
 
 
