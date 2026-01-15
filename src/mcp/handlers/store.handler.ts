@@ -157,8 +157,8 @@ export const handleCreateStore: ToolHandler<CreateStoreArgs> = async (
     message: `Indexing ${result.data.name}...`,
   });
 
-  // Spawn background worker (dataDir defaults to project-local .bluera if undefined)
-  spawnBackgroundWorker(job.id, options.dataDir ?? '');
+  // Spawn background worker
+  spawnBackgroundWorker(job.id, options.dataDir);
 
   return {
     content: [
@@ -223,8 +223,8 @@ export const handleIndexStore: ToolHandler<IndexStoreArgs> = async (
     message: `Re-indexing ${store.name}...`,
   });
 
-  // Spawn background worker (dataDir defaults to project-local .bluera if undefined)
-  spawnBackgroundWorker(job.id, options.dataDir ?? '');
+  // Spawn background worker
+  spawnBackgroundWorker(job.id, options.dataDir);
 
   return {
     content: [

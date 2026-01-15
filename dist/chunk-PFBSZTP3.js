@@ -967,8 +967,8 @@ function spawnBackgroundWorker(jobId, dataDir) {
     env: {
       ...process.env,
       // Inherit environment variables
-      BLUERA_DATA_DIR: dataDir
-      // Pass dataDir to worker
+      ...dataDir !== void 0 && dataDir !== "" ? { BLUERA_DATA_DIR: dataDir } : {}
+      // Only set if provided
     }
   });
   worker.unref();
@@ -1064,7 +1064,7 @@ var handleCreateStore = async (args, context) => {
     details: jobDetails,
     message: `Indexing ${result.data.name}...`
   });
-  spawnBackgroundWorker(job.id, options.dataDir ?? "");
+  spawnBackgroundWorker(job.id, options.dataDir);
   return {
     content: [
       {
@@ -1111,7 +1111,7 @@ var handleIndexStore = async (args, context) => {
     details: jobDetails,
     message: `Re-indexing ${store.name}...`
   });
-  spawnBackgroundWorker(job.id, options.dataDir ?? "");
+  spawnBackgroundWorker(job.id, options.dataDir);
   return {
     content: [
       {
@@ -2139,4 +2139,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-CC6EGZ4D.js.map
+//# sourceMappingURL=chunk-PFBSZTP3.js.map

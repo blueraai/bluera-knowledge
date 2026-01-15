@@ -9,8 +9,9 @@ import { fileURLToPath } from 'url';
  * parent to exit while the worker continues running.
  *
  * @param jobId - The ID of the job to execute
+ * @param dataDir - Optional data directory (uses default if undefined)
  */
-export function spawnBackgroundWorker(jobId: string, dataDir: string): void {
+export function spawnBackgroundWorker(jobId: string, dataDir?: string): void {
   // Determine the worker script path
   // In production, this will be the compiled dist file
   // In development, we need to use tsx to run TypeScript
@@ -40,7 +41,7 @@ export function spawnBackgroundWorker(jobId: string, dataDir: string): void {
     stdio: 'ignore', // Don't pipe stdio (fully independent)
     env: {
       ...process.env, // Inherit environment variables
-      BLUERA_DATA_DIR: dataDir, // Pass dataDir to worker
+      ...(dataDir !== undefined && dataDir !== '' ? { BLUERA_DATA_DIR: dataDir } : {}), // Only set if provided
     },
   });
 
