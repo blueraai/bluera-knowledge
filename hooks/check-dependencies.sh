@@ -1,6 +1,15 @@
 #!/bin/bash
 # Bluera Knowledge Plugin - Dependency Checker
 # Automatically checks and installs dependencies for the plugin
+#
+# Environment variables:
+#   BK_SKIP_AUTO_INSTALL=1  - Skip automatic pip installation of crawl4ai
+#                             Set this if you prefer to manage Python packages manually
+#
+# What this script auto-installs (if missing):
+#   - Node.js dependencies (via bun or npm, from package.json)
+#   - crawl4ai Python package (via pip, for web crawling)
+#   - Playwright Chromium browser (via playwright CLI, for headless crawling)
 
 set -e
 
@@ -95,9 +104,17 @@ echo -e "${YELLOW}To enable web crawling, install crawl4ai:${NC}"
 echo -e "  ${GREEN}pip install crawl4ai${NC}"
 echo ""
 
+# Check if auto-install is disabled
+if [ "${BK_SKIP_AUTO_INSTALL:-}" = "1" ]; then
+    echo -e "${YELLOW}[bluera-knowledge] Auto-install disabled (BK_SKIP_AUTO_INSTALL=1)${NC}"
+    echo -e "${YELLOW}Install manually: pip install crawl4ai && python3 -m playwright install chromium${NC}"
+    exit 0
+fi
+
 # Check if we should auto-install
 if command -v pip3 &> /dev/null || command -v pip &> /dev/null; then
-    echo -e "${YELLOW}Attempting automatic installation via pip...${NC}"
+    echo -e "${YELLOW}[bluera-knowledge] Auto-installing crawl4ai via pip...${NC}"
+    echo -e "${YELLOW}(Set BK_SKIP_AUTO_INSTALL=1 to disable auto-install)${NC}"
 
     # Try to install using pip3 or pip
     if command -v pip3 &> /dev/null; then

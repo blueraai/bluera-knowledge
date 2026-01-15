@@ -1180,6 +1180,14 @@ pip install crawl4ai
 playwright install chromium
 ```
 
+**Disable auto-install (security-conscious environments):**
+
+Set the `BK_SKIP_AUTO_INSTALL` environment variable to disable automatic pip package installation:
+
+```bash
+export BK_SKIP_AUTO_INSTALL=1
+```
+
 > [!NOTE]
 > The plugin will work without crawl4ai/playwright, but web crawling features (`/bluera-knowledge:crawl`) will be unavailable. The default mode uses headless browser for maximum compatibility with JavaScript-rendered sites. Use `--fast` for static sites when speed is critical.
 
