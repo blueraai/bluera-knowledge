@@ -422,6 +422,93 @@ describe('JobService', () => {
     });
   });
 
+  describe('cleanupStalePendingJobs', () => {
+    it('should clean up pending jobs that have been stale for too long', () => {
+      const job = jobService.createJob({
+        type: 'index',
+        details: { storeId: 'test' },
+      });
+      // Job stays in pending status (never started)
+
+      // Make it stale (3 hours old)
+      const jobFile = join(tempDir, 'jobs', `${job.id}.json`);
+      const jobData = JSON.parse(readFileSync(jobFile, 'utf-8'));
+      jobData.updatedAt = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      writeFileSync(jobFile, JSON.stringify(jobData), 'utf-8');
+
+      const cleaned = jobService.cleanupStalePendingJobs(2);
+      expect(cleaned).toBe(1);
+      expect(existsSync(jobFile)).toBe(false);
+    });
+
+    it('should mark stale pending jobs as failed before cleanup', () => {
+      const job = jobService.createJob({
+        type: 'index',
+        details: { storeId: 'test' },
+      });
+
+      // Make it stale
+      const jobFile = join(tempDir, 'jobs', `${job.id}.json`);
+      const jobData = JSON.parse(readFileSync(jobFile, 'utf-8'));
+      jobData.updatedAt = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      writeFileSync(jobFile, JSON.stringify(jobData), 'utf-8');
+
+      // Should mark as failed (not just delete)
+      jobService.cleanupStalePendingJobs(2, { markAsFailed: true });
+
+      const updated = jobService.getJob(job.id);
+      expect(updated?.status).toBe('failed');
+      expect(updated?.message).toContain('stale');
+    });
+
+    it('should not clean up recently created pending jobs', () => {
+      const job = jobService.createJob({
+        type: 'index',
+        details: { storeId: 'test' },
+      });
+      // Job is pending but recent
+
+      const cleaned = jobService.cleanupStalePendingJobs(2);
+      expect(cleaned).toBe(0);
+
+      const retrieved = jobService.getJob(job.id);
+      expect(retrieved).not.toBeNull();
+    });
+
+    it('should not clean up running jobs even if old', () => {
+      const job = jobService.createJob({
+        type: 'index',
+        details: { storeId: 'test' },
+      });
+      jobService.updateJob(job.id, { status: 'running' });
+
+      // Make it old
+      const jobFile = join(tempDir, 'jobs', `${job.id}.json`);
+      const jobData = JSON.parse(readFileSync(jobFile, 'utf-8'));
+      jobData.updatedAt = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+      writeFileSync(jobFile, JSON.stringify(jobData), 'utf-8');
+
+      const cleaned = jobService.cleanupStalePendingJobs(2);
+      expect(cleaned).toBe(0);
+    });
+
+    it('should use default 2 hours if not specified', () => {
+      const job = jobService.createJob({
+        type: 'index',
+        details: { storeId: 'test' },
+      });
+
+      // Make it 3 hours old
+      const jobFile = join(tempDir, 'jobs', `${job.id}.json`);
+      const jobData = JSON.parse(readFileSync(jobFile, 'utf-8'));
+      jobData.updatedAt = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      writeFileSync(jobFile, JSON.stringify(jobData), 'utf-8');
+
+      const cleaned = jobService.cleanupStalePendingJobs();
+      expect(cleaned).toBe(1);
+    });
+  });
+
   describe('deleteJob', () => {
     it('should delete a job file', () => {
       const job = jobService.createJob({
