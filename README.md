@@ -1657,7 +1657,8 @@ This creates a separate `bluera-knowledge-dev` MCP server that runs source TypeS
 | `bun run test:coverage:verbose` | 📢 Coverage (full output) | Reviewing detailed coverage |
 | `bun run build:verbose` | 📢 Build (full output) | Debugging build issues |
 | `bun run gh:status` | 📋 List recent GitHub Actions runs | Monitor CI/CD status |
-| `bun run gh:watch` | 👁️ Watch latest workflow run | Wait for CI completion |
+| `bun run gh:watch` | 👁️ Watch latest workflow (quiet, shows result + failures) | Wait for CI completion |
+| `bun run gh:watch:verbose` | 📢 Watch with live status updates | Debugging CI issues |
 | `bun run gh:releases` | 🏷️ List recent GitHub releases | Check release history |
 
 ### 🔄 Automatic Build & Dist Commit
