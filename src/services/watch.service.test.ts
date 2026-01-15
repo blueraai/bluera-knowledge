@@ -21,6 +21,9 @@ vi.mock('chokidar', () => ({
   }),
 }));
 
+// Import chokidar once after mock is set up to avoid dynamic import flakiness
+import * as chokidar from 'chokidar';
+
 describe('WatchService', () => {
   let watchService: WatchService;
   let mockIndexService: IndexService;
@@ -78,7 +81,7 @@ describe('WatchService', () => {
     const noopErrorHandler = (): void => {};
 
     it('starts watching a file store', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
@@ -93,7 +96,7 @@ describe('WatchService', () => {
     });
 
     it('starts watching a repo store', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockRepoStore, 1000, undefined, noopErrorHandler);
 
@@ -109,7 +112,7 @@ describe('WatchService', () => {
     });
 
     it('does not start watching if already watching the same store', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
       const callCount1 = (watch as ReturnType<typeof vi.fn>).mock.calls.length;
@@ -121,7 +124,7 @@ describe('WatchService', () => {
     });
 
     it('allows watching multiple different stores', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
       await watchService.watch(mockRepoStore, 1000, undefined, noopErrorHandler);
@@ -454,7 +457,7 @@ describe('WatchService', () => {
     });
 
     it('removes watcher from internal map', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
       await watchService.unwatch(mockFileStore.id);
@@ -523,7 +526,7 @@ describe('WatchService', () => {
     });
 
     it('clears all watchers from map', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
       await watchService.watch(mockRepoStore, 1000, undefined, noopErrorHandler);
@@ -546,7 +549,7 @@ describe('WatchService', () => {
     const noopErrorHandler = (): void => {};
 
     it('ignores .git directories', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
@@ -557,7 +560,7 @@ describe('WatchService', () => {
     });
 
     it('ignores node_modules directories', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
@@ -567,7 +570,7 @@ describe('WatchService', () => {
     });
 
     it('ignores dist and build directories', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
@@ -577,7 +580,7 @@ describe('WatchService', () => {
     });
 
     it('sets persistent to true', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
@@ -586,7 +589,7 @@ describe('WatchService', () => {
     });
 
     it('sets ignoreInitial to true', async () => {
-      const { watch } = await import('chokidar');
+      const { watch } = chokidar;
 
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
