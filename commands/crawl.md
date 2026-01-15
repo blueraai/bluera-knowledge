@@ -1,7 +1,8 @@
 ---
 description: Crawl web pages with natural language control and add to knowledge store
 argument-hint: "[url] [store-name] [--crawl instruction] [--extract instruction] [--fast]"
-allowed-tools: [Bash(*)]
+allowed-tools: ["Bash(node ${CLAUDE_PLUGIN_ROOT}/dist/index.js crawl:*)"]
+context: fork
 ---
 
 Crawling and indexing: $ARGUMENTS

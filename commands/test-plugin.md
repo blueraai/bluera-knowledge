@@ -1,3 +1,8 @@
+---
+description: Run comprehensive plugin validation test suite
+context: fork
+---
+
 # Test Plugin
 
 Comprehensive test of all Bluera Knowledge plugin functionality (MCP tools + slash commands).
