@@ -40,12 +40,12 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/job-status-hook.sh",
-            "timeout": 5
+            "timeout": 2
           },
           {
             "type": "command",
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/skill-activation.py",
-            "timeout": 5
+            "timeout": 2
           }
         ]
       }

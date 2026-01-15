@@ -10,6 +10,20 @@ import re
 import sys
 from typing import Any
 
+# Fast string checks - if none of these are in the path, skip regex entirely
+# This avoids regex overhead for the vast majority of file accesses
+LIBRARY_QUICK_CHECKS = frozenset([
+    "node_modules",
+    "vendor",
+    "site-packages",
+    "venv",
+    "bower_components",
+    "packages",
+    ".npm",
+    ".cargo",
+    "go/pkg",
+])
+
 # Patterns indicating library/dependency code
 LIBRARY_PATH_PATTERNS = [
     r"node_modules/",
@@ -26,6 +40,12 @@ LIBRARY_PATH_PATTERNS = [
 
 # Compile patterns for efficiency
 LIBRARY_PATTERNS_RE = re.compile("|".join(LIBRARY_PATH_PATTERNS), re.IGNORECASE)
+
+
+def quick_path_check(path: str) -> bool:
+    """Fast check if path might contain library code. Avoids regex for most paths."""
+    path_lower = path.lower()
+    return any(keyword in path_lower for keyword in LIBRARY_QUICK_CHECKS)
 
 
 def extract_library_name(path: str) -> str | None:
@@ -62,7 +82,11 @@ def check_grep_tool(tool_input: dict[str, Any]) -> tuple[str | None, str | None]
     """Check if Grep targeted library code. Returns (action, library_name)."""
     path = tool_input.get("path", "")
 
-    if path and LIBRARY_PATTERNS_RE.search(path):
+    # Fast path: skip regex if no library keywords present
+    if not path or not quick_path_check(path):
+        return None, None
+
+    if LIBRARY_PATTERNS_RE.search(path):
         lib_name = extract_library_name(path)
         return f"grepped in `{path}`", lib_name
 
@@ -73,7 +97,11 @@ def check_read_tool(tool_input: dict[str, Any]) -> tuple[str | None, str | None]
     """Check if Read targeted library code. Returns (action, library_name)."""
     file_path = tool_input.get("file_path", "")
 
-    if file_path and LIBRARY_PATTERNS_RE.search(file_path):
+    # Fast path: skip regex if no library keywords present
+    if not file_path or not quick_path_check(file_path):
+        return None, None
+
+    if LIBRARY_PATTERNS_RE.search(file_path):
         lib_name = extract_library_name(file_path)
         return f"read `{file_path}`", lib_name
 
