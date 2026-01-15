@@ -1,5 +1,6 @@
 import * as lancedb from '@lancedb/lancedb';
 import { createDocumentId } from '../types/brands.js';
+import { DocumentMetadataSchema } from '../types/document.js';
 import type { StoreId, DocumentId } from '../types/brands.js';
 import type { Document, DocumentMetadata } from '../types/document.js';
 import type { Table, Connection } from '@lancedb/lancedb';
@@ -88,13 +89,17 @@ export class LanceStore {
 
     // Return all results - threshold filtering is applied after score normalization
     // in search.service.ts to match displayed scores
-    return results.map((r) => ({
-      id: createDocumentId(r.id),
-      content: r.content,
-      score: 1 - r._distance,
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      metadata: JSON.parse(r.metadata) as DocumentMetadata,
-    }));
+    return results.map((r) => {
+      const metadata = DocumentMetadataSchema.parse(JSON.parse(r.metadata));
+      return {
+        id: createDocumentId(r.id),
+        content: r.content,
+        score: 1 - r._distance,
+        // Schema validates structure, cast to branded type
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        metadata: metadata as DocumentMetadata,
+      };
+    });
   }
 
   async createFtsIndex(storeId: StoreId): Promise<void> {
@@ -121,13 +126,17 @@ export class LanceStore {
       _score: number;
     }>;
 
-    return results.map((r) => ({
-      id: createDocumentId(r.id),
-      content: r.content,
-      score: r._score,
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      metadata: JSON.parse(r.metadata) as DocumentMetadata,
-    }));
+    return results.map((r) => {
+      const metadata = DocumentMetadataSchema.parse(JSON.parse(r.metadata));
+      return {
+        id: createDocumentId(r.id),
+        content: r.content,
+        score: r._score,
+        // Schema validates structure, cast to branded type
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        metadata: metadata as DocumentMetadata,
+      };
+    });
   }
 
   async deleteStore(storeId: StoreId): Promise<void> {

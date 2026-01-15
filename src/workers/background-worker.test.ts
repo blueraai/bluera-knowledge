@@ -59,7 +59,10 @@ describe('BackgroundWorker', () => {
         details: { storeId: 'test' },
       });
 
-      await expect(worker.executeJob(job.id)).rejects.toThrow('Unknown job type: unknown');
+      // Zod validation catches invalid job type when reading the job file
+      await expect(worker.executeJob(job.id)).rejects.toThrow(
+        /Invalid option.*clone.*index.*crawl/
+      );
     });
 
     it('should set job to running status before execution', async () => {
