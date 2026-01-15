@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-BMY3BWB6.js";
+} from "../chunk-6777ULXC.js";
 import {
   JobService,
   createDocumentId,
   createLogger,
   createServices,
   createStoreId,
+  destroyServices,
   shutdownLogger
-} from "../chunk-RISACKN5.js";
+} from "../chunk-VTATT3IR.js";
 import "../chunk-HRQD3MPH.js";
+
+// src/workers/background-worker-cli.ts
+import { platform } from "os";
 
 // src/workers/background-worker.ts
 import { createHash } from "crypto";
@@ -276,6 +280,15 @@ function buildPidFilePath(jobsDir, jobId) {
 }
 
 // src/workers/background-worker-cli.ts
+function forceExitOnMacOS(exitCode) {
+  if (platform() === "darwin") {
+    setTimeout(() => {
+      process.kill(process.pid, "SIGKILL");
+    }, 100);
+  } else {
+    process.exit(exitCode);
+  }
+}
 var logger2 = createLogger("background-worker-cli");
 async function main() {
   const jobId = process.argv[2];
@@ -334,8 +347,9 @@ async function main() {
       );
     }
     logger2.info({ jobId }, "Job completed successfully");
+    await destroyServices(services);
     await shutdownLogger();
-    process.exit(0);
+    forceExitOnMacOS(0);
   } catch (error) {
     logger2.error(
       { jobId, error: error instanceof Error ? error.message : String(error) },
@@ -348,8 +362,9 @@ async function main() {
         "Could not remove PID file after failure"
       );
     }
+    await destroyServices(services);
     await shutdownLogger();
-    process.exit(1);
+    forceExitOnMacOS(1);
   }
 }
 main().catch(async (error) => {
@@ -358,6 +373,6 @@ main().catch(async (error) => {
     "Fatal error in background worker"
   );
   await shutdownLogger();
-  process.exit(1);
+  forceExitOnMacOS(1);
 });
 //# sourceMappingURL=background-worker-cli.js.map

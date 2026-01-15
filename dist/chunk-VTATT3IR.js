@@ -4383,6 +4383,16 @@ var EmbeddingEngine = class {
   getDimensions() {
     return this.dimensions;
   }
+  /**
+   * Dispose the embedding pipeline to free resources.
+   * Should be called before process exit to prevent ONNX runtime cleanup issues on macOS.
+   */
+  async dispose() {
+    if (this.extractor !== null) {
+      await this.extractor.dispose();
+      this.extractor = null;
+    }
+  }
 };
 
 // src/db/lance.ts
@@ -4565,6 +4575,13 @@ async function destroyServices(services) {
     errors.push(error);
   }
   try {
+    await services.embeddings.dispose();
+  } catch (e) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger4.error({ error }, "Error disposing EmbeddingEngine");
+    errors.push(error);
+  }
+  try {
     await services.pythonBridge.stop();
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
@@ -4600,4 +4617,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RISACKN5.js.map
+//# sourceMappingURL=chunk-VTATT3IR.js.map

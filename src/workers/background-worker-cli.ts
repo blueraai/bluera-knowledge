@@ -1,9 +1,33 @@
 #!/usr/bin/env node
+import { platform } from 'os';
 import { BackgroundWorker } from './background-worker.js';
 import { writePidFile, deletePidFile, buildPidFilePath } from './pid-file.js';
 import { createLogger, shutdownLogger } from '../logging/index.js';
-import { createServices } from '../services/index.js';
+import { createServices, destroyServices } from '../services/index.js';
 import { JobService } from '../services/job.service.js';
+
+/**
+ * Force exit the process to avoid ONNX runtime mutex crash on macOS.
+ *
+ * On macOS, the ONNX runtime (used by transformers.js for embeddings) has a known
+ * bug where static mutex cleanup fails during process exit, causing a crash with:
+ * "mutex lock failed: Invalid argument"
+ *
+ * This doesn't affect job completion - all work is done and persisted before exit.
+ * Using SIGKILL bypasses the problematic cleanup code.
+ *
+ * See: https://github.com/microsoft/onnxruntime/issues/24579
+ */
+function forceExitOnMacOS(exitCode: number): void {
+  if (platform() === 'darwin') {
+    // Give time for any pending I/O to flush
+    setTimeout(() => {
+      process.kill(process.pid, 'SIGKILL');
+    }, 100);
+  } else {
+    process.exit(exitCode);
+  }
+}
 
 const logger = createLogger('background-worker-cli');
 
@@ -90,8 +114,9 @@ async function main(): Promise<void> {
     }
 
     logger.info({ jobId }, 'Job completed successfully');
+    await destroyServices(services);
     await shutdownLogger();
-    process.exit(0);
+    forceExitOnMacOS(0);
   } catch (error) {
     // Job service already updated with failure status in BackgroundWorker
     logger.error(
@@ -108,8 +133,9 @@ async function main(): Promise<void> {
       );
     }
 
+    await destroyServices(services);
     await shutdownLogger();
-    process.exit(1);
+    forceExitOnMacOS(1);
   }
 }
 
@@ -119,5 +145,5 @@ main().catch(async (error: unknown) => {
     'Fatal error in background worker'
   );
   await shutdownLogger();
-  process.exit(1);
+  forceExitOnMacOS(1);
 });

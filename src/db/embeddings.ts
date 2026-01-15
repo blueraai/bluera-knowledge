@@ -64,4 +64,15 @@ export class EmbeddingEngine {
   getDimensions(): number {
     return this.dimensions;
   }
+
+  /**
+   * Dispose the embedding pipeline to free resources.
+   * Should be called before process exit to prevent ONNX runtime cleanup issues on macOS.
+   */
+  async dispose(): Promise<void> {
+    if (this.extractor !== null) {
+      await this.extractor.dispose();
+      this.extractor = null;
+    }
+  }
 }
