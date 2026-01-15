@@ -95,28 +95,26 @@ def score_skill(
 def generate_reminder(
     matches: list[tuple[str, int, list[str], str]]
 ) -> str:
-    """Generate the system-reminder for matched skills."""
+    """Generate assertive skill activation reminder using forced evaluation pattern."""
     lines = [
-        "<system-reminder>",
-        "BLUERA-KNOWLEDGE SKILL ACTIVATION",
+        "BLUERA-KNOWLEDGE SKILL ACTIVATION - MANDATORY EVALUATION",
         "",
-        "The user's prompt suggests they may benefit from these skills.",
-        "For EACH skill below, decide YES/NO:",
-        "- YES: Invoke via Skill tool: Skill(skill='bluera-knowledge:<skill-name>')",
-        "- NO: Skip (user doesn't need this guidance)",
+        "CRITICAL: Complete these steps IN ORDER before answering:",
         "",
-        "Candidate skills (ranked by relevance):",
+        "STEP 1 - EVALUATE each skill (YES/NO with one-line reason):",
     ]
 
     for name, score, reasons, description in matches:
-        lines.append(f"")
-        lines.append(f"  [{name}] (score={score})")
-        lines.append(f"  Purpose: {description}")
-        lines.append(f"  Matched: {', '.join(reasons[:3])}")
+        lines.append(f"  • [{name}] - {description}")
+        lines.append(f"    Triggered by: {', '.join(reasons[:2])}")
 
     lines.append("")
-    lines.append("Evaluate quickly, then answer the user's question.")
-    lines.append("</system-reminder>")
+    lines.append("STEP 2 - ACTIVATE: For each YES, invoke Skill(skill='bluera-knowledge:<name>') NOW")
+    lines.append("")
+    lines.append("STEP 3 - RESPOND: Only after activation, answer the user's question")
+    lines.append("")
+    lines.append("WARNING: This evaluation is WORTHLESS if you skip activation.")
+    lines.append("Skills provide indexed library knowledge - faster than grepping node_modules.")
 
     return "\n".join(lines)
 
@@ -179,9 +177,15 @@ def main() -> int:
     # Sort by score (highest first)
     matches.sort(key=lambda t: t[1], reverse=True)
 
-    # Generate and output the reminder
+    # Generate and output the reminder using proper JSON format
     reminder = generate_reminder(matches)
-    print(reminder)
+    output = {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": reminder,
+        }
+    }
+    print(json.dumps(output))
 
     return 0
 
