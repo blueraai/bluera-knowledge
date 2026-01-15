@@ -92,6 +92,30 @@ describe('spawnBackgroundWorker', () => {
 
     expect(options.env.BLUERA_DATA_DIR).toBe(testDataDir);
   });
+
+  it('should NOT set BLUERA_DATA_DIR when dataDir is undefined', () => {
+    spawnBackgroundWorker('test-job');
+
+    const [, , options] = mockSpawn.mock.calls[0] as [
+      string,
+      string[],
+      { env: Record<string, string> },
+    ];
+
+    expect(options.env).not.toHaveProperty('BLUERA_DATA_DIR');
+  });
+
+  it('should NOT set BLUERA_DATA_DIR when dataDir is empty string', () => {
+    spawnBackgroundWorker('test-job', '');
+
+    const [, , options] = mockSpawn.mock.calls[0] as [
+      string,
+      string[],
+      { env: Record<string, string> },
+    ];
+
+    expect(options.env).not.toHaveProperty('BLUERA_DATA_DIR');
+  });
 });
 
 // Test production mode with separate import to get fresh module
