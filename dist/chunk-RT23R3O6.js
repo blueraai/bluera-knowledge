@@ -4618,6 +4618,96 @@ var LanceStore = class {
 
 // src/services/index.ts
 var logger4 = createLogger("services");
+var LazyServiceContainer = class {
+  // Eagerly initialized (lightweight)
+  config;
+  store;
+  lance;
+  pythonBridge;
+  // Configuration for lazy initialization
+  appConfig;
+  dataDir;
+  // Lazily initialized (heavy)
+  _embeddings = null;
+  _codeGraph = null;
+  _search = null;
+  _index = null;
+  constructor(config, appConfig, dataDir, store, lance, pythonBridge) {
+    this.config = config;
+    this.appConfig = appConfig;
+    this.dataDir = dataDir;
+    this.store = store;
+    this.lance = lance;
+    this.pythonBridge = pythonBridge;
+  }
+  /**
+   * EmbeddingEngine is lazily created on first access.
+   * Model loading (3-10s) is deferred until embed() is called.
+   */
+  get embeddings() {
+    if (this._embeddings === null) {
+      logger4.debug("Lazy-initializing EmbeddingEngine");
+      this._embeddings = new EmbeddingEngine(
+        this.appConfig.embedding.model,
+        this.appConfig.embedding.dimensions
+      );
+    }
+    return this._embeddings;
+  }
+  /**
+   * CodeGraphService is lazily created on first access.
+   */
+  get codeGraph() {
+    if (this._codeGraph === null) {
+      logger4.debug("Lazy-initializing CodeGraphService");
+      this._codeGraph = new CodeGraphService(this.dataDir, this.pythonBridge);
+    }
+    return this._codeGraph;
+  }
+  /**
+   * SearchService is lazily created on first access.
+   */
+  get search() {
+    if (this._search === null) {
+      logger4.debug("Lazy-initializing SearchService");
+      this._search = new SearchService(this.lance, this.embeddings, this.codeGraph);
+    }
+    return this._search;
+  }
+  /**
+   * IndexService is lazily created on first access.
+   */
+  get index() {
+    if (this._index === null) {
+      logger4.debug("Lazy-initializing IndexService");
+      this._index = new IndexService(this.lance, this.embeddings, {
+        codeGraphService: this.codeGraph
+      });
+    }
+    return this._index;
+  }
+  /**
+   * Check if embeddings have been initialized (for cleanup purposes).
+   */
+  get hasEmbeddings() {
+    return this._embeddings !== null;
+  }
+};
+async function createLazyServices(configPath, dataDir, projectRoot) {
+  logger4.info({ configPath, dataDir, projectRoot }, "Initializing lazy services");
+  const startTime = Date.now();
+  const config = new ConfigService(configPath, dataDir, projectRoot);
+  const appConfig = await config.load();
+  const resolvedDataDir = config.resolveDataDir();
+  const pythonBridge = new PythonBridge();
+  await pythonBridge.start();
+  const lance = new LanceStore(resolvedDataDir);
+  const store = new StoreService(resolvedDataDir);
+  await store.initialize();
+  const durationMs = Date.now() - startTime;
+  logger4.info({ dataDir: resolvedDataDir, durationMs }, "Lazy services initialized");
+  return new LazyServiceContainer(config, appConfig, resolvedDataDir, store, lance, pythonBridge);
+}
 async function createServices(configPath, dataDir, projectRoot) {
   logger4.info({ configPath, dataDir, projectRoot }, "Initializing services");
   const config = new ConfigService(configPath, dataDir, projectRoot);
@@ -4655,12 +4745,18 @@ async function destroyServices(services) {
     logger4.error({ error }, "Error stopping Python bridge");
     errors.push(error);
   }
-  try {
-    await services.embeddings.dispose();
-  } catch (e) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    logger4.error({ error }, "Error disposing EmbeddingEngine");
-    errors.push(error);
+  const isLazyContainer = services instanceof LazyServiceContainer;
+  const shouldDisposeEmbeddings = !isLazyContainer || services.hasEmbeddings;
+  if (shouldDisposeEmbeddings) {
+    try {
+      await services.embeddings.dispose();
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      logger4.error({ error }, "Error disposing EmbeddingEngine");
+      errors.push(error);
+    }
+  } else {
+    logger4.debug("Skipping embeddings disposal (not initialized)");
   }
   try {
     await services.lance.closeAsync();
@@ -4694,7 +4790,8 @@ export {
   classifyWebContentType,
   extractRepoName,
   JobService,
+  createLazyServices,
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-5VW5DNW4.js.map
+//# sourceMappingURL=chunk-RT23R3O6.js.map

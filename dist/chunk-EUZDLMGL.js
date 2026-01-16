@@ -2,12 +2,12 @@ import {
   AdapterRegistry,
   JobService,
   ProjectRootService,
+  createLazyServices,
   createLogger,
-  createServices,
   createStoreId,
   destroyServices,
   summarizePayload
-} from "./chunk-5VW5DNW4.js";
+} from "./chunk-RT23R3O6.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -2080,7 +2080,7 @@ var registry = AdapterRegistry.getInstance();
 if (!registry.hasExtension(".zil")) {
   registry.register(new ZilAdapter());
 }
-function createMCPServer(options) {
+function createMCPServer(options, services) {
   const server = new Server(
     {
       name: "bluera-knowledge",
@@ -2192,7 +2192,6 @@ function createMCPServer(options) {
     const { name, arguments: args } = request.params;
     const startTime = Date.now();
     logger4.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
-    const services = await createServices(options.config, options.dataDir, options.projectRoot);
     const context = { services, options };
     try {
       let result;
@@ -2221,8 +2220,6 @@ function createMCPServer(options) {
         "Tool execution failed"
       );
       throw error;
-    } finally {
-      await destroyServices(services);
     }
   });
   return server;
@@ -2235,8 +2232,23 @@ async function runMCPServer(options) {
     },
     "MCP server starting"
   );
-  const server = createMCPServer(options);
+  const services = await createLazyServices(options.config, options.dataDir, options.projectRoot);
+  const server = createMCPServer(options, services);
   const transport = new StdioServerTransport();
+  const shutdown = async (signal) => {
+    logger4.info({ signal }, "Shutdown signal received");
+    try {
+      await destroyServices(services);
+      logger4.info("Services destroyed, exiting");
+    } catch (error) {
+      logger4.error(
+        { error: error instanceof Error ? error.message : String(error) },
+        "Error during shutdown"
+      );
+    }
+  };
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
   await server.connect(transport);
   logger4.info("MCP server connected to stdio transport");
 }
@@ -2270,4 +2282,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-SWHYQLSJ.js.map
+//# sourceMappingURL=chunk-EUZDLMGL.js.map
