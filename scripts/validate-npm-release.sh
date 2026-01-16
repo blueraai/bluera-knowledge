@@ -262,16 +262,32 @@ run_test_contains "Sync created store" "sync-test-store" "bluera-knowledge store
 # Clean up sync test store
 bluera-knowledge store delete "sync-test-store" --force -d "$DATA_DIR" 2>/dev/null || true
 
-# Test crawl
-log_header "Testing crawl"
-CRAWL_STORE="npm-validation-crawl-$TIMESTAMP"
+# Test crawl (simple mode - no Claude CLI required)
+log_header "Testing crawl (simple mode)"
+CRAWL_SIMPLE_STORE="npm-validation-crawl-simple-$TIMESTAMP"
 # Create web store first
-run_test "bluera-knowledge store create (web)" "bluera-knowledge store create '$CRAWL_STORE' -t web -s 'https://code.claude.com' -d '$DATA_DIR'"
-# Crawl Claude Code docs - should find main section headings
-run_test "bluera-knowledge crawl" "bluera-knowledge crawl 'https://code.claude.com/docs/' '$CRAWL_STORE' --crawl 'all documentation section links' --max-pages 5 -d '$DATA_DIR'"
-# Verify crawl indexed content (should find "Getting Started" section)
-run_test_contains "Crawl indexed docs content" "Getting Started" "bluera-knowledge search 'getting started guide' --stores '$CRAWL_STORE' -d '$DATA_DIR' --include-content"
-bluera-knowledge store delete "$CRAWL_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
+run_test "bluera-knowledge store create (web, simple)" "bluera-knowledge store create '$CRAWL_SIMPLE_STORE' -t web -s 'https://code.claude.com' -d '$DATA_DIR'"
+# Crawl using --simple mode (BFS, no Claude CLI)
+run_test "bluera-knowledge crawl --simple" "bluera-knowledge crawl 'https://code.claude.com/docs/' '$CRAWL_SIMPLE_STORE' --simple --max-pages 3 --fast -d '$DATA_DIR'"
+# Verify crawl indexed content
+run_test_contains "Simple crawl indexed content" "Claude" "bluera-knowledge search 'Claude Code' --stores '$CRAWL_SIMPLE_STORE' -d '$DATA_DIR' --include-content"
+bluera-knowledge store delete "$CRAWL_SIMPLE_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
+
+# Test crawl (intelligent mode - requires Claude CLI)
+log_header "Testing crawl (intelligent mode)"
+CRAWL_STORE="npm-validation-crawl-$TIMESTAMP"
+# Check if Claude CLI is available
+if command -v claude >/dev/null 2>&1 || [ -f "$HOME/.claude/local/claude" ] || [ -f "$HOME/.local/bin/claude" ]; then
+    # Create web store first
+    run_test "bluera-knowledge store create (web)" "bluera-knowledge store create '$CRAWL_STORE' -t web -s 'https://code.claude.com' -d '$DATA_DIR'"
+    # Crawl Claude Code docs with intelligent mode
+    run_test "bluera-knowledge crawl (intelligent)" "bluera-knowledge crawl 'https://code.claude.com/docs/' '$CRAWL_STORE' --crawl 'all documentation section links' --max-pages 5 -d '$DATA_DIR'"
+    # Verify crawl indexed content (should find "Getting Started" section)
+    run_test_contains "Intelligent crawl indexed content" "Getting Started" "bluera-knowledge search 'getting started guide' --stores '$CRAWL_STORE' -d '$DATA_DIR' --include-content"
+    bluera-knowledge store delete "$CRAWL_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
+else
+    log "SKIP: Intelligent crawl test (Claude CLI not available)"
+fi
 
 # Test setup repos (list only - don't actually clone all repos)
 log_header "Testing setup repos"

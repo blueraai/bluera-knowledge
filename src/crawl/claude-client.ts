@@ -4,6 +4,9 @@
  */
 
 import { spawn, execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 /**
  * Schema for crawl strategy response from Claude
@@ -36,22 +39,67 @@ export class ClaudeClient {
   private readonly timeout: number;
   private static availabilityChecked = false;
   private static available = false;
+  private static claudePath: string | null = null;
 
   /**
-   * Check if Claude CLI is available in PATH
+   * Get the path to the Claude CLI binary
+   * Checks in order:
+   * 1. CLAUDE_BIN environment variable (explicit override)
+   * 2. ~/.claude/local/claude (newer installation location)
+   * 3. ~/.local/bin/claude (standard installation location)
+   * 4. 'claude' in PATH (custom installations)
+   */
+  static getClaudePath(): string | null {
+    // Check environment variable override
+    const envPath = process.env['CLAUDE_BIN'];
+    if (envPath !== undefined && envPath !== '' && existsSync(envPath)) {
+      return envPath;
+    }
+
+    // Check ~/.claude/local/claude (newer location)
+    const claudeLocalPath = join(homedir(), '.claude', 'local', 'claude');
+    if (existsSync(claudeLocalPath)) {
+      return claudeLocalPath;
+    }
+
+    // Check ~/.local/bin/claude (standard location)
+    const localBinPath = join(homedir(), '.local', 'bin', 'claude');
+    if (existsSync(localBinPath)) {
+      return localBinPath;
+    }
+
+    // Check if 'claude' is in PATH (custom installations, uses 'command -v' which handles aliases)
+    try {
+      const result = execSync('command -v claude', { stdio: ['pipe', 'pipe', 'ignore'] });
+      const path = result.toString().trim();
+      if (path) {
+        return path;
+      }
+    } catch {
+      // Not in PATH
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if Claude CLI is available
    * Result is cached after first check for performance
    */
   static isAvailable(): boolean {
     if (!ClaudeClient.availabilityChecked) {
-      try {
-        execSync('which claude', { stdio: 'ignore' });
-        ClaudeClient.available = true;
-      } catch {
-        ClaudeClient.available = false;
-      }
+      ClaudeClient.claudePath = ClaudeClient.getClaudePath();
+      ClaudeClient.available = ClaudeClient.claudePath !== null;
       ClaudeClient.availabilityChecked = true;
     }
     return ClaudeClient.available;
+  }
+
+  /**
+   * Get the cached Claude path (call isAvailable first)
+   */
+  static getCachedPath(): string | null {
+    return ClaudeClient.claudePath;
   }
 
   /**
@@ -157,6 +205,13 @@ ${this.truncateMarkdown(markdown, 100000)}`;
    */
   private async callClaude(prompt: string, jsonSchema?: Record<string, unknown>): Promise<string> {
     return new Promise<string>((resolve, reject) => {
+      // Ensure we have Claude path
+      const claudePath = ClaudeClient.getCachedPath();
+      if (claudePath === null) {
+        reject(new Error('Claude CLI not available'));
+        return;
+      }
+
       const args = ['-p'];
 
       // Add JSON schema if provided
@@ -165,7 +220,7 @@ ${this.truncateMarkdown(markdown, 100000)}`;
         args.push('--output-format', 'json');
       }
 
-      const proc = spawn('claude', args, {
+      const proc = spawn(claudePath, args, {
         stdio: ['pipe', 'pipe', 'pipe'],
         cwd: process.cwd(),
         env: { ...process.env },

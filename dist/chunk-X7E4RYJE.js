@@ -217,6 +217,9 @@ ${hashes} ${cleanContent}
 
 // src/crawl/claude-client.ts
 import { spawn, execSync } from "child_process";
+import { existsSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 var CRAWL_STRATEGY_SCHEMA = {
   type: "object",
   properties: {
@@ -236,21 +239,55 @@ var ClaudeClient = class _ClaudeClient {
   timeout;
   static availabilityChecked = false;
   static available = false;
+  static claudePath = null;
   /**
-   * Check if Claude CLI is available in PATH
+   * Get the path to the Claude CLI binary
+   * Checks in order:
+   * 1. CLAUDE_BIN environment variable (explicit override)
+   * 2. ~/.claude/local/claude (newer installation location)
+   * 3. ~/.local/bin/claude (standard installation location)
+   * 4. 'claude' in PATH (custom installations)
+   */
+  static getClaudePath() {
+    const envPath = process.env["CLAUDE_BIN"];
+    if (envPath !== void 0 && envPath !== "" && existsSync(envPath)) {
+      return envPath;
+    }
+    const claudeLocalPath = join(homedir(), ".claude", "local", "claude");
+    if (existsSync(claudeLocalPath)) {
+      return claudeLocalPath;
+    }
+    const localBinPath = join(homedir(), ".local", "bin", "claude");
+    if (existsSync(localBinPath)) {
+      return localBinPath;
+    }
+    try {
+      const result = execSync("command -v claude", { stdio: ["pipe", "pipe", "ignore"] });
+      const path = result.toString().trim();
+      if (path) {
+        return path;
+      }
+    } catch {
+    }
+    return null;
+  }
+  /**
+   * Check if Claude CLI is available
    * Result is cached after first check for performance
    */
   static isAvailable() {
     if (!_ClaudeClient.availabilityChecked) {
-      try {
-        execSync("which claude", { stdio: "ignore" });
-        _ClaudeClient.available = true;
-      } catch {
-        _ClaudeClient.available = false;
-      }
+      _ClaudeClient.claudePath = _ClaudeClient.getClaudePath();
+      _ClaudeClient.available = _ClaudeClient.claudePath !== null;
       _ClaudeClient.availabilityChecked = true;
     }
     return _ClaudeClient.available;
+  }
+  /**
+   * Get the cached Claude path (call isAvailable first)
+   */
+  static getCachedPath() {
+    return _ClaudeClient.claudePath;
   }
   /**
    * Reset availability cache (for testing)
@@ -329,12 +366,17 @@ ${this.truncateMarkdown(markdown, 1e5)}`;
    */
   async callClaude(prompt, jsonSchema) {
     return new Promise((resolve, reject) => {
+      const claudePath = _ClaudeClient.getCachedPath();
+      if (claudePath === null) {
+        reject(new Error("Claude CLI not available"));
+        return;
+      }
       const args = ["-p"];
       if (jsonSchema) {
         args.push("--json-schema", JSON.stringify(jsonSchema));
         args.push("--output-format", "json");
       }
-      const proc = spawn("claude", args, {
+      const proc = spawn(claudePath, args, {
         stdio: ["pipe", "pipe", "pipe"],
         cwd: process.cwd(),
         env: { ...process.env }
@@ -753,4 +795,4 @@ var IntelligentCrawler = class extends EventEmitter {
 export {
   IntelligentCrawler
 };
-//# sourceMappingURL=chunk-AIS5S77C.js.map
+//# sourceMappingURL=chunk-X7E4RYJE.js.map

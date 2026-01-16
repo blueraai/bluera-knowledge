@@ -14,7 +14,19 @@ vi.mock('node:child_process', () => ({
   execSync: vi.fn(),
 }));
 
+// Mock node:fs for path existence checks
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(),
+}));
+
+// Mock node:os for homedir
+vi.mock('node:os', () => ({
+  homedir: vi.fn(() => '/home/testuser'),
+}));
+
 const { spawn, execSync } = await import('node:child_process');
+const { existsSync } = await import('node:fs');
+const { homedir } = await import('node:os');
 
 describe('ClaudeClient', () => {
   let client: ClaudeClient;
@@ -30,52 +42,151 @@ describe('ClaudeClient', () => {
     kill = vi.fn();
   }
 
+  const TEST_CLAUDE_PATH = '/home/testuser/.claude/local/claude';
+
   beforeEach(() => {
     vi.clearAllMocks();
     ClaudeClient.resetAvailabilityCache(); // Reset static cache between tests
+
+    // Set up default mock: claude exists at ~/.claude/local/claude
+    vi.mocked(existsSync).mockImplementation(
+      (path) => path === '/home/testuser/.claude/local/claude'
+    );
+    vi.mocked(homedir).mockReturnValue('/home/testuser');
+
+    // Pre-cache the path by calling isAvailable before each test
+    ClaudeClient.isAvailable();
+
     client = new ClaudeClient({ timeout: 100 }); // Short timeout for tests
     mockProcess = new MockChildProcess();
     vi.mocked(spawn).mockReturnValue(mockProcess as unknown as ChildProcess);
   });
 
   describe('isAvailable', () => {
-    it('should return true when claude is in PATH', () => {
-      vi.mocked(execSync).mockReturnValue(Buffer.from('/usr/local/bin/claude'));
+    it('should return true when CLAUDE_BIN env var is set and path exists', () => {
+      ClaudeClient.resetAvailabilityCache();
+      process.env['CLAUDE_BIN'] = '/custom/path/claude';
+      vi.mocked(existsSync).mockImplementation((path) => path === '/custom/path/claude');
 
       expect(ClaudeClient.isAvailable()).toBe(true);
-      expect(execSync).toHaveBeenCalledWith('which claude', { stdio: 'ignore' });
+      expect(ClaudeClient.getCachedPath()).toBe('/custom/path/claude');
+
+      delete process.env['CLAUDE_BIN'];
     });
 
-    it('should return false when claude is not in PATH', () => {
+    it('should return true when ~/.claude/local/claude exists', () => {
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path === '/home/testuser/.claude/local/claude'
+      );
+
+      expect(ClaudeClient.isAvailable()).toBe(true);
+      expect(ClaudeClient.getCachedPath()).toBe('/home/testuser/.claude/local/claude');
+    });
+
+    it('should return true when ~/.local/bin/claude exists', () => {
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path === '/home/testuser/.local/bin/claude'
+      );
+
+      expect(ClaudeClient.isAvailable()).toBe(true);
+      expect(ClaudeClient.getCachedPath()).toBe('/home/testuser/.local/bin/claude');
+    });
+
+    it('should return true when claude is in PATH via command -v', () => {
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(execSync).mockReturnValue(Buffer.from('/usr/local/bin/claude\n'));
+
+      expect(ClaudeClient.isAvailable()).toBe(true);
+      expect(ClaudeClient.getCachedPath()).toBe('/usr/local/bin/claude');
+      expect(execSync).toHaveBeenCalledWith('command -v claude', {
+        stdio: ['pipe', 'pipe', 'ignore'],
+      });
+    });
+
+    it('should return false when claude is not found anywhere', () => {
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockReturnValue(false);
       vi.mocked(execSync).mockImplementation(() => {
         throw new Error('Command not found');
       });
 
       expect(ClaudeClient.isAvailable()).toBe(false);
+      expect(ClaudeClient.getCachedPath()).toBe(null);
+    });
+
+    it('should prioritize CLAUDE_BIN over other locations', () => {
+      ClaudeClient.resetAvailabilityCache();
+      process.env['CLAUDE_BIN'] = '/custom/path/claude';
+      // Both custom path and standard paths exist
+      vi.mocked(existsSync).mockReturnValue(true);
+
+      expect(ClaudeClient.isAvailable()).toBe(true);
+      expect(ClaudeClient.getCachedPath()).toBe('/custom/path/claude');
+
+      delete process.env['CLAUDE_BIN'];
+    });
+
+    it('should prioritize ~/.claude/local/claude over ~/.local/bin/claude', () => {
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockImplementation((path) => {
+        return (
+          path === '/home/testuser/.claude/local/claude' ||
+          path === '/home/testuser/.local/bin/claude'
+        );
+      });
+
+      expect(ClaudeClient.isAvailable()).toBe(true);
+      expect(ClaudeClient.getCachedPath()).toBe('/home/testuser/.claude/local/claude');
     });
 
     it('should cache the result after first check', () => {
-      vi.mocked(execSync).mockReturnValue(Buffer.from('/usr/local/bin/claude'));
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path === '/home/testuser/.claude/local/claude'
+      );
 
       // First call
       expect(ClaudeClient.isAvailable()).toBe(true);
-      expect(execSync).toHaveBeenCalledTimes(1);
 
-      // Second call - should use cache
+      // Reset mock to verify cache is used
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      // Second call - should use cache, not re-check
       expect(ClaudeClient.isAvailable()).toBe(true);
-      expect(execSync).toHaveBeenCalledTimes(1); // Still 1, not 2
+      expect(ClaudeClient.getCachedPath()).toBe('/home/testuser/.claude/local/claude');
     });
 
     it('should reset cache with resetAvailabilityCache', () => {
-      vi.mocked(execSync).mockReturnValue(Buffer.from('/usr/local/bin/claude'));
+      ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path === '/home/testuser/.claude/local/claude'
+      );
 
       expect(ClaudeClient.isAvailable()).toBe(true);
-      expect(execSync).toHaveBeenCalledTimes(1);
 
       ClaudeClient.resetAvailabilityCache();
+      vi.mocked(existsSync).mockReturnValue(false);
+      vi.mocked(execSync).mockImplementation(() => {
+        throw new Error('Not found');
+      });
+
+      expect(ClaudeClient.isAvailable()).toBe(false);
+    });
+
+    it('should ignore empty CLAUDE_BIN env var', () => {
+      ClaudeClient.resetAvailabilityCache();
+      process.env['CLAUDE_BIN'] = '';
+      vi.mocked(existsSync).mockImplementation(
+        (path) => path === '/home/testuser/.claude/local/claude'
+      );
 
       expect(ClaudeClient.isAvailable()).toBe(true);
-      expect(execSync).toHaveBeenCalledTimes(2); // Called again after reset
+      expect(ClaudeClient.getCachedPath()).toBe('/home/testuser/.claude/local/claude');
+
+      delete process.env['CLAUDE_BIN'];
     });
   });
 
@@ -185,7 +296,7 @@ describe('ClaudeClient', () => {
       await promise;
 
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        TEST_CLAUDE_PATH,
         expect.arrayContaining([
           '-p',
           '--json-schema',
@@ -450,7 +561,7 @@ describe('ClaudeClient', () => {
       await promise;
 
       expect(spawn).toHaveBeenCalledWith(
-        'claude',
+        TEST_CLAUDE_PATH,
         ['-p'],
         expect.objectContaining({
           stdio: ['pipe', 'pipe', 'pipe'],
