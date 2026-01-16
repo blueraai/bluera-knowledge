@@ -19,6 +19,7 @@ logs/
 test_*.cjs
 test_*.ts
 test-*.js
+!scripts/test-mcp-dev.js
 fix_*.sh
 fix_*.py
 fix_*.pl
