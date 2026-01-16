@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.14.0](https://github.com/blueraai/bluera-knowledge/compare/v0.13.3...v0.14.0) (2026-01-16)
+
+
+### Features
+
+* add uninstall command and use venv for Python dependencies ([e632618](https://github.com/blueraai/bluera-knowledge/commit/e632618cc1b0925dbdc90a2eabb0863ae3e939fa))
+
 ## [0.13.3](https://github.com/blueraai/bluera-knowledge/compare/v0.13.2...v0.13.3) (2026-01-16)
 
 
