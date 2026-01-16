@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.14.1](https://github.com/blueraai/bluera-knowledge/compare/v0.14.0...v0.14.1) (2026-01-16)
+
+
+### Bug Fixes
+
+* **npm:** add files field to prevent 389MB package bloat ([fa55313](https://github.com/blueraai/bluera-knowledge/commit/fa55313050381b8f2c51cb89d42f66c30adfe58c))
+
 ## [0.14.0](https://github.com/blueraai/bluera-knowledge/compare/v0.13.3...v0.14.0) (2026-01-16)
 
 
