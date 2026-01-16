@@ -9,8 +9,9 @@ import {
   spawnBackgroundWorker
 } from "./chunk-UAWKTJWN.js";
 import {
-  IntelligentCrawler
-} from "./chunk-X7E4RYJE.js";
+  IntelligentCrawler,
+  getCrawlStrategy
+} from "./chunk-Y4FVM3CW.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -45,6 +46,21 @@ function createCrawlCommand(getOptions) {
   ).option("--simple", "Use simple BFS mode instead of intelligent crawling").option("--max-pages <number>", "Maximum number of pages to crawl", "50").option("--fast", "Use fast axios-only mode (may fail on JavaScript-heavy sites)").action(
     async (url, storeIdOrName, cmdOptions) => {
       const globalOpts = getOptions();
+      const useHeadless = !(cmdOptions.fast ?? false);
+      let preComputedStrategy;
+      const useIntelligentMode = cmdOptions.simple !== true && cmdOptions.crawl !== void 0 && cmdOptions.crawl !== "";
+      if (useIntelligentMode && cmdOptions.crawl !== void 0) {
+        if (globalOpts.quiet !== true && globalOpts.format !== "json") {
+          console.log(`Crawling ${url}`);
+          console.log("Analyzing page structure with Claude...");
+        }
+        preComputedStrategy = await getCrawlStrategy(url, cmdOptions.crawl, useHeadless);
+        if (globalOpts.quiet !== true && globalOpts.format !== "json") {
+          console.log(
+            `Claude identified ${String(preComputedStrategy.urls.length)} URLs: ${preComputedStrategy.reasoning}`
+          );
+        }
+      }
       const services = await createServices(globalOpts.config, globalOpts.dataDir);
       let store;
       let storeCreated = false;
@@ -113,8 +129,8 @@ function createCrawlCommand(getOptions) {
           ...cmdOptions.extract !== void 0 && { extractInstruction: cmdOptions.extract },
           maxPages,
           ...cmdOptions.simple !== void 0 && { simple: cmdOptions.simple },
-          useHeadless: !(cmdOptions.fast ?? false)
-          // Default true (headless), --fast disables
+          useHeadless,
+          ...preComputedStrategy !== void 0 && { preComputedStrategy }
         })) {
           const contentToProcess = result.extracted ?? result.markdown;
           const chunks = webChunker.chunk(contentToProcess, `${result.url}.md`);

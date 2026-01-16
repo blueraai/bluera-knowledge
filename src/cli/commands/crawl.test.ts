@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createCrawlCommand } from './crawl.js';
 import { createServices } from '../../services/index.js';
-import { IntelligentCrawler } from '../../crawl/intelligent-crawler.js';
+import { IntelligentCrawler, getCrawlStrategy } from '../../crawl/intelligent-crawler.js';
 import type { GlobalOptions } from '../program.js';
 import type { WebStore } from '../../types/store.js';
 import { createStoreId, createDocumentId } from '../../types/brands.js';
@@ -12,6 +12,7 @@ vi.mock('../../services/index.js', () => ({
 }));
 vi.mock('../../crawl/intelligent-crawler.js', () => ({
   IntelligentCrawler: vi.fn(),
+  getCrawlStrategy: vi.fn(),
 }));
 vi.mock('ora', () => ({
   default: vi.fn(() => ({
@@ -61,6 +62,10 @@ describe('crawl command execution', () => {
     vi.mocked(IntelligentCrawler).mockImplementation(function (this: any) {
       return mockCrawler as any;
     } as any);
+    vi.mocked(getCrawlStrategy).mockResolvedValue({
+      urls: ['https://example.com/page1', 'https://example.com/page2'],
+      reasoning: 'Found 2 documentation pages',
+    });
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -133,6 +138,10 @@ describe('crawl command execution', () => {
         crawlInstruction: 'all documentation pages',
         maxPages: 50,
         useHeadless: true,
+        preComputedStrategy: {
+          urls: ['https://example.com/page1', 'https://example.com/page2'],
+          reasoning: 'Found 2 documentation pages',
+        },
       });
       expect(mockServices.embeddings.embed).toHaveBeenCalledTimes(2);
       expect(mockServices.lance.addDocuments).toHaveBeenCalledWith(
@@ -336,6 +345,10 @@ describe('crawl command execution', () => {
         extractInstruction: 'code examples',
         maxPages: 100,
         useHeadless: true,
+        preComputedStrategy: {
+          urls: ['https://example.com/page1', 'https://example.com/page2'],
+          reasoning: 'Found 2 documentation pages',
+        },
       });
     });
   });

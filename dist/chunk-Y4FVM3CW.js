@@ -460,6 +460,31 @@ ${this.truncateMarkdown(markdown, 1e5)}`;
 
 // src/crawl/intelligent-crawler.ts
 var logger2 = createLogger("crawler");
+async function getCrawlStrategy(seedUrl, crawlInstruction, useHeadless = false) {
+  if (!ClaudeClient.isAvailable()) {
+    throw new Error("Claude CLI not available: install Claude Code for intelligent crawling");
+  }
+  const client = new ClaudeClient();
+  const bridge = new PythonBridge();
+  try {
+    let seedHtml;
+    if (useHeadless) {
+      const headlessResult = await bridge.fetchHeadless(seedUrl);
+      seedHtml = headlessResult.html;
+    } else {
+      const response = await axios.get(seedUrl, {
+        timeout: 3e4,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; BluenaKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)"
+        }
+      });
+      seedHtml = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+    }
+    return await client.determineCrawlUrls(seedUrl, seedHtml, crawlInstruction);
+  } finally {
+    await bridge.stop();
+  }
+}
 var IntelligentCrawler = class extends EventEmitter {
   claudeClient;
   pythonBridge;
@@ -501,7 +526,8 @@ var IntelligentCrawler = class extends EventEmitter {
         crawlInstruction,
         extractInstruction,
         maxPages,
-        options.useHeadless ?? false
+        options.useHeadless ?? false,
+        options.preComputedStrategy
       );
     } else {
       yield* this.crawlSimple(seedUrl, extractInstruction, maxPages, options.useHeadless ?? false);
@@ -533,31 +559,42 @@ var IntelligentCrawler = class extends EventEmitter {
   /**
    * Intelligent mode: Use Claude to determine which URLs to crawl
    */
-  async *crawlIntelligent(seedUrl, crawlInstruction, extractInstruction, maxPages, useHeadless = false) {
-    if (!ClaudeClient.isAvailable()) {
-      throw new Error("Claude CLI not available: install Claude Code for intelligent crawling");
-    }
+  async *crawlIntelligent(seedUrl, crawlInstruction, extractInstruction, maxPages, useHeadless = false, preComputedStrategy) {
     let strategy;
-    try {
-      const strategyStartProgress = {
+    if (preComputedStrategy !== void 0) {
+      strategy = preComputedStrategy;
+      const strategyProgress = {
         type: "strategy",
         pagesVisited: 0,
         totalPages: maxPages,
-        currentUrl: seedUrl,
-        message: "Analyzing page structure with Claude..."
+        message: `Using pre-computed strategy: ${String(strategy.urls.length)} URLs to crawl`
       };
-      this.emit("progress", strategyStartProgress);
-      const seedHtml = await this.fetchHtml(seedUrl, useHeadless);
-      strategy = await this.claudeClient.determineCrawlUrls(seedUrl, seedHtml, crawlInstruction);
-      const strategyCompleteProgress = {
-        type: "strategy",
-        pagesVisited: 0,
-        totalPages: maxPages,
-        message: `Claude identified ${String(strategy.urls.length)} URLs to crawl: ${strategy.reasoning}`
-      };
-      this.emit("progress", strategyCompleteProgress);
-    } catch (error) {
-      throw error instanceof Error ? error : new Error(String(error));
+      this.emit("progress", strategyProgress);
+    } else {
+      if (!ClaudeClient.isAvailable()) {
+        throw new Error("Claude CLI not available: install Claude Code for intelligent crawling");
+      }
+      try {
+        const strategyStartProgress = {
+          type: "strategy",
+          pagesVisited: 0,
+          totalPages: maxPages,
+          currentUrl: seedUrl,
+          message: "Analyzing page structure with Claude..."
+        };
+        this.emit("progress", strategyStartProgress);
+        const seedHtml = await this.fetchHtml(seedUrl, useHeadless);
+        strategy = await this.claudeClient.determineCrawlUrls(seedUrl, seedHtml, crawlInstruction);
+        const strategyCompleteProgress = {
+          type: "strategy",
+          pagesVisited: 0,
+          totalPages: maxPages,
+          message: `Claude identified ${String(strategy.urls.length)} URLs to crawl: ${strategy.reasoning}`
+        };
+        this.emit("progress", strategyCompleteProgress);
+      } catch (error) {
+        throw error instanceof Error ? error : new Error(String(error));
+      }
     }
     let pagesVisited = 0;
     for (const url of strategy.urls) {
@@ -793,6 +830,7 @@ var IntelligentCrawler = class extends EventEmitter {
 };
 
 export {
+  getCrawlStrategy,
   IntelligentCrawler
 };
-//# sourceMappingURL=chunk-X7E4RYJE.js.map
+//# sourceMappingURL=chunk-Y4FVM3CW.js.map

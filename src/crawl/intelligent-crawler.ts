@@ -12,6 +12,49 @@ import { createLogger, summarizePayload } from '../logging/index.js';
 
 const logger = createLogger('crawler');
 
+/**
+ * Get crawl strategy from Claude CLI without initializing lancedb.
+ * Call this BEFORE createServices() to avoid fork-safety issues with lancedb.
+ *
+ * LanceDB's native Rust code is not fork-safe. If we spawn Claude CLI
+ * after lancedb is loaded, the fork corrupts lancedb's mutex state.
+ */
+export async function getCrawlStrategy(
+  seedUrl: string,
+  crawlInstruction: string,
+  useHeadless: boolean = false
+): Promise<CrawlStrategy> {
+  if (!ClaudeClient.isAvailable()) {
+    throw new Error('Claude CLI not available: install Claude Code for intelligent crawling');
+  }
+
+  const client = new ClaudeClient();
+  const bridge = new PythonBridge();
+
+  try {
+    // Fetch seed HTML
+    let seedHtml: string;
+    if (useHeadless) {
+      const headlessResult = await bridge.fetchHeadless(seedUrl);
+      seedHtml = headlessResult.html;
+    } else {
+      const response = await axios.get(seedUrl, {
+        timeout: 30000,
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (compatible; BluenaKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)',
+        },
+      });
+      seedHtml = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+    }
+
+    // Get strategy from Claude
+    return await client.determineCrawlUrls(seedUrl, seedHtml, crawlInstruction);
+  } finally {
+    await bridge.stop();
+  }
+}
+
 export interface CrawlOptions {
   crawlInstruction?: string; // Natural language: what to crawl
   extractInstruction?: string; // Natural language: what to extract
@@ -19,6 +62,7 @@ export interface CrawlOptions {
   timeout?: number; // Per-page timeout in ms (default: 30000)
   simple?: boolean; // Force simple BFS mode
   useHeadless?: boolean; // Enable headless browser for JavaScript-rendered sites
+  preComputedStrategy?: CrawlStrategy; // Pre-computed strategy (to avoid fork issues with lancedb)
 }
 
 export interface CrawlResult {
@@ -95,7 +139,8 @@ export class IntelligentCrawler extends EventEmitter {
         crawlInstruction,
         extractInstruction,
         maxPages,
-        options.useHeadless ?? false
+        options.useHeadless ?? false,
+        options.preComputedStrategy
       );
     } else {
       yield* this.crawlSimple(seedUrl, extractInstruction, maxPages, options.useHeadless ?? false);
@@ -137,41 +182,54 @@ export class IntelligentCrawler extends EventEmitter {
     crawlInstruction: string,
     extractInstruction: string | undefined,
     maxPages: number,
-    useHeadless: boolean = false
+    useHeadless: boolean = false,
+    preComputedStrategy?: CrawlStrategy
   ): AsyncIterable<CrawlResult> {
-    // Check if Claude CLI is available before attempting intelligent mode
-    if (!ClaudeClient.isAvailable()) {
-      throw new Error('Claude CLI not available: install Claude Code for intelligent crawling');
-    }
-
     let strategy: CrawlStrategy;
 
-    try {
-      // Step 1: Fetch seed page HTML
-      const strategyStartProgress: CrawlProgress = {
+    // Use pre-computed strategy if provided (avoids fork issues with lancedb)
+    if (preComputedStrategy !== undefined) {
+      strategy = preComputedStrategy;
+      const strategyProgress: CrawlProgress = {
         type: 'strategy',
         pagesVisited: 0,
         totalPages: maxPages,
-        currentUrl: seedUrl,
-        message: 'Analyzing page structure with Claude...',
+        message: `Using pre-computed strategy: ${String(strategy.urls.length)} URLs to crawl`,
       };
-      this.emit('progress', strategyStartProgress);
+      this.emit('progress', strategyProgress);
+    } else {
+      // Check if Claude CLI is available before attempting intelligent mode
+      if (!ClaudeClient.isAvailable()) {
+        throw new Error('Claude CLI not available: install Claude Code for intelligent crawling');
+      }
 
-      const seedHtml = await this.fetchHtml(seedUrl, useHeadless);
+      try {
+        // Step 1: Fetch seed page HTML
+        const strategyStartProgress: CrawlProgress = {
+          type: 'strategy',
+          pagesVisited: 0,
+          totalPages: maxPages,
+          currentUrl: seedUrl,
+          message: 'Analyzing page structure with Claude...',
+        };
+        this.emit('progress', strategyStartProgress);
 
-      // Step 2: Ask Claude which URLs to crawl (pass seedUrl for relative URL resolution)
-      strategy = await this.claudeClient.determineCrawlUrls(seedUrl, seedHtml, crawlInstruction);
+        const seedHtml = await this.fetchHtml(seedUrl, useHeadless);
 
-      const strategyCompleteProgress: CrawlProgress = {
-        type: 'strategy',
-        pagesVisited: 0,
-        totalPages: maxPages,
-        message: `Claude identified ${String(strategy.urls.length)} URLs to crawl: ${strategy.reasoning}`,
-      };
-      this.emit('progress', strategyCompleteProgress);
-    } catch (error) {
-      // Re-throw strategy errors - do not fall back silently
-      throw error instanceof Error ? error : new Error(String(error));
+        // Step 2: Ask Claude which URLs to crawl (pass seedUrl for relative URL resolution)
+        strategy = await this.claudeClient.determineCrawlUrls(seedUrl, seedHtml, crawlInstruction);
+
+        const strategyCompleteProgress: CrawlProgress = {
+          type: 'strategy',
+          pagesVisited: 0,
+          totalPages: maxPages,
+          message: `Claude identified ${String(strategy.urls.length)} URLs to crawl: ${strategy.reasoning}`,
+        };
+        this.emit('progress', strategyCompleteProgress);
+      } catch (error) {
+        // Re-throw strategy errors - do not fall back silently
+        throw error instanceof Error ? error : new Error(String(error));
+      }
     }
 
     // Step 3: Crawl each URL from Claude's strategy

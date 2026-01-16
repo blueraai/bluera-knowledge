@@ -1,11 +1,16 @@
 import { createHash } from 'node:crypto';
 import { Command } from 'commander';
 import ora, { type Ora } from 'ora';
-import { IntelligentCrawler, type CrawlProgress } from '../../crawl/intelligent-crawler.js';
+import {
+  getCrawlStrategy,
+  IntelligentCrawler,
+  type CrawlProgress,
+} from '../../crawl/intelligent-crawler.js';
 import { ChunkingService } from '../../services/chunking.service.js';
 import { createServices, destroyServices } from '../../services/index.js';
 import { classifyWebContentType } from '../../services/index.service.js';
 import { createDocumentId } from '../../types/brands.js';
+import type { CrawlStrategy } from '../../crawl/claude-client.js';
 import type { Document } from '../../types/document.js';
 import type { WebStore } from '../../types/store.js';
 import type { GlobalOptions } from '../program.js';
@@ -39,6 +44,29 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
         }
       ) => {
         const globalOpts = getOptions();
+        const useHeadless = !(cmdOptions.fast ?? false);
+
+        // IMPORTANT: Get crawl strategy BEFORE initializing lancedb services.
+        // LanceDB's native Rust code is not fork-safe. Spawning Claude CLI after
+        // lancedb is loaded corrupts the mutex state, causing crashes.
+        let preComputedStrategy: CrawlStrategy | undefined;
+        const useIntelligentMode =
+          cmdOptions.simple !== true && cmdOptions.crawl !== undefined && cmdOptions.crawl !== '';
+
+        if (useIntelligentMode && cmdOptions.crawl !== undefined) {
+          if (globalOpts.quiet !== true && globalOpts.format !== 'json') {
+            console.log(`Crawling ${url}`);
+            console.log('Analyzing page structure with Claude...');
+          }
+          preComputedStrategy = await getCrawlStrategy(url, cmdOptions.crawl, useHeadless);
+          if (globalOpts.quiet !== true && globalOpts.format !== 'json') {
+            console.log(
+              `Claude identified ${String(preComputedStrategy.urls.length)} URLs: ${preComputedStrategy.reasoning}`
+            );
+          }
+        }
+
+        // Now safe to initialize lancedb services
         const services = await createServices(globalOpts.config, globalOpts.dataDir);
 
         // Look up or auto-create web store
@@ -125,7 +153,8 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
             ...(cmdOptions.extract !== undefined && { extractInstruction: cmdOptions.extract }),
             maxPages,
             ...(cmdOptions.simple !== undefined && { simple: cmdOptions.simple }),
-            useHeadless: !(cmdOptions.fast ?? false), // Default true (headless), --fast disables
+            useHeadless,
+            ...(preComputedStrategy !== undefined && { preComputedStrategy }),
           })) {
             // Use extracted content if available, otherwise markdown
             const contentToProcess = result.extracted ?? result.markdown;
