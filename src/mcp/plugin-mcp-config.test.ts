@@ -4,16 +4,22 @@ import { join } from 'path';
 
 /**
  * Tests to verify .mcp.json is correctly configured for MCP server.
- * The MCP server must work when the plugin is installed via marketplace.
+ * The MCP server must work in both contexts:
+ * - Plugin mode: installed via marketplace (CLAUDE_PLUGIN_ROOT is set)
+ * - Project mode: running from repo root (CLAUDE_PLUGIN_ROOT is undefined)
  *
  * Key requirements:
- * - Must use ${CLAUDE_PLUGIN_ROOT} for server path (resolves to plugin cache)
+ * - Must use ${CLAUDE_PLUGIN_ROOT:-.} with default value for dual-mode support
  * - Must set PROJECT_ROOT env var (required by server fail-fast check)
- * - Must NOT use relative paths (would resolve to user's project, not plugin)
  *
  * Note: We use .mcp.json at plugin root (not inline in plugin.json) due to
  * Claude Code Bug #16143 where inline mcpServers is ignored during parsing.
  * See: https://github.com/anthropics/claude-code/issues/16143
+ *
+ * CLAUDE_PLUGIN_ROOT behavior:
+ * - Plugin mode: expands to ~/.claude/plugins/cache/bluera/bluera-knowledge/X.Y.Z/
+ * - Project mode: undefined, so default "." is used
+ * See: https://github.com/anthropics/claude-code/issues/9354
  */
 describe('Plugin MCP Configuration (.mcp.json)', () => {
   const mcpJsonPath = join(process.cwd(), '.mcp.json');
@@ -28,23 +34,15 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
     expect(config.mcpServers).toHaveProperty('bluera-knowledge');
   });
 
-  it('uses ${CLAUDE_PLUGIN_ROOT} for server path (required for plugin mode)', () => {
+  it('uses ${CLAUDE_PLUGIN_ROOT:-.} with default value for dual-mode support', () => {
     const serverConfig = config.mcpServers['bluera-knowledge'];
     const argsString = JSON.stringify(serverConfig.args);
 
-    // CLAUDE_PLUGIN_ROOT is set by Claude Code when plugin is installed
-    // This ensures the path resolves to the plugin cache, not user's project
-    expect(argsString).toContain('${CLAUDE_PLUGIN_ROOT}');
+    // Uses ${CLAUDE_PLUGIN_ROOT:-.} to support both:
+    // - Plugin mode: CLAUDE_PLUGIN_ROOT expands to plugin cache path
+    // - Project mode: Uses default "." for local development
+    expect(argsString).toContain('${CLAUDE_PLUGIN_ROOT:-.}');
     expect(argsString).toContain('dist/mcp/server.js');
-  });
-
-  it('does NOT use relative paths (would break in plugin mode)', () => {
-    const serverConfig = config.mcpServers['bluera-knowledge'];
-    const argsString = JSON.stringify(serverConfig.args);
-
-    // Relative paths like ./dist would resolve to user's project directory
-    // which doesn't have the plugin's dist folder
-    expect(argsString).not.toMatch(/"\.\//);
   });
 
   it('sets PROJECT_ROOT environment variable (required by fail-fast server)', () => {
