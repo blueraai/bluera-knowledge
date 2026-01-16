@@ -1,10 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { handleUninstall } from './uninstall.handler.js';
 import type { HandlerContext } from '../types.js';
 import type { UninstallArgs } from './uninstall.handler.js';
+
+// Mock os module to control homedir for testing global data deletion
+vi.mock('node:os', async () => {
+  const actual = await vi.importActual<typeof import('node:os')>('node:os');
+  return {
+    ...actual,
+    homedir: vi.fn(() => actual.homedir()),
+  };
+});
 
 describe('uninstall.handler', () => {
   let tempDir: string;
@@ -25,6 +34,7 @@ describe('uninstall.handler', () => {
 
   afterEach(() => {
     rmSync(tempDir, { recursive: true, force: true });
+    vi.restoreAllMocks();
   });
 
   describe('handleUninstall', () => {
@@ -125,6 +135,60 @@ describe('uninstall.handler', () => {
 
       // Verify everything is deleted
       expect(existsSync(join(bkDir, 'data'))).toBe(false);
+    });
+
+    it('should delete global data when global flag is true', async () => {
+      // Mock homedir to return our temp directory
+      const { homedir } = await import('node:os');
+      vi.mocked(homedir).mockReturnValue(tempDir);
+
+      // Create fake global data directory
+      const globalDir = join(tempDir, '.local', 'share', 'bluera-knowledge');
+      mkdirSync(globalDir, { recursive: true });
+      writeFileSync(join(globalDir, 'jobs.json'), '[]');
+
+      const args: UninstallArgs = { global: true };
+      const result = await handleUninstall(args, mockContext);
+
+      // Verify global data was deleted
+      expect(existsSync(globalDir)).toBe(false);
+      expect(result.content[0].text).toContain('Deleted:');
+      expect(result.content[0].text).toContain('.local/share/bluera-knowledge');
+    });
+
+    it('should handle global flag when global data does not exist', async () => {
+      // Mock homedir to return our temp directory (no global data exists)
+      const { homedir } = await import('node:os');
+      vi.mocked(homedir).mockReturnValue(tempDir);
+
+      const args: UninstallArgs = { global: true };
+      const result = await handleUninstall(args, mockContext);
+
+      // The handler should still complete without errors
+      expect(result.content[0].text).toContain('plugin cache');
+    });
+
+    it('should report global data deletion in result', async () => {
+      // Mock homedir to return our temp directory
+      const { homedir } = await import('node:os');
+      vi.mocked(homedir).mockReturnValue(tempDir);
+
+      // Create both project and global data
+      const bkDir = join(projectRoot, '.bluera', 'bluera-knowledge');
+      mkdirSync(bkDir, { recursive: true });
+      writeFileSync(join(bkDir, 'config.json'), '{}');
+
+      const globalDir = join(tempDir, '.local', 'share', 'bluera-knowledge');
+      mkdirSync(globalDir, { recursive: true });
+      writeFileSync(join(globalDir, 'jobs.json'), '[]');
+
+      const args: UninstallArgs = { global: true, keepDefinitions: false };
+      const result = await handleUninstall(args, mockContext);
+
+      // Verify both were deleted
+      expect(existsSync(bkDir)).toBe(false);
+      expect(existsSync(globalDir)).toBe(false);
+      expect(result.content[0].text).toContain('Deleted:');
     });
   });
 });
