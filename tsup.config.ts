@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    'mcp/bootstrap': 'src/mcp/bootstrap.ts',
     'mcp/server': 'src/mcp/server.ts',
     'workers/background-worker-cli': 'src/workers/background-worker-cli.ts',
   },

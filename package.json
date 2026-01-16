@@ -70,7 +70,6 @@
     "hooks/",
     "commands/",
     "skills/",
-    "scripts/",
     ".claude-plugin/",
     "README.md",
     "CHANGELOG.md",
