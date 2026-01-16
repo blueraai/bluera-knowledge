@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.14.3](https://github.com/blueraai/bluera-knowledge/compare/v0.14.1...v0.14.3) (2026-01-16)
+
+
+### Bug Fixes
+
+* **crawl:** avoid lancedb fork-safety crash in intelligent mode ([3608be2](https://github.com/blueraai/bluera-knowledge/commit/3608be28cc09c0b291dde8e2e74c552e857956ab))
+* **crawl:** detect Claude CLI at ~/.claude/local/claude ([cf490e2](https://github.com/blueraai/bluera-knowledge/commit/cf490e2af2524352b108aa19c313faecf0abafac))
+
 ## [0.14.2](https://github.com/blueraai/bluera-knowledge/compare/v0.14.1...v0.14.2) (2026-01-16)
 
 
