@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.14.7](https://github.com/blueraai/bluera-knowledge/compare/v0.14.6...v0.14.7) (2026-01-16)
+
+
+### Bug Fixes
+
+* **serve:** remove process.exit to prevent lancedb mutex crash ([dd5b991](https://github.com/blueraai/bluera-knowledge/commit/dd5b9911797c2b8165d91f629314f41a0f2204cf))
+
 ## [0.14.3](https://github.com/blueraai/bluera-knowledge/compare/v0.14.1...v0.14.3) (2026-01-16)
 
 
