@@ -182,10 +182,11 @@ describe('CLI Consistency', () => {
     beforeAll(async () => {
       try {
         cli(`store create quiet-test-store --type file --source "${testFilesDir}"`);
+        cli('index quiet-test-store');
       } catch {
         // Store may already exist
       }
-    });
+    }, 120000);
 
     it('--quiet suppresses all output for index on success', () => {
       const result = runCli('index quiet-test-store --quiet');
@@ -204,7 +205,7 @@ describe('CLI Consistency', () => {
     });
 
     it('--quiet outputs only paths for search', () => {
-      const result = runCli('search "test" --quiet');
+      const result = runCli('search "test" --stores quiet-test-store --quiet');
       expect(result.exitCode).toBe(0);
       // Should not contain verbose headers
       expect(result.stdout).not.toContain('Search:');
