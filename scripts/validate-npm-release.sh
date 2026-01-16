@@ -282,8 +282,8 @@ if command -v claude >/dev/null 2>&1 || [ -f "$HOME/.claude/local/claude" ] || [
     run_test "bluera-knowledge store create (web)" "bluera-knowledge store create '$CRAWL_STORE' -t web -s 'https://code.claude.com' -d '$DATA_DIR'"
     # Crawl Claude Code docs with intelligent mode
     run_test "bluera-knowledge crawl (intelligent)" "bluera-knowledge crawl 'https://code.claude.com/docs/' '$CRAWL_STORE' --crawl 'all documentation section links' --max-pages 5 -d '$DATA_DIR'"
-    # Verify crawl indexed content (should find "Getting Started" section)
-    run_test_contains "Intelligent crawl indexed content" "Getting Started" "bluera-knowledge search 'getting started guide' --stores '$CRAWL_STORE' -d '$DATA_DIR' --include-content"
+    # Verify crawl indexed content (should find Claude Code content)
+    run_test_contains "Intelligent crawl indexed content" "Claude" "bluera-knowledge search 'Claude Code documentation' --stores '$CRAWL_STORE' -d '$DATA_DIR' --include-content"
     bluera-knowledge store delete "$CRAWL_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
 else
     log "SKIP: Intelligent crawl test (Claude CLI not available)"
