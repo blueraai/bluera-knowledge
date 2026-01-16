@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createServices, destroyServices, type ServiceContainer } from './index.js';
+import {
+  createServices,
+  createLazyServices,
+  destroyServices,
+  type ServiceContainer,
+} from './index.js';
 import type { PythonBridge } from '../crawl/bridge.js';
 import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
+import type { StoreDefinitionService } from './store-definition.service.js';
+import type { GitignoreService } from './gitignore.service.js';
 
 // Mock all dependencies for createServices tests
 vi.mock('../crawl/bridge.js');
@@ -10,6 +17,8 @@ vi.mock('../db/lance.js');
 vi.mock('../db/embeddings.js');
 vi.mock('./config.service.js');
 vi.mock('./store.service.js');
+vi.mock('./store-definition.service.js');
+vi.mock('./gitignore.service.js');
 vi.mock('./code-graph.service.js');
 vi.mock('./search.service.js');
 vi.mock('./index.service.js');
@@ -228,6 +237,180 @@ describe('createServices', () => {
     expect(pythonStartIndex).toBeLessThan(lanceConstructorIndex);
 
     // Cleanup
+    await destroyServices(services);
+  });
+
+  it('creates StoreDefinitionService when projectRoot is provided', async () => {
+    const { StoreDefinitionService } = await import('./store-definition.service.js');
+
+    vi.mocked(StoreDefinitionService).mockImplementation(function () {
+      return {} as unknown as StoreDefinitionService;
+    });
+
+    const services = await createServices(undefined, undefined, '/test/project');
+
+    expect(StoreDefinitionService).toHaveBeenCalledWith('/test/project');
+
+    await destroyServices(services);
+  });
+
+  it('creates GitignoreService when projectRoot is provided', async () => {
+    const { GitignoreService } = await import('./gitignore.service.js');
+
+    vi.mocked(GitignoreService).mockImplementation(function () {
+      return {} as unknown as GitignoreService;
+    });
+
+    const services = await createServices(undefined, undefined, '/test/project');
+
+    expect(GitignoreService).toHaveBeenCalledWith('/test/project');
+
+    await destroyServices(services);
+  });
+
+  it('passes StoreDefinitionService and GitignoreService to StoreService', async () => {
+    const { StoreService } = await import('./store.service.js');
+    const { StoreDefinitionService } = await import('./store-definition.service.js');
+    const { GitignoreService } = await import('./gitignore.service.js');
+
+    const mockDefinitionService = { mock: 'definitionService' };
+    const mockGitignoreService = { mock: 'gitignoreService' };
+
+    vi.mocked(StoreDefinitionService).mockImplementation(function () {
+      return mockDefinitionService as unknown as StoreDefinitionService;
+    });
+
+    vi.mocked(GitignoreService).mockImplementation(function () {
+      return mockGitignoreService as unknown as GitignoreService;
+    });
+
+    const services = await createServices(undefined, undefined, '/test/project');
+
+    expect(StoreService).toHaveBeenCalledWith('/tmp/test-data', {
+      definitionService: mockDefinitionService,
+      gitignoreService: mockGitignoreService,
+    });
+
+    await destroyServices(services);
+  });
+
+  it('does not create StoreDefinitionService when projectRoot is undefined', async () => {
+    const { StoreDefinitionService } = await import('./store-definition.service.js');
+
+    vi.mocked(StoreDefinitionService).mockClear();
+
+    const services = await createServices();
+
+    expect(StoreDefinitionService).not.toHaveBeenCalled();
+
+    await destroyServices(services);
+  });
+});
+
+describe('createLazyServices', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    const { PythonBridge } = await import('../crawl/bridge.js');
+    const { LanceStore } = await import('../db/lance.js');
+    const { ConfigService } = await import('./config.service.js');
+    const { StoreService } = await import('./store.service.js');
+
+    vi.mocked(PythonBridge).mockImplementation(function () {
+      return {
+        start: vi.fn().mockResolvedValue(undefined),
+        stop: vi.fn().mockResolvedValue(undefined),
+      } as unknown as PythonBridge;
+    });
+
+    vi.mocked(LanceStore).mockImplementation(function () {
+      return {
+        closeAsync: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn(),
+      } as unknown as LanceStore;
+    });
+
+    vi.mocked(ConfigService).mockImplementation(function () {
+      return {
+        load: vi.fn().mockResolvedValue({ embedding: { model: 'test', dimensions: 384 } }),
+        resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),
+      };
+    });
+
+    vi.mocked(StoreService).mockImplementation(function () {
+      return {
+        initialize: vi.fn().mockResolvedValue(undefined),
+      };
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('creates StoreDefinitionService when projectRoot is provided', async () => {
+    const { StoreDefinitionService } = await import('./store-definition.service.js');
+
+    vi.mocked(StoreDefinitionService).mockImplementation(function () {
+      return {} as unknown as StoreDefinitionService;
+    });
+
+    const services = await createLazyServices(undefined, undefined, '/test/project');
+
+    expect(StoreDefinitionService).toHaveBeenCalledWith('/test/project');
+
+    await destroyServices(services);
+  });
+
+  it('creates GitignoreService when projectRoot is provided', async () => {
+    const { GitignoreService } = await import('./gitignore.service.js');
+
+    vi.mocked(GitignoreService).mockImplementation(function () {
+      return {} as unknown as GitignoreService;
+    });
+
+    const services = await createLazyServices(undefined, undefined, '/test/project');
+
+    expect(GitignoreService).toHaveBeenCalledWith('/test/project');
+
+    await destroyServices(services);
+  });
+
+  it('passes StoreDefinitionService and GitignoreService to StoreService', async () => {
+    const { StoreService } = await import('./store.service.js');
+    const { StoreDefinitionService } = await import('./store-definition.service.js');
+    const { GitignoreService } = await import('./gitignore.service.js');
+
+    const mockDefinitionService = { mock: 'definitionService' };
+    const mockGitignoreService = { mock: 'gitignoreService' };
+
+    vi.mocked(StoreDefinitionService).mockImplementation(function () {
+      return mockDefinitionService as unknown as StoreDefinitionService;
+    });
+
+    vi.mocked(GitignoreService).mockImplementation(function () {
+      return mockGitignoreService as unknown as GitignoreService;
+    });
+
+    const services = await createLazyServices(undefined, undefined, '/test/project');
+
+    expect(StoreService).toHaveBeenCalledWith('/tmp/test-data', {
+      definitionService: mockDefinitionService,
+      gitignoreService: mockGitignoreService,
+    });
+
+    await destroyServices(services);
+  });
+
+  it('does not create StoreDefinitionService when projectRoot is undefined', async () => {
+    const { StoreDefinitionService } = await import('./store-definition.service.js');
+
+    vi.mocked(StoreDefinitionService).mockClear();
+
+    const services = await createLazyServices();
+
+    expect(StoreDefinitionService).not.toHaveBeenCalled();
+
     await destroyServices(services);
   });
 });

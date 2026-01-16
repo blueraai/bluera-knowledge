@@ -1,12 +1,15 @@
 import { CodeGraphService } from './code-graph.service.js';
 import { ConfigService } from './config.service.js';
+import { GitignoreService } from './gitignore.service.js';
 import { IndexService } from './index.service.js';
 import { SearchService } from './search.service.js';
+import { StoreDefinitionService } from './store-definition.service.js';
 import { StoreService } from './store.service.js';
 import { PythonBridge } from '../crawl/bridge.js';
 import { EmbeddingEngine } from '../db/embeddings.js';
 import { LanceStore } from '../db/lance.js';
 import { createLogger, shutdownLogger } from '../logging/index.js';
+import type { StoreServiceOptions } from './store.service.js';
 import type { AppConfig } from '../types/config.js';
 
 const logger = createLogger('services');
@@ -162,7 +165,15 @@ export async function createLazyServices(
   // Now safe to create LanceStore wrapper (doesn't connect until initialize() is called)
   const lance = new LanceStore(resolvedDataDir);
 
-  const store = new StoreService(resolvedDataDir);
+  // Create project-root-dependent services
+  let storeOptions: StoreServiceOptions | undefined;
+  if (projectRoot !== undefined) {
+    const definitionService = new StoreDefinitionService(projectRoot);
+    const gitignoreService = new GitignoreService(projectRoot);
+    storeOptions = { definitionService, gitignoreService };
+  }
+
+  const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
 
   const durationMs = Date.now() - startTime;
@@ -200,7 +211,15 @@ export async function createServices(
 
   await embeddings.initialize();
 
-  const store = new StoreService(resolvedDataDir);
+  // Create project-root-dependent services
+  let storeOptions: StoreServiceOptions | undefined;
+  if (projectRoot !== undefined) {
+    const definitionService = new StoreDefinitionService(projectRoot);
+    const gitignoreService = new GitignoreService(projectRoot);
+    storeOptions = { definitionService, gitignoreService };
+  }
+
+  const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
 
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);

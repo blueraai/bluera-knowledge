@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { cloneRepository } from '../plugin/git-clone.js';
 import { createStoreId } from '../types/brands.js';
 import { ok, err } from '../types/result.js';
+import type { GitignoreService } from './gitignore.service.js';
 import type { StoreDefinitionService } from './store-definition.service.js';
 import type { StoreId } from '../types/brands.js';
 import type { Result } from '../types/result.js';
@@ -41,6 +42,8 @@ export interface CreateStoreInput {
 export interface StoreServiceOptions {
   /** Optional definition service for auto-updating git-committable config */
   definitionService?: StoreDefinitionService;
+  /** Optional gitignore service for ensuring .gitignore patterns */
+  gitignoreService?: GitignoreService;
 }
 
 export interface OperationOptions {
@@ -55,11 +58,13 @@ interface StoreRegistry {
 export class StoreService {
   private readonly dataDir: string;
   private readonly definitionService: StoreDefinitionService | undefined;
+  private readonly gitignoreService: GitignoreService | undefined;
   private registry: StoreRegistry = { stores: [] };
 
   constructor(dataDir: string, options?: StoreServiceOptions) {
     this.dataDir = dataDir;
     this.definitionService = options?.definitionService ?? undefined;
+    this.gitignoreService = options?.gitignoreService ?? undefined;
   }
 
   async initialize(): Promise<void> {
@@ -228,6 +233,11 @@ export class StoreService {
 
     this.registry.stores.push(store);
     await this.saveRegistry();
+
+    // Ensure .gitignore has required patterns
+    if (this.gitignoreService !== undefined) {
+      await this.gitignoreService.ensureGitignorePatterns();
+    }
 
     // Sync to store definitions if service is available and not skipped
     if (this.definitionService !== undefined && options?.skipDefinitionSync !== true) {
