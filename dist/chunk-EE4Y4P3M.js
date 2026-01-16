@@ -4652,10 +4652,10 @@ async function destroyServices(services) {
   logger4.info("Shutting down services");
   const errors = [];
   try {
-    await services.lance.closeAsync();
+    await services.pythonBridge.stop();
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    logger4.error({ error }, "Error closing LanceStore");
+    logger4.error({ error }, "Error stopping Python bridge");
     errors.push(error);
   }
   try {
@@ -4666,10 +4666,10 @@ async function destroyServices(services) {
     errors.push(error);
   }
   try {
-    await services.pythonBridge.stop();
+    await services.lance.closeAsync();
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    logger4.error({ error }, "Error stopping Python bridge");
+    logger4.error({ error }, "Error closing LanceStore");
     errors.push(error);
   }
   await new Promise((resolve3) => setTimeout(resolve3, 100));
@@ -4701,4 +4701,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-PWOIOCTW.js.map
+//# sourceMappingURL=chunk-EE4Y4P3M.js.map

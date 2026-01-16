@@ -83,16 +83,21 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
   logger.info('Shutting down services');
   const errors: Error[] = [];
 
-  // Use async close to allow native threads time to cleanup
+  // IMPORTANT: Shutdown in reverse order of initialization (LIFO).
+  // PythonBridge must stop BEFORE LanceStore closes to avoid mutex corruption.
+  // LanceDB's native Rust code is not fork-safe and has threading issues
+  // if subprocess signals are sent while lancedb is shutting down.
+
+  // 1. Stop Python bridge first (reverse of init: started first, stopped first)
   try {
-    await services.lance.closeAsync();
+    await services.pythonBridge.stop();
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    logger.error({ error }, 'Error closing LanceStore');
+    logger.error({ error }, 'Error stopping Python bridge');
     errors.push(error);
   }
 
-  // Dispose embedding engine to free ONNX runtime resources
+  // 2. Dispose embedding engine
   try {
     await services.embeddings.dispose();
   } catch (e) {
@@ -101,11 +106,12 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
     errors.push(error);
   }
 
+  // 3. Close LanceStore last (reverse of init: created after PythonBridge started)
   try {
-    await services.pythonBridge.stop();
+    await services.lance.closeAsync();
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    logger.error({ error }, 'Error stopping Python bridge');
+    logger.error({ error }, 'Error closing LanceStore');
     errors.push(error);
   }
 

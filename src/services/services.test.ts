@@ -115,6 +115,30 @@ describe('destroyServices', () => {
       'Service shutdown failed: dispose failed'
     );
   });
+
+  it('stops PythonBridge BEFORE closing LanceStore (fork-safety)', async () => {
+    // This test verifies the fix for lancedb fork-safety during shutdown.
+    // PythonBridge.stop() sends SIGTERM to subprocess - must happen before
+    // LanceStore.closeAsync() to avoid mutex corruption.
+    const callOrder: string[] = [];
+
+    mockPythonBridge.stop.mockImplementation(async () => {
+      callOrder.push('PythonBridge.stop');
+    });
+
+    mockLance.closeAsync.mockImplementation(async () => {
+      callOrder.push('LanceStore.closeAsync');
+    });
+
+    await destroyServices(mockServices);
+
+    const pythonStopIndex = callOrder.indexOf('PythonBridge.stop');
+    const lanceCloseIndex = callOrder.indexOf('LanceStore.closeAsync');
+
+    expect(pythonStopIndex).toBeGreaterThanOrEqual(0);
+    expect(lanceCloseIndex).toBeGreaterThanOrEqual(0);
+    expect(pythonStopIndex).toBeLessThan(lanceCloseIndex);
+  });
 });
 
 describe('createServices', () => {
