@@ -115,9 +115,6 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
     errors.push(error);
   }
 
-  // Additional delay to allow native threads (LanceDB, tree-sitter, transformers)
-  // to fully complete their cleanup before process exit
-  await new Promise((resolve) => setTimeout(resolve, 100));
   await shutdownLogger();
 
   // Throw if any errors occurred during cleanup

@@ -156,19 +156,13 @@ export class LanceStore {
   }
 
   /**
-   * Async close that allows native code cleanup time.
-   * Use this before process.exit() to prevent mutex crashes.
+   * Async close for API consistency. Calls sync close() internally.
+   * Do NOT call process.exit() after this - let the event loop drain
+   * naturally so native threads can complete cleanup.
    */
-  async closeAsync(): Promise<void> {
-    this.tables.clear();
-    if (this.connection !== null) {
-      this.connection.close();
-      this.connection = null;
-      // Allow native threads time to complete cleanup
-      // LanceDB's native code has background threads that need time
-      // Increased from 100ms to 200ms for more reliable cleanup
-      await new Promise((resolve) => setTimeout(resolve, 200));
-    }
+  closeAsync(): Promise<void> {
+    this.close();
+    return Promise.resolve();
   }
 
   private getTableName(storeId: StoreId): string {

@@ -4591,16 +4591,13 @@ var LanceStore = class {
     }
   }
   /**
-   * Async close that allows native code cleanup time.
-   * Use this before process.exit() to prevent mutex crashes.
+   * Async close for API consistency. Calls sync close() internally.
+   * Do NOT call process.exit() after this - let the event loop drain
+   * naturally so native threads can complete cleanup.
    */
-  async closeAsync() {
-    this.tables.clear();
-    if (this.connection !== null) {
-      this.connection.close();
-      this.connection = null;
-      await new Promise((resolve3) => setTimeout(resolve3, 200));
-    }
+  closeAsync() {
+    this.close();
+    return Promise.resolve();
   }
   getTableName(storeId) {
     return `documents_${storeId}`;
@@ -4672,7 +4669,6 @@ async function destroyServices(services) {
     logger4.error({ error }, "Error closing LanceStore");
     errors.push(error);
   }
-  await new Promise((resolve3) => setTimeout(resolve3, 100));
   await shutdownLogger();
   if (errors.length === 1 && errors[0] !== void 0) {
     throw new Error(`Service shutdown failed: ${errors[0].message}`, { cause: errors[0] });
@@ -4701,4 +4697,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-EE4Y4P3M.js.map
+//# sourceMappingURL=chunk-5VW5DNW4.js.map

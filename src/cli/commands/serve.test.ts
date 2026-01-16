@@ -346,7 +346,7 @@ describe('Serve Command - Execution Tests', () => {
       processOnSpy.mockRestore();
     });
 
-    it('calls destroyServices on SIGINT', async () => {
+    it('calls destroyServices on SIGINT without process.exit', async () => {
       const { destroyServices } = await import('../../services/index.js');
       const processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
       let sigintHandler: (() => void) | undefined;
@@ -366,10 +366,38 @@ describe('Serve Command - Execution Tests', () => {
       await sigintHandler!();
 
       expect(destroyServices).toHaveBeenCalledWith(mockServices);
-      expect(processExitSpy).toHaveBeenCalledWith(0);
+      // process.exit() is intentionally NOT called - let event loop drain
+      // naturally so native code (lancedb, ONNX) can clean up without mutex corruption
+      expect(processExitSpy).not.toHaveBeenCalled();
 
       processOnSpy.mockRestore();
       processExitSpy.mockRestore();
+    });
+
+    it('prevents double-shutdown on multiple signals', async () => {
+      const { destroyServices } = await import('../../services/index.js');
+      let sigintHandler: (() => void) | undefined;
+
+      const processOnSpy = vi.spyOn(process, 'on').mockImplementation((event, handler) => {
+        if (event === 'SIGINT') {
+          sigintHandler = handler as () => void;
+        }
+        return process;
+      });
+
+      const command = createServeCommand(getOptions);
+      const actionHandler = (command as any)._actionHandler;
+      await actionHandler([]);
+
+      expect(sigintHandler).toBeDefined();
+      // Call handler twice
+      await sigintHandler!();
+      await sigintHandler!();
+
+      // destroyServices should only be called once
+      expect(destroyServices).toHaveBeenCalledTimes(1);
+
+      processOnSpy.mockRestore();
     });
   });
 });

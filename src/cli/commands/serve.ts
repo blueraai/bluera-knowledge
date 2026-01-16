@@ -29,13 +29,15 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
         hostname: host,
       });
 
-      // Graceful shutdown: close HTTP server first, then cleanup services
+      // Graceful shutdown: close HTTP server, then cleanup services.
+      // Do NOT call process.exit() - let the event loop drain naturally
+      // so native code (lancedb, ONNX) can clean up without mutex corruption.
+      let shuttingDown = false;
       const shutdown = (): void => {
+        if (shuttingDown) return; // Prevent double-shutdown
+        shuttingDown = true;
         server.close(() => {
-          void (async (): Promise<void> => {
-            await destroyServices(services);
-            process.exit(0);
-          })();
+          void destroyServices(services);
         });
       };
 

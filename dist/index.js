@@ -7,11 +7,11 @@ import {
   isWebStoreDefinition,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-U77KS2BI.js";
+} from "./chunk-SWHYQLSJ.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-2YNQ7ZF7.js";
+} from "./chunk-TGMFSPTQ.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -25,7 +25,7 @@ import {
   err,
   extractRepoName,
   ok
-} from "./chunk-EE4Y4P3M.js";
+} from "./chunk-5VW5DNW4.js";
 import "./chunk-HRQD3MPH.js";
 
 // src/index.ts
@@ -1282,12 +1282,12 @@ function createServeCommand(getOptions) {
       port,
       hostname: host
     });
+    let shuttingDown = false;
     const shutdown = () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
       server.close(() => {
-        void (async () => {
-          await destroyServices(services);
-          process.exit(0);
-        })();
+        void destroyServices(services);
       });
     };
     process.on("SIGINT", shutdown);

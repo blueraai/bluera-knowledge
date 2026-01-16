@@ -354,7 +354,7 @@ describe('LanceStore', () => {
       await expect(uninitializedStore.closeAsync()).resolves.not.toThrow();
     });
 
-    it('allows native threads time to complete', async () => {
+    it('delegates to sync close without artificial delays', async () => {
       const timedStoreId = createStoreId('timed-close-test');
       const timedStore = new LanceStore(tempDir);
       await timedStore.initialize(timedStoreId);
@@ -372,12 +372,14 @@ describe('LanceStore', () => {
 
       await timedStore.addDocuments(timedStoreId, [doc]);
 
+      // closeAsync should complete quickly (no artificial delays)
+      // Native cleanup happens naturally when the event loop drains
       const startTime = Date.now();
       await timedStore.closeAsync();
       const elapsed = Date.now() - startTime;
 
-      // Should take at least some time for native cleanup
-      expect(elapsed).toBeGreaterThanOrEqual(50);
+      // Should complete within reasonable time (not blocking)
+      expect(elapsed).toBeLessThan(1000);
     });
   });
 
