@@ -10,7 +10,9 @@ vi.mock('../../services/index.js', () => ({
 }));
 
 vi.mock('@hono/node-server', () => ({
-  serve: vi.fn(),
+  serve: vi.fn().mockReturnValue({
+    close: vi.fn((callback?: () => void) => callback?.()),
+  }),
 }));
 
 vi.mock('../../server/app.js', () => ({
@@ -55,7 +57,9 @@ describe('Serve Command - Execution Tests', () => {
 
     vi.mocked(createServices).mockResolvedValue(mockServices);
     vi.mocked(createApp).mockReturnValue({ fetch: vi.fn() } as any);
-    vi.mocked(serve).mockReturnValue(undefined as any);
+    vi.mocked(serve).mockReturnValue({
+      close: vi.fn((callback?: () => void) => callback?.()),
+    } as any);
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });

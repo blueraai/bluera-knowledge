@@ -21,23 +21,25 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
       const port = parseInt(options.port ?? '3847', 10);
       const host = options.host ?? '127.0.0.1';
 
-      // Graceful shutdown handler
-      const shutdown = (): void => {
-        void (async (): Promise<void> => {
-          await destroyServices(services);
-          process.exit(0);
-        })();
-      };
-
-      process.on('SIGINT', shutdown);
-      process.on('SIGTERM', shutdown);
-
       console.log(`Starting server on http://${host}:${String(port)}`);
 
-      serve({
+      const server = serve({
         fetch: app.fetch,
         port,
         hostname: host,
       });
+
+      // Graceful shutdown: close HTTP server first, then cleanup services
+      const shutdown = (): void => {
+        server.close(() => {
+          void (async (): Promise<void> => {
+            await destroyServices(services);
+            process.exit(0);
+          })();
+        });
+      };
+
+      process.on('SIGINT', shutdown);
+      process.on('SIGTERM', shutdown);
     });
 }
