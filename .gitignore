@@ -27,3 +27,9 @@ fix_*.pl
 *-output.txt
 coverage-*.json
 package-lock.json
+
+# Bluera Knowledge
+# Store definitions (stores.config.json) are committed for team sharing
+# Data directory (vector DB, cloned repos) is not committed
+!.bluera/
+.bluera/bluera-knowledge/data/

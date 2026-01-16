@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "dataDir": ".bluera/bluera-knowledge/data",
+  "embedding": {
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "batchSize": 32,
+    "dimensions": 384
+  },
+  "indexing": {
+    "concurrency": 4,
+    "chunkSize": 1000,
+    "chunkOverlap": 150,
+    "ignorePatterns": [
+      "node_modules/**",
+      ".git/**",
+      "*.min.js",
+      "*.map"
+    ]
+  },
+  "search": {
+    "defaultMode": "hybrid",
+    "defaultLimit": 10,
+    "minScore": 0.5,
+    "rrf": {
+      "k": 40,
+      "vectorWeight": 0.7,
+      "ftsWeight": 0.3
+    }
+  },
+  "crawl": {
+    "userAgent": "BlueraKnowledge/1.0",
+    "timeout": 30000,
+    "maxConcurrency": 3
+  },
+  "server": {
+    "port": 3847,
+    "host": "127.0.0.1"
+  }
+}
