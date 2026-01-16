@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.13.2](https://github.com/blueraai/bluera-knowledge/compare/v0.13.1...v0.13.2) (2026-01-16)
+
+
+### Bug Fixes
+
+* **mcp:** move config to .mcp.json to fix fresh install failures ([b4bbfbb](https://github.com/blueraai/bluera-knowledge/commit/b4bbfbb327f1448aa7595c59c737f2e4496cae1a)), closes [#16143](https://github.com/blueraai/bluera-knowledge/issues/16143)
+
 ## [0.13.0](https://github.com/blueraai/bluera-knowledge/compare/v0.12.11...v0.13.0) (2026-01-15)
 
 ## [0.12.10](https://github.com/blueraai/bluera-knowledge/compare/v0.11.21...v0.12.10) (2026-01-15)
