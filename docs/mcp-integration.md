@@ -10,19 +10,47 @@ The MCP server is configured in `.mcp.json` at the plugin root:
 
 ```json
 {
-  "bluera-knowledge": {
-    "command": "node",
-    "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
-    "env": {
-      "PROJECT_ROOT": "${PWD}",
-      "DATA_DIR": ".bluera/bluera-knowledge/data",
-      "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
+  "mcpServers": {
+    "bluera-knowledge": {
+      "command": "bash",
+      "args": ["${CLAUDE_PLUGIN_ROOT:-.}/scripts/mcp-server.sh"],
+      "env": {
+        "PROJECT_ROOT": "${PWD}",
+        "DATA_DIR": ".bluera/bluera-knowledge/data",
+        "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
+      }
     }
   }
 }
 ```
 
 > **Note:** We use a separate `.mcp.json` file rather than inline `mcpServers` in `plugin.json` due to [Claude Code Bug #16143](https://github.com/anthropics/claude-code/issues/16143). This is the recommended pattern for Claude Code plugins.
+
+### Dependency Installation Wrapper
+
+Claude Code installs plugins via `git clone` without running `npm install`. MCP servers start before `SessionStart` hooks fire, causing module-not-found errors for plugins with npm dependencies.
+
+**Solution:** Use a wrapper script (`scripts/mcp-server.sh`) that:
+1. Checks if `node_modules` exists
+2. Runs `bun install` or `npm ci` if missing
+3. Then starts the MCP server
+
+```bash
+#!/bin/bash
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
+
+if [ ! -d "$PLUGIN_ROOT/node_modules" ]; then
+    if command -v bun &> /dev/null; then
+        (cd "$PLUGIN_ROOT" && bun install --frozen-lockfile) >&2
+    elif command -v npm &> /dev/null; then
+        (cd "$PLUGIN_ROOT" && npm ci --silent) >&2
+    fi
+fi
+
+exec node "$PLUGIN_ROOT/dist/mcp/server.js"
+```
+
+This pattern is necessary until Claude Code adds a `PostInstall` hook (see [#11240](https://github.com/anthropics/claude-code/issues/11240)).
 
 ---
 
@@ -128,3 +156,5 @@ If you're developing a Claude Code plugin with MCP integration, we recommend:
 | [#16143](https://github.com/anthropics/claude-code/issues/16143) | Open | Inline `mcpServers` in plugin.json ignored |
 | [#13543](https://github.com/anthropics/claude-code/issues/13543) | Fixed v2.0.65 | .mcp.json files not copied to plugin cache |
 | [#18336](https://github.com/anthropics/claude-code/issues/18336) | Open | MCP plugin shows enabled but no resources available |
+| [#10997](https://github.com/anthropics/claude-code/issues/10997) | Open | SessionStart hooks don't execute on first run |
+| [#11240](https://github.com/anthropics/claude-code/issues/11240) | Open | PostInstall hook requested (for dependency installation) |

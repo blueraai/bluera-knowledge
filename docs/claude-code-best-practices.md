@@ -322,6 +322,8 @@ In managed settings:
 
 ### MCP in plugins
 - Bundle MCP via `.mcp.json` (or inline in plugin.json) and reference local scripts/config with `${CLAUDE_PLUGIN_ROOT}`.
+- **Dependency installation problem:** Claude Code installs plugins via `git clone` without `npm install`. MCP servers start before `SessionStart` hooks fire, so plugins with npm dependencies fail on first run.
+- **Wrapper pattern:** Use a bash wrapper script that checks for `node_modules` and runs `npm ci` or `bun install` before starting the MCP server. See [#10997](https://github.com/anthropics/claude-code/issues/10997) and [#11240](https://github.com/anthropics/claude-code/issues/11240) for context.
 
 ---
 
@@ -370,6 +372,12 @@ A freshly opened issue reports that installing plugins in web-based Claude Code 
 Workaround patterns:
 - Skip plugin installs in cloud hooks (detect env) and pre-bake dependencies where possible.
 - If you need plugins, prefer local Claude Code execution until the web install path is stable.
+
+### MCP plugins with npm dependencies fail on first run
+Claude Code installs plugins via `git clone` without running `npm install`. MCP servers start before `SessionStart` hooks fire ([#10997](https://github.com/anthropics/claude-code/issues/10997)), so dependencies aren't available.
+Workaround:
+- Use a bash wrapper script instead of directly invoking `node dist/server.js`. The wrapper checks for `node_modules` and runs `bun install` or `npm ci` before starting the server.
+- A `PostInstall` hook has been requested ([#11240](https://github.com/anthropics/claude-code/issues/11240)) but is not yet available.
 
 ---
 
@@ -446,6 +454,8 @@ GitHub issues (examples of common failure modes / UX gaps):
 - Plugin marketplace cache: https://github.com/anthropics/claude-code/issues/16866
 - Web env plugin install hang: https://github.com/anthropics/claude-code/issues/18088
 - Windows plugin mgmt UX: https://github.com/anthropics/claude-code/issues/9426
+- SessionStart hooks don't execute on first run: https://github.com/anthropics/claude-code/issues/10997
+- PostInstall hook requested: https://github.com/anthropics/claude-code/issues/11240
 
 Community signals (toolkits + discussion):
 - plugin-dev toolkit (community expansion): https://github.com/sjnims/plugin-dev
