@@ -558,10 +558,10 @@ var ASTParser = class {
       });
       const nodes = [];
       traverse(ast, {
-        FunctionDeclaration: (path3) => {
-          const node = path3.node;
+        FunctionDeclaration: (path4) => {
+          const node = path4.node;
           if (!node.id) return;
-          const exported = path3.parent.type === "ExportNamedDeclaration" || path3.parent.type === "ExportDefaultDeclaration";
+          const exported = path4.parent.type === "ExportNamedDeclaration" || path4.parent.type === "ExportDefaultDeclaration";
           nodes.push({
             type: "function",
             name: node.id.name,
@@ -572,10 +572,10 @@ var ASTParser = class {
             signature: this.extractFunctionSignature(node)
           });
         },
-        ClassDeclaration: (path3) => {
-          const node = path3.node;
+        ClassDeclaration: (path4) => {
+          const node = path4.node;
           if (!node.id) return;
-          const exported = path3.parent.type === "ExportNamedDeclaration" || path3.parent.type === "ExportDefaultDeclaration";
+          const exported = path4.parent.type === "ExportNamedDeclaration" || path4.parent.type === "ExportDefaultDeclaration";
           const methods = [];
           for (const member of node.body.body) {
             if (t.isClassMethod(member) && t.isIdentifier(member.key)) {
@@ -597,9 +597,9 @@ var ASTParser = class {
             methods
           });
         },
-        TSInterfaceDeclaration: (path3) => {
-          const node = path3.node;
-          const exported = path3.parent.type === "ExportNamedDeclaration";
+        TSInterfaceDeclaration: (path4) => {
+          const node = path4.node;
+          const exported = path4.parent.type === "ExportNamedDeclaration";
           nodes.push({
             type: "interface",
             name: node.id.name,
@@ -622,8 +622,8 @@ var ASTParser = class {
       });
       const imports = [];
       traverse(ast, {
-        ImportDeclaration: (path3) => {
-          const node = path3.node;
+        ImportDeclaration: (path4) => {
+          const node = path4.node;
           const specifiers = [];
           for (const spec of node.specifiers) {
             if (t.isImportDefaultSpecifier(spec)) {
@@ -976,10 +976,10 @@ var GoASTParser = class {
             continue;
           }
           const stringContent = pathNode.descendantsOfType("interpreted_string_literal_content")[0];
-          const path3 = stringContent !== void 0 ? stringContent.text : pathNode.text.replace(/"/g, "");
-          if (path3 !== "") {
+          const path4 = stringContent !== void 0 ? stringContent.text : pathNode.text.replace(/"/g, "");
+          if (path4 !== "") {
             imports.push({
-              source: path3,
+              source: path4,
               specifiers: [],
               isType: false
             });
@@ -1616,25 +1616,25 @@ var RustASTParser = class {
    * - "super::Type" -> { source: "super", specifiers: ["Type"] }
    */
   parseImportPath(importPath) {
-    const path3 = importPath.trim();
-    if (path3.includes("::*")) {
-      const source = path3.replace("::*", "");
+    const path4 = importPath.trim();
+    if (path4.includes("::*")) {
+      const source = path4.replace("::*", "");
       return { source, specifiers: ["*"] };
     }
-    const scopedMatch = path3.match(/^(.+)::\{(.+)\}$/);
+    const scopedMatch = path4.match(/^(.+)::\{(.+)\}$/);
     if (scopedMatch !== null) {
       const source = scopedMatch[1] ?? "";
       const specifiersStr = scopedMatch[2] ?? "";
       const specifiers = specifiersStr.split(",").map((s) => s.trim());
       return { source, specifiers };
     }
-    const parts = path3.split("::");
+    const parts = path4.split("::");
     if (parts.length > 1) {
       const specifiers = [parts[parts.length - 1] ?? ""];
       const source = parts.slice(0, -1).join("::");
       return { source, specifiers };
     }
-    return { source: "", specifiers: [path3] };
+    return { source: "", specifiers: [path4] };
   }
 };
 
@@ -1957,20 +1957,20 @@ var ProjectRootService = class {
   /**
    * Normalize path by resolving symlinks and normalizing separators
    */
-  static normalize(path3) {
+  static normalize(path4) {
     try {
-      const realPath = realpathSync(path3);
+      const realPath = realpathSync(path4);
       return normalize(realPath);
     } catch {
-      return normalize(path3);
+      return normalize(path4);
     }
   }
   /**
    * Validate that a path exists and is a directory
    */
-  static validate(path3) {
+  static validate(path4) {
     try {
-      const stats = statSync(path3);
+      const stats = statSync(path4);
       return stats.isDirectory();
     } catch {
       return false;
@@ -2015,9 +2015,9 @@ var DEFAULT_CONFIG = {
 };
 
 // src/services/config.service.ts
-async function fileExists(path3) {
+async function fileExists(path4) {
   try {
-    await access(path3);
+    await access(path4);
     return true;
   } catch {
     return false;
@@ -2064,14 +2064,14 @@ var ConfigService = class {
   resolveDataDir() {
     return this.dataDir;
   }
-  expandPath(path3, baseDir) {
-    if (path3.startsWith("~")) {
-      return path3.replace("~", homedir2());
+  expandPath(path4, baseDir) {
+    if (path4.startsWith("~")) {
+      return path4.replace("~", homedir2());
     }
-    if (!path3.startsWith("/")) {
-      return resolve(baseDir, path3);
+    if (!path4.startsWith("/")) {
+      return resolve(baseDir, path4);
     }
-    return path3;
+    return path4;
   }
 };
 
@@ -3445,9 +3445,9 @@ var SearchService = class {
    * This helps queries like "dispatcher" rank async_dispatcher.py higher.
    */
   getPathKeywordBoost(query, result) {
-    const path3 = result.metadata.path;
-    if (path3 === void 0 || path3 === "") return 1;
-    const pathSegments = path3.toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    const path4 = result.metadata.path;
+    if (path4 === void 0 || path4 === "") return 1;
+    const pathSegments = path4.toLowerCase().replace(/[^a-z0-9]+/g, " ");
     const stopWords = /* @__PURE__ */ new Set([
       "how",
       "to",
@@ -3489,9 +3489,9 @@ var SearchService = class {
    * If query mentions a framework, boost results from that framework's files.
    */
   getFrameworkContextBoost(query, result) {
-    const path3 = result.metadata.path ?? result.metadata.url ?? "";
+    const path4 = result.metadata.path ?? result.metadata.url ?? "";
     const content = result.content.toLowerCase();
-    const pathLower = path3.toLowerCase();
+    const pathLower = path4.toLowerCase();
     for (const { pattern, terms } of FRAMEWORK_PATTERNS) {
       if (pattern.test(query)) {
         const resultMatchesFramework = terms.some(
@@ -3508,7 +3508,7 @@ var SearchService = class {
   }
   addProgressiveContext(result, query, detail, graph) {
     const enhanced = { ...result };
-    const path3 = result.metadata.path ?? result.metadata.url ?? "unknown";
+    const path4 = result.metadata.path ?? result.metadata.url ?? "unknown";
     const fileType = result.metadata["fileType"];
     const codeUnit = this.extractCodeUnitFromResult(result);
     const symbolName = codeUnit?.name ?? this.extractSymbolName(result.content);
@@ -3517,11 +3517,11 @@ var SearchService = class {
       name: symbolName,
       signature: codeUnit?.signature ?? "",
       purpose: this.generatePurpose(result.content, query),
-      location: `${path3}${codeUnit ? `:${String(codeUnit.startLine)}` : ""}`,
+      location: `${path4}${codeUnit ? `:${String(codeUnit.startLine)}` : ""}`,
       relevanceReason: this.generateRelevanceReason(result, query)
     };
     if (detail === "contextual" || detail === "full") {
-      const usage = this.getUsageFromGraph(graph, path3, symbolName);
+      const usage = this.getUsageFromGraph(graph, path4, symbolName);
       enhanced.context = {
         interfaces: this.extractInterfaces(result.content),
         keyImports: this.extractImports(result.content),
@@ -3530,7 +3530,7 @@ var SearchService = class {
       };
     }
     if (detail === "full") {
-      const relatedCode = this.getRelatedCodeFromGraph(graph, path3, symbolName);
+      const relatedCode = this.getRelatedCodeFromGraph(graph, path4, symbolName);
       enhanced.full = {
         completeCode: codeUnit?.fullContent ?? result.content,
         relatedCode,
@@ -3541,9 +3541,9 @@ var SearchService = class {
     return enhanced;
   }
   extractCodeUnitFromResult(result) {
-    const path3 = result.metadata.path;
-    if (path3 === void 0 || path3 === "") return void 0;
-    const ext = path3.split(".").pop() ?? "";
+    const path4 = result.metadata.path;
+    if (path4 === void 0 || path4 === "") return void 0;
+    const ext = path4.split(".").pop() ?? "";
     const language = ext === "ts" || ext === "tsx" ? "typescript" : ext === "js" || ext === "jsx" ? "javascript" : ext;
     const symbolName = this.extractSymbolName(result.content);
     if (symbolName === "") return void 0;
@@ -3824,9 +3824,9 @@ function extractRepoName(url) {
 }
 
 // src/services/store.service.ts
-async function fileExists2(path3) {
+async function fileExists2(path4) {
   try {
-    await access2(path3);
+    await access2(path4);
     return true;
   } catch {
     return false;
@@ -4086,7 +4086,9 @@ var StoreService = class {
 // src/crawl/bridge.ts
 import { spawn as spawn2 } from "child_process";
 import { randomUUID as randomUUID3 } from "crypto";
+import path3 from "path";
 import { createInterface } from "readline";
+import { fileURLToPath } from "url";
 import { ZodError } from "zod";
 
 // src/crawl/schemas.ts
@@ -4166,8 +4168,23 @@ var PythonBridge = class {
   stderrReadline = null;
   start() {
     if (this.process) return Promise.resolve();
-    logger3.debug("Starting Python bridge process");
-    this.process = spawn2("python3", ["python/crawl_worker.py"], {
+    const currentFilePath = fileURLToPath(import.meta.url);
+    const isProduction = currentFilePath.includes("/dist/");
+    let pythonWorkerPath;
+    if (isProduction) {
+      const distIndex = currentFilePath.indexOf("/dist/");
+      const pluginRoot = currentFilePath.substring(0, distIndex);
+      pythonWorkerPath = path3.join(pluginRoot, "python", "crawl_worker.py");
+    } else {
+      const srcDir = path3.dirname(path3.dirname(currentFilePath));
+      const projectRoot = path3.dirname(srcDir);
+      pythonWorkerPath = path3.join(projectRoot, "python", "crawl_worker.py");
+    }
+    logger3.debug(
+      { pythonWorkerPath, currentFilePath, isProduction },
+      "Starting Python bridge process"
+    );
+    this.process = spawn2("python3", [pythonWorkerPath], {
       stdio: ["pipe", "pipe", "pipe"]
     });
     this.process.on("error", (err2) => {
@@ -4679,4 +4696,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-6ZVW2P2F.js.map
+//# sourceMappingURL=chunk-AJI5DCKY.js.map

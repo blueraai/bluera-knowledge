@@ -78,7 +78,7 @@ describe('PythonBridge', () => {
 
       expect(spawn).toHaveBeenCalledWith(
         'python3',
-        ['python/crawl_worker.py'],
+        [expect.stringMatching(/.*\/python\/crawl_worker\.py$/)],
         expect.objectContaining({
           stdio: ['pipe', 'pipe', 'pipe'],
         })

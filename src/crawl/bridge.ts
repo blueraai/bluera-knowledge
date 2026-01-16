@@ -1,6 +1,8 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import path from 'node:path';
 import { createInterface, type Interface as ReadlineInterface } from 'node:readline';
+import { fileURLToPath } from 'node:url';
 import { ZodError } from 'zod';
 import {
   type CrawlResult,
@@ -37,9 +39,30 @@ export class PythonBridge {
   start(): Promise<void> {
     if (this.process) return Promise.resolve();
 
-    logger.debug('Starting Python bridge process');
+    // Compute absolute path to Python worker using import.meta.url
+    // This works both in development (src/) and production (dist/)
+    const currentFilePath = fileURLToPath(import.meta.url);
+    const isProduction = currentFilePath.includes('/dist/');
 
-    this.process = spawn('python3', ['python/crawl_worker.py'], {
+    let pythonWorkerPath: string;
+    if (isProduction) {
+      // Production: Find dist dir and go to sibling python/ directory
+      const distIndex = currentFilePath.indexOf('/dist/');
+      const pluginRoot = currentFilePath.substring(0, distIndex);
+      pythonWorkerPath = path.join(pluginRoot, 'python', 'crawl_worker.py');
+    } else {
+      // Development: Go up from src/crawl to find python/
+      const srcDir = path.dirname(path.dirname(currentFilePath));
+      const projectRoot = path.dirname(srcDir);
+      pythonWorkerPath = path.join(projectRoot, 'python', 'crawl_worker.py');
+    }
+
+    logger.debug(
+      { pythonWorkerPath, currentFilePath, isProduction },
+      'Starting Python bridge process'
+    );
+
+    this.process = spawn('python3', [pythonWorkerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 
