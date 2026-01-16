@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createInterface, type Interface as ReadlineInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -45,24 +46,33 @@ export class PythonBridge {
     const isProduction = currentFilePath.includes('/dist/');
 
     let pythonWorkerPath: string;
+    let pythonPath: string;
+
     if (isProduction) {
       // Production: Find dist dir and go to sibling python/ directory
       const distIndex = currentFilePath.indexOf('/dist/');
       const pluginRoot = currentFilePath.substring(0, distIndex);
       pythonWorkerPath = path.join(pluginRoot, 'python', 'crawl_worker.py');
+
+      // Use venv python if available (installed by check-dependencies.sh hook)
+      const venvPython = path.join(pluginRoot, '.venv', 'bin', 'python3');
+      pythonPath = existsSync(venvPython) ? venvPython : 'python3';
     } else {
       // Development: Go up from src/crawl to find python/
       const srcDir = path.dirname(path.dirname(currentFilePath));
       const projectRoot = path.dirname(srcDir);
       pythonWorkerPath = path.join(projectRoot, 'python', 'crawl_worker.py');
+
+      // Development: Use system python (user manages their own environment)
+      pythonPath = 'python3';
     }
 
     logger.debug(
-      { pythonWorkerPath, currentFilePath, isProduction },
+      { pythonWorkerPath, pythonPath, currentFilePath, isProduction },
       'Starting Python bridge process'
     );
 
-    this.process = spawn('python3', [pythonWorkerPath], {
+    this.process = spawn(pythonPath, [pythonWorkerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

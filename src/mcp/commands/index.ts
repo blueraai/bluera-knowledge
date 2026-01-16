@@ -10,12 +10,14 @@ import { metaCommands } from './meta.commands.js';
 import { commandRegistry } from './registry.js';
 import { storeCommands } from './store.commands.js';
 import { syncCommands } from './sync.commands.js';
+import { uninstallCommands } from './uninstall.commands.js';
 
 // Register all commands
 commandRegistry.registerAll(storeCommands);
 commandRegistry.registerAll(jobCommands);
 commandRegistry.registerAll(metaCommands);
 commandRegistry.registerAll(syncCommands);
+commandRegistry.registerAll(uninstallCommands);
 
 // Re-export for convenience
 export { commandRegistry, executeCommand, generateHelp } from './registry.js';

@@ -4086,6 +4086,7 @@ var StoreService = class {
 // src/crawl/bridge.ts
 import { spawn as spawn2 } from "child_process";
 import { randomUUID as randomUUID3 } from "crypto";
+import { existsSync as existsSync4 } from "fs";
 import path3 from "path";
 import { createInterface } from "readline";
 import { fileURLToPath } from "url";
@@ -4171,20 +4172,24 @@ var PythonBridge = class {
     const currentFilePath = fileURLToPath(import.meta.url);
     const isProduction = currentFilePath.includes("/dist/");
     let pythonWorkerPath;
+    let pythonPath;
     if (isProduction) {
       const distIndex = currentFilePath.indexOf("/dist/");
       const pluginRoot = currentFilePath.substring(0, distIndex);
       pythonWorkerPath = path3.join(pluginRoot, "python", "crawl_worker.py");
+      const venvPython = path3.join(pluginRoot, ".venv", "bin", "python3");
+      pythonPath = existsSync4(venvPython) ? venvPython : "python3";
     } else {
       const srcDir = path3.dirname(path3.dirname(currentFilePath));
       const projectRoot = path3.dirname(srcDir);
       pythonWorkerPath = path3.join(projectRoot, "python", "crawl_worker.py");
+      pythonPath = "python3";
     }
     logger3.debug(
-      { pythonWorkerPath, currentFilePath, isProduction },
+      { pythonWorkerPath, pythonPath, currentFilePath, isProduction },
       "Starting Python bridge process"
     );
-    this.process = spawn2("python3", [pythonWorkerPath], {
+    this.process = spawn2(pythonPath, [pythonWorkerPath], {
       stdio: ["pipe", "pipe", "pipe"]
     });
     this.process.on("error", (err2) => {
@@ -4696,4 +4701,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-AJI5DCKY.js.map
+//# sourceMappingURL=chunk-Y24ZJRZP.js.map

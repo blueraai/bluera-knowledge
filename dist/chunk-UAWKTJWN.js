@@ -7,7 +7,7 @@ import {
   createStoreId,
   destroyServices,
   summarizePayload
-} from "./chunk-AJI5DCKY.js";
+} from "./chunk-Y24ZJRZP.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -1626,11 +1626,130 @@ var syncCommands = [
   }
 ];
 
+// src/mcp/commands/uninstall.commands.ts
+import { z as z8 } from "zod";
+
+// src/mcp/handlers/uninstall.handler.ts
+import { existsSync } from "fs";
+import { readdir, rm as rm2 } from "fs/promises";
+import { homedir } from "os";
+import { join as join3 } from "path";
+var logger2 = createLogger("uninstall-handler");
+var handleUninstall = async (args, context) => {
+  const { global: includeGlobal = false, keepDefinitions = true } = args;
+  const deleted = [];
+  const kept = [];
+  const errors = [];
+  const projectRoot = context.options.projectRoot ?? process.cwd();
+  const projectDataDir = join3(projectRoot, ".bluera", "bluera-knowledge");
+  logger2.info({ projectDataDir, includeGlobal, keepDefinitions }, "Starting uninstall");
+  if (existsSync(projectDataDir)) {
+    if (keepDefinitions) {
+      try {
+        const entries = await readdir(projectDataDir, { withFileTypes: true });
+        for (const entry of entries) {
+          const entryPath = join3(projectDataDir, entry.name);
+          if (entry.name === "stores.config.json") {
+            kept.push(entryPath);
+            continue;
+          }
+          try {
+            await rm2(entryPath, { recursive: true, force: true });
+            deleted.push(entryPath);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            errors.push(`Failed to delete ${entryPath}: ${msg}`);
+            logger2.error({ error: msg, path: entryPath }, "Failed to delete");
+          }
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`Failed to read ${projectDataDir}: ${msg}`);
+        logger2.error({ error: msg, path: projectDataDir }, "Failed to read directory");
+      }
+    } else {
+      try {
+        await rm2(projectDataDir, { recursive: true, force: true });
+        deleted.push(projectDataDir);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`Failed to delete ${projectDataDir}: ${msg}`);
+        logger2.error({ error: msg, path: projectDataDir }, "Failed to delete");
+      }
+    }
+  }
+  if (includeGlobal) {
+    const globalDir = join3(homedir(), ".local", "share", "bluera-knowledge");
+    if (existsSync(globalDir)) {
+      try {
+        await rm2(globalDir, { recursive: true, force: true });
+        deleted.push(globalDir);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`Failed to delete ${globalDir}: ${msg}`);
+        logger2.error({ error: msg, path: globalDir }, "Failed to delete global data");
+      }
+    }
+  }
+  logger2.info({ deleted, kept, errors }, "Uninstall complete");
+  const lines = [];
+  if (deleted.length > 0) {
+    lines.push("## Deleted:");
+    for (const path2 of deleted) {
+      lines.push(`- ${path2}`);
+    }
+  } else {
+    lines.push("No data found to delete.");
+  }
+  if (kept.length > 0) {
+    lines.push("");
+    lines.push("## Preserved:");
+    for (const path2 of kept) {
+      lines.push(`- ${path2}`);
+    }
+    lines.push("");
+    lines.push("_Use `keepDefinitions: false` to also remove stores.config.json_");
+  }
+  if (errors.length > 0) {
+    lines.push("");
+    lines.push("## Errors:");
+    for (const error of errors) {
+      lines.push(`- ${error}`);
+    }
+  }
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push("## To fully uninstall (clear plugin cache):");
+  lines.push("1. Exit Claude Code");
+  lines.push("2. Run: `rm -rf ~/.claude/plugins/cache/bluera-knowledge-*`");
+  lines.push("3. Restart Claude Code");
+  lines.push("");
+  lines.push("_This removes the plugin, Python venv, and all dependencies._");
+  return {
+    content: [{ type: "text", text: lines.join("\n") }]
+  };
+};
+
+// src/mcp/commands/uninstall.commands.ts
+var uninstallCommands = [
+  {
+    name: "uninstall",
+    description: "Remove Bluera Knowledge data from project (and optionally global data)",
+    argsSchema: z8.object({
+      global: z8.boolean().optional().describe("Also remove global data (~/.local/share/bluera-knowledge)"),
+      keepDefinitions: z8.boolean().optional().describe("Keep stores.config.json for team sharing (default: true)")
+    }),
+    handler: (args, context) => handleUninstall(args, context)
+  }
+];
+
 // src/mcp/commands/index.ts
 commandRegistry.registerAll(storeCommands);
 commandRegistry.registerAll(jobCommands);
 commandRegistry.registerAll(metaCommands);
 commandRegistry.registerAll(syncCommands);
+commandRegistry.registerAll(uninstallCommands);
 
 // src/mcp/handlers/execute.handler.ts
 var handleExecute = async (args, context) => {
@@ -1734,11 +1853,11 @@ var LRUCache = class {
 };
 
 // src/mcp/handlers/search.handler.ts
-var logger2 = createLogger("mcp-search");
+var logger3 = createLogger("mcp-search");
 var resultCache = new LRUCache(1e3);
 var handleSearch = async (args, context) => {
   const validated = SearchArgsSchema.parse(args);
-  logger2.info(
+  logger3.info(
     {
       query: validated.query,
       stores: validated.stores,
@@ -1815,7 +1934,7 @@ var handleSearch = async (args, context) => {
   const header = `Search: "${validated.query}" | Results: ${String(results.totalResults)} | ${formatTokenCount(responseTokens)} tokens | ${String(results.timeMs)}ms${confidenceInfo}
 
 `;
-  logger2.info(
+  logger3.info(
     {
       query: validated.query,
       totalResults: results.totalResults,
@@ -1836,7 +1955,7 @@ var handleSearch = async (args, context) => {
 };
 var handleGetFullContext = async (args, context) => {
   const validated = GetFullContextArgsSchema.parse(args);
-  logger2.info({ resultId: validated.resultId }, "Get full context requested");
+  logger3.info({ resultId: validated.resultId }, "Get full context requested");
   const resultId = validated.resultId;
   const cachedResult = resultCache.get(resultId);
   if (!cachedResult) {
@@ -1854,7 +1973,7 @@ var handleGetFullContext = async (args, context) => {
       null,
       2
     );
-    logger2.info(
+    logger3.info(
       {
         resultId,
         cached: true,
@@ -1920,7 +2039,7 @@ var handleGetFullContext = async (args, context) => {
     null,
     2
   );
-  logger2.info(
+  logger3.info(
     {
       resultId,
       cached: false,
@@ -1956,7 +2075,7 @@ var tools = [
 ];
 
 // src/mcp/server.ts
-var logger3 = createLogger("mcp-server");
+var logger4 = createLogger("mcp-server");
 var registry = AdapterRegistry.getInstance();
 if (!registry.hasExtension(".zil")) {
   registry.register(new ZilAdapter());
@@ -2072,7 +2191,7 @@ function createMCPServer(options) {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     const startTime = Date.now();
-    logger3.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
+    logger4.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
     const services = await createServices(options.config, options.dataDir, options.projectRoot);
     const context = { services, options };
     try {
@@ -2089,11 +2208,11 @@ function createMCPServer(options) {
         result = await tool.handler(validated, context);
       }
       const durationMs = Date.now() - startTime;
-      logger3.info({ tool: name, durationMs }, "Tool completed");
+      logger4.info({ tool: name, durationMs }, "Tool completed");
       return result;
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      logger3.error(
+      logger4.error(
         {
           tool: name,
           durationMs,
@@ -2109,7 +2228,7 @@ function createMCPServer(options) {
   return server;
 }
 async function runMCPServer(options) {
-  logger3.info(
+  logger4.info(
     {
       dataDir: options.dataDir,
       projectRoot: options.projectRoot
@@ -2119,7 +2238,7 @@ async function runMCPServer(options) {
   const server = createMCPServer(options);
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  logger3.info("MCP server connected to stdio transport");
+  logger4.info("MCP server connected to stdio transport");
 }
 var scriptPath = process.argv[1] ?? "";
 var isMCPServerEntry = scriptPath.endsWith("mcp/server.js") || scriptPath.endsWith("mcp/server");
@@ -2133,7 +2252,7 @@ if (isMCPServerEntry) {
     config: process.env["CONFIG_PATH"],
     projectRoot
   }).catch((error) => {
-    logger3.error(
+    logger4.error(
       { error: error instanceof Error ? error.message : String(error) },
       "Failed to start MCP server"
     );
@@ -2151,4 +2270,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-XL2UHMBL.js.map
+//# sourceMappingURL=chunk-UAWKTJWN.js.map
