@@ -3,25 +3,32 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 /**
- * Tests to verify plugin.json is correctly configured for MCP server.
+ * Tests to verify .mcp.json is correctly configured for MCP server.
  * The MCP server must work when the plugin is installed via marketplace.
  *
  * Key requirements:
  * - Must use ${CLAUDE_PLUGIN_ROOT} for server path (resolves to plugin cache)
  * - Must set PROJECT_ROOT env var (required by server fail-fast check)
  * - Must NOT use relative paths (would resolve to user's project, not plugin)
+ *
+ * Note: We use .mcp.json at plugin root (not inline in plugin.json) due to
+ * Claude Code Bug #16143 where inline mcpServers is ignored during parsing.
+ * See: https://github.com/anthropics/claude-code/issues/16143
  */
-describe('Plugin MCP Configuration (.claude-plugin/plugin.json)', () => {
-  const configPath = join(process.cwd(), '.claude-plugin/plugin.json');
-  const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+describe('Plugin MCP Configuration (.mcp.json)', () => {
+  const mcpJsonPath = join(process.cwd(), '.mcp.json');
+  const config = JSON.parse(readFileSync(mcpJsonPath, 'utf-8'));
 
-  it('has mcpServers configuration inline', () => {
-    expect(config).toHaveProperty('mcpServers');
-    expect(config.mcpServers).toHaveProperty('bluera-knowledge');
+  it('has .mcp.json file at plugin root', () => {
+    expect(existsSync(mcpJsonPath)).toBe(true);
+  });
+
+  it('has bluera-knowledge server configuration', () => {
+    expect(config).toHaveProperty('bluera-knowledge');
   });
 
   it('uses ${CLAUDE_PLUGIN_ROOT} for server path (required for plugin mode)', () => {
-    const serverConfig = config.mcpServers['bluera-knowledge'];
+    const serverConfig = config['bluera-knowledge'];
     const argsString = JSON.stringify(serverConfig.args);
 
     // CLAUDE_PLUGIN_ROOT is set by Claude Code when plugin is installed
@@ -31,7 +38,7 @@ describe('Plugin MCP Configuration (.claude-plugin/plugin.json)', () => {
   });
 
   it('does NOT use relative paths (would break in plugin mode)', () => {
-    const serverConfig = config.mcpServers['bluera-knowledge'];
+    const serverConfig = config['bluera-knowledge'];
     const argsString = JSON.stringify(serverConfig.args);
 
     // Relative paths like ./dist would resolve to user's project directory
@@ -40,7 +47,7 @@ describe('Plugin MCP Configuration (.claude-plugin/plugin.json)', () => {
   });
 
   it('sets PROJECT_ROOT environment variable (required by fail-fast server)', () => {
-    const serverConfig = config.mcpServers['bluera-knowledge'];
+    const serverConfig = config['bluera-knowledge'];
 
     // PROJECT_ROOT is required since b404cd6 (fail-fast change)
     expect(serverConfig.env).toHaveProperty('PROJECT_ROOT');
@@ -49,16 +56,16 @@ describe('Plugin MCP Configuration (.claude-plugin/plugin.json)', () => {
 });
 
 /**
- * Tests to ensure .mcp.json is NOT distributed with the plugin.
- * .mcp.json at project root causes confusion between plugin and project config.
+ * Tests to ensure plugin.json does NOT have inline mcpServers.
+ * Inline mcpServers is broken due to Claude Code Bug #16143.
  */
-describe('No conflicting .mcp.json in repo', () => {
-  it('does NOT have .mcp.json in repo root (prevents config confusion)', () => {
-    const mcpJsonPath = join(process.cwd(), '.mcp.json');
+describe('plugin.json does NOT have inline mcpServers', () => {
+  it('plugin.json does NOT contain mcpServers (would be ignored by Claude Code)', () => {
+    const pluginJsonPath = join(process.cwd(), '.claude-plugin/plugin.json');
+    const pluginConfig = JSON.parse(readFileSync(pluginJsonPath, 'utf-8'));
 
-    // .mcp.json should NOT exist in the repo
-    // - For plugin mode: use mcpServers in plugin.json
-    // - For development: use ~/.claude.json per README
-    expect(existsSync(mcpJsonPath)).toBe(false);
+    // mcpServers in plugin.json is ignored due to Bug #16143
+    // All MCP config should be in .mcp.json at plugin root
+    expect(pluginConfig).not.toHaveProperty('mcpServers');
   });
 });

@@ -6,23 +6,23 @@ The plugin includes a Model Context Protocol server that exposes search tools fo
 
 ## Configuration
 
-The MCP server is configured inline in `.claude-plugin/plugin.json`:
+The MCP server is configured in `.mcp.json` at the plugin root:
 
 ```json
 {
-  "mcpServers": {
-    "bluera-knowledge": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
-      "env": {
-        "PROJECT_ROOT": "${PWD}",
-        "DATA_DIR": ".bluera/bluera-knowledge/data",
-        "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
-      }
+  "bluera-knowledge": {
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/server.js"],
+    "env": {
+      "PROJECT_ROOT": "${PWD}",
+      "DATA_DIR": ".bluera/bluera-knowledge/data",
+      "CONFIG_PATH": ".bluera/bluera-knowledge/config.json"
     }
   }
 }
 ```
+
+> **Note:** We use a separate `.mcp.json` file rather than inline `mcpServers` in `plugin.json` due to [Claude Code Bug #16143](https://github.com/anthropics/claude-code/issues/16143). This is the recommended pattern for Claude Code plugins.
 
 ---
 
@@ -108,3 +108,23 @@ Meta-tool for store and job management. Consolidates 8 operations into one tool 
 | `job:cancel` | `jobId` | Cancel a running job |
 | `help` | `command?` | Show help for commands |
 | `commands` | - | List all available commands |
+
+---
+
+## Known Issues
+
+### MCP Configuration Pattern
+
+This plugin uses a separate `.mcp.json` file for MCP server configuration (rather than inline in `plugin.json`). This is the recommended pattern for Claude Code plugins due to [Bug #16143](https://github.com/anthropics/claude-code/issues/16143) where inline `mcpServers` may be ignored during plugin manifest parsing.
+
+If you're developing a Claude Code plugin with MCP integration, we recommend:
+1. Create a `.mcp.json` file at your plugin root
+2. Do NOT use inline `mcpServers` in `plugin.json`
+
+### Related Claude Code Bugs
+
+| Issue | Status | Description |
+|-------|--------|-------------|
+| [#16143](https://github.com/anthropics/claude-code/issues/16143) | Open | Inline `mcpServers` in plugin.json ignored |
+| [#13543](https://github.com/anthropics/claude-code/issues/13543) | Fixed v2.0.65 | .mcp.json files not copied to plugin cache |
+| [#18336](https://github.com/anthropics/claude-code/issues/18336) | Open | MCP plugin shows enabled but no resources available |

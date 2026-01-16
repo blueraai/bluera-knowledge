@@ -463,6 +463,18 @@ If the plugin isn't listed, install it:
 </details>
 
 <details>
+<summary><b>🔌 MCP server shows as "failed" in /plugin</b></summary>
+
+If the MCP server shows as failed after installation:
+
+1. **Restart Claude Code** - MCP servers require a restart to initialize
+2. **Check status:** Run `/mcp` to see connection status
+3. **Reinstall:** Try `/plugin uninstall bluera-knowledge` then `/plugin install bluera-knowledge@bluera`
+
+If the issue persists, check that Claude Code is v2.0.65 or later (earlier versions had MCP loading bugs).
+</details>
+
+<details>
 <summary><b>🌐 Web crawling fails</b></summary>
 
 Check Python dependencies:
