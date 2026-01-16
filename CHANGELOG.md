@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.14.8](https://github.com/blueraai/bluera-knowledge/compare/v0.14.7...v0.14.8) (2026-01-16)
+
+
+### Bug Fixes
+
+* **mcp:** add missing mcpServers wrapper to config ([506c8b2](https://github.com/blueraai/bluera-knowledge/commit/506c8b20d2dd52e2c15dda43f9cc8ae620a37b5c))
+
 ## [0.14.7](https://github.com/blueraai/bluera-knowledge/compare/v0.14.6...v0.14.7) (2026-01-16)
 
 

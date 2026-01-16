@@ -23,12 +23,13 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
     expect(existsSync(mcpJsonPath)).toBe(true);
   });
 
-  it('has bluera-knowledge server configuration', () => {
-    expect(config).toHaveProperty('bluera-knowledge');
+  it('has mcpServers wrapper with bluera-knowledge server configuration', () => {
+    expect(config).toHaveProperty('mcpServers');
+    expect(config.mcpServers).toHaveProperty('bluera-knowledge');
   });
 
   it('uses ${CLAUDE_PLUGIN_ROOT} for server path (required for plugin mode)', () => {
-    const serverConfig = config['bluera-knowledge'];
+    const serverConfig = config.mcpServers['bluera-knowledge'];
     const argsString = JSON.stringify(serverConfig.args);
 
     // CLAUDE_PLUGIN_ROOT is set by Claude Code when plugin is installed
@@ -38,7 +39,7 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
   });
 
   it('does NOT use relative paths (would break in plugin mode)', () => {
-    const serverConfig = config['bluera-knowledge'];
+    const serverConfig = config.mcpServers['bluera-knowledge'];
     const argsString = JSON.stringify(serverConfig.args);
 
     // Relative paths like ./dist would resolve to user's project directory
@@ -47,7 +48,7 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
   });
 
   it('sets PROJECT_ROOT environment variable (required by fail-fast server)', () => {
-    const serverConfig = config['bluera-knowledge'];
+    const serverConfig = config.mcpServers['bluera-knowledge'];
 
     // PROJECT_ROOT is required since b404cd6 (fail-fast change)
     expect(serverConfig.env).toHaveProperty('PROJECT_ROOT');
