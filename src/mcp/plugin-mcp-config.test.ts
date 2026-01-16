@@ -42,7 +42,8 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
     // - Plugin mode: CLAUDE_PLUGIN_ROOT expands to plugin cache path
     // - Project mode: Uses default "." for local development
     expect(argsString).toContain('${CLAUDE_PLUGIN_ROOT:-.}');
-    expect(argsString).toContain('dist/mcp/server.js');
+    // Wrapper script installs deps before starting MCP server
+    expect(argsString).toContain('scripts/mcp-server.sh');
   });
 
   it('sets PROJECT_ROOT environment variable (required by fail-fast server)', () => {
