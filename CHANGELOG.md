@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.15.0](https://github.com/blueraai/bluera-knowledge/compare/v0.14.8...v0.15.0) (2026-01-16)
+
+
+### Features
+
+* **services:** wire up StoreDefinitionService and GitignoreService ([4d52052](https://github.com/blueraai/bluera-knowledge/commit/4d520523f52b1424f3bf523ad3596227add8fdb9))
+
+
+### Bug Fixes
+
+* **gitignore:** correct patterns to actually track stores.config.json ([7e0dd34](https://github.com/blueraai/bluera-knowledge/commit/7e0dd342610b45f59237ede36c14b5ed124943cd))
+* **mcp:** use default value syntax for dual-mode MCP support ([4f62f5c](https://github.com/blueraai/bluera-knowledge/commit/4f62f5cfe67b24758ba2b198730a674f4b3055d7))
+
 ## [0.14.8](https://github.com/blueraai/bluera-knowledge/compare/v0.14.7...v0.14.8) (2026-01-16)
 
 
