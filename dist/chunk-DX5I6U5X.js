@@ -1,13 +1,16 @@
 import {
   AdapterRegistry,
   JobService,
-  ProjectRootService,
+  StoreDefinitionService,
   createLazyServices,
   createLogger,
   createStoreId,
   destroyServices,
+  isFileStoreDefinition,
+  isRepoStoreDefinition,
+  isWebStoreDefinition,
   summarizePayload
-} from "./chunk-RT23R3O6.js";
+} from "./chunk-WYZQUKUD.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -1239,213 +1242,7 @@ var storeCommands = [
 ];
 
 // src/mcp/commands/sync.commands.ts
-import { z as z7 } from "zod";
-
-// src/services/store-definition.service.ts
-import { readFile, writeFile, mkdir, access } from "fs/promises";
-import { dirname, resolve, isAbsolute, join as join2 } from "path";
-
-// src/types/store-definition.ts
 import { z as z6 } from "zod";
-var BaseStoreDefinitionSchema = z6.object({
-  name: z6.string().min(1, "Store name is required"),
-  description: z6.string().optional(),
-  tags: z6.array(z6.string()).optional()
-});
-var FileStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
-  type: z6.literal("file"),
-  path: z6.string().min(1, "Path is required for file stores")
-});
-var RepoStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
-  type: z6.literal("repo"),
-  url: z6.url("Valid URL is required for repo stores"),
-  branch: z6.string().optional(),
-  depth: z6.number().int().positive("Depth must be a positive integer").optional()
-});
-var WebStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
-  type: z6.literal("web"),
-  url: z6.url("Valid URL is required for web stores"),
-  depth: z6.number().int().min(0, "Depth must be non-negative").default(1),
-  maxPages: z6.number().int().positive("maxPages must be a positive integer").optional(),
-  crawlInstructions: z6.string().optional(),
-  extractInstructions: z6.string().optional()
-});
-var StoreDefinitionSchema = z6.discriminatedUnion("type", [
-  FileStoreDefinitionSchema,
-  RepoStoreDefinitionSchema,
-  WebStoreDefinitionSchema
-]);
-var StoreDefinitionsConfigSchema = z6.object({
-  version: z6.literal(1),
-  stores: z6.array(StoreDefinitionSchema)
-});
-function isFileStoreDefinition(def) {
-  return def.type === "file";
-}
-function isRepoStoreDefinition(def) {
-  return def.type === "repo";
-}
-function isWebStoreDefinition(def) {
-  return def.type === "web";
-}
-var DEFAULT_STORE_DEFINITIONS_CONFIG = {
-  version: 1,
-  stores: []
-};
-
-// src/services/store-definition.service.ts
-async function fileExists(path2) {
-  try {
-    await access(path2);
-    return true;
-  } catch {
-    return false;
-  }
-}
-var StoreDefinitionService = class {
-  configPath;
-  projectRoot;
-  config = null;
-  constructor(projectRoot) {
-    this.projectRoot = projectRoot ?? ProjectRootService.resolve();
-    this.configPath = join2(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
-  }
-  /**
-   * Load store definitions from config file.
-   * Returns empty config if file doesn't exist.
-   * Throws on parse/validation errors (fail fast per CLAUDE.md).
-   */
-  async load() {
-    if (this.config !== null) {
-      return this.config;
-    }
-    const exists = await fileExists(this.configPath);
-    if (!exists) {
-      this.config = {
-        ...DEFAULT_STORE_DEFINITIONS_CONFIG,
-        stores: [...DEFAULT_STORE_DEFINITIONS_CONFIG.stores]
-      };
-      return this.config;
-    }
-    const content = await readFile(this.configPath, "utf-8");
-    let parsed;
-    try {
-      parsed = JSON.parse(content);
-    } catch (error) {
-      throw new Error(
-        `Failed to parse store definitions at ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-    const result = StoreDefinitionsConfigSchema.safeParse(parsed);
-    if (!result.success) {
-      throw new Error(`Invalid store definitions at ${this.configPath}: ${result.error.message}`);
-    }
-    this.config = result.data;
-    return this.config;
-  }
-  /**
-   * Save store definitions to config file.
-   */
-  async save(config) {
-    await mkdir(dirname(this.configPath), { recursive: true });
-    await writeFile(this.configPath, JSON.stringify(config, null, 2));
-    this.config = config;
-  }
-  /**
-   * Add a store definition.
-   * Throws if a definition with the same name already exists.
-   */
-  async addDefinition(definition) {
-    const config = await this.load();
-    const existing = config.stores.find((s) => s.name === definition.name);
-    if (existing !== void 0) {
-      throw new Error(`Store definition "${definition.name}" already exists`);
-    }
-    config.stores.push(definition);
-    await this.save(config);
-  }
-  /**
-   * Remove a store definition by name.
-   * Returns true if removed, false if not found.
-   */
-  async removeDefinition(name) {
-    const config = await this.load();
-    const index = config.stores.findIndex((s) => s.name === name);
-    if (index === -1) {
-      return false;
-    }
-    config.stores.splice(index, 1);
-    await this.save(config);
-    return true;
-  }
-  /**
-   * Update an existing store definition.
-   * Only updates the provided fields, preserving others.
-   * Throws if definition not found.
-   */
-  async updateDefinition(name, updates) {
-    const config = await this.load();
-    const index = config.stores.findIndex((s) => s.name === name);
-    if (index === -1) {
-      throw new Error(`Store definition "${name}" not found`);
-    }
-    const existing = config.stores[index];
-    if (existing === void 0) {
-      throw new Error(`Store definition "${name}" not found at index ${String(index)}`);
-    }
-    if (updates.description !== void 0) {
-      existing.description = updates.description;
-    }
-    if (updates.tags !== void 0) {
-      existing.tags = updates.tags;
-    }
-    await this.save(config);
-  }
-  /**
-   * Get a store definition by name.
-   * Returns undefined if not found.
-   */
-  async getByName(name) {
-    const config = await this.load();
-    return config.stores.find((s) => s.name === name);
-  }
-  /**
-   * Check if any definitions exist.
-   */
-  async hasDefinitions() {
-    const config = await this.load();
-    return config.stores.length > 0;
-  }
-  /**
-   * Resolve a file store path relative to project root.
-   */
-  resolvePath(path2) {
-    if (isAbsolute(path2)) {
-      return path2;
-    }
-    return resolve(this.projectRoot, path2);
-  }
-  /**
-   * Get the config file path.
-   */
-  getConfigPath() {
-    return this.configPath;
-  }
-  /**
-   * Get the project root.
-   */
-  getProjectRoot() {
-    return this.projectRoot;
-  }
-  /**
-   * Clear the cached config (useful for testing).
-   */
-  clearCache() {
-    this.config = null;
-  }
-};
-
-// src/mcp/commands/sync.commands.ts
 async function handleStoresSync(args, context) {
   const { services, options } = context;
   const projectRoot = options.projectRoot;
@@ -1605,10 +1402,10 @@ var syncCommands = [
   {
     name: "stores:sync",
     description: "Sync stores from definitions config (bootstrap on fresh clone)",
-    argsSchema: z7.object({
-      prune: z7.boolean().optional().describe("Remove stores not in definitions"),
-      dryRun: z7.boolean().optional().describe("Show what would happen without making changes"),
-      reindex: z7.boolean().optional().describe("Re-index existing stores after sync")
+    argsSchema: z6.object({
+      prune: z6.boolean().optional().describe("Remove stores not in definitions"),
+      dryRun: z6.boolean().optional().describe("Show what would happen without making changes"),
+      reindex: z6.boolean().optional().describe("Re-index existing stores after sync")
     }),
     handler: (args, context) => {
       const syncArgs = {};
@@ -1627,13 +1424,13 @@ var syncCommands = [
 ];
 
 // src/mcp/commands/uninstall.commands.ts
-import { z as z8 } from "zod";
+import { z as z7 } from "zod";
 
 // src/mcp/handlers/uninstall.handler.ts
 import { existsSync } from "fs";
 import { readdir, rm as rm2 } from "fs/promises";
 import { homedir } from "os";
-import { join as join3 } from "path";
+import { join as join2 } from "path";
 var logger2 = createLogger("uninstall-handler");
 var handleUninstall = async (args, context) => {
   const { global: includeGlobal = false, keepDefinitions = true } = args;
@@ -1641,14 +1438,14 @@ var handleUninstall = async (args, context) => {
   const kept = [];
   const errors = [];
   const projectRoot = context.options.projectRoot ?? process.cwd();
-  const projectDataDir = join3(projectRoot, ".bluera", "bluera-knowledge");
+  const projectDataDir = join2(projectRoot, ".bluera", "bluera-knowledge");
   logger2.info({ projectDataDir, includeGlobal, keepDefinitions }, "Starting uninstall");
   if (existsSync(projectDataDir)) {
     if (keepDefinitions) {
       try {
         const entries = await readdir(projectDataDir, { withFileTypes: true });
         for (const entry of entries) {
-          const entryPath = join3(projectDataDir, entry.name);
+          const entryPath = join2(projectDataDir, entry.name);
           if (entry.name === "stores.config.json") {
             kept.push(entryPath);
             continue;
@@ -1679,7 +1476,7 @@ var handleUninstall = async (args, context) => {
     }
   }
   if (includeGlobal) {
-    const globalDir = join3(homedir(), ".local", "share", "bluera-knowledge");
+    const globalDir = join2(homedir(), ".local", "share", "bluera-knowledge");
     if (existsSync(globalDir)) {
       try {
         await rm2(globalDir, { recursive: true, force: true });
@@ -1736,9 +1533,9 @@ var uninstallCommands = [
   {
     name: "uninstall",
     description: "Remove Bluera Knowledge data from project (and optionally global data)",
-    argsSchema: z8.object({
-      global: z8.boolean().optional().describe("Also remove global data (~/.local/share/bluera-knowledge)"),
-      keepDefinitions: z8.boolean().optional().describe("Keep stores.config.json for team sharing (default: true)")
+    argsSchema: z7.object({
+      global: z7.boolean().optional().describe("Also remove global data (~/.local/share/bluera-knowledge)"),
+      keepDefinitions: z7.boolean().optional().describe("Keep stores.config.json for team sharing (default: true)")
     }),
     handler: (args, context) => handleUninstall(args, context)
   }
@@ -2275,11 +2072,7 @@ if (isMCPServerEntry) {
 export {
   ZilAdapter,
   spawnBackgroundWorker,
-  isFileStoreDefinition,
-  isRepoStoreDefinition,
-  isWebStoreDefinition,
-  StoreDefinitionService,
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-EUZDLMGL.js.map
+//# sourceMappingURL=chunk-DX5I6U5X.js.map

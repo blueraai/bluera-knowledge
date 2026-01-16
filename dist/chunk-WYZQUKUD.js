@@ -181,15 +181,15 @@ function getLogDirectory() {
   return getLogDir();
 }
 function shutdownLogger() {
-  return new Promise((resolve3) => {
+  return new Promise((resolve4) => {
     if (rootLogger !== null) {
       rootLogger.flush();
       setTimeout(() => {
         rootLogger = null;
-        resolve3();
+        resolve4();
       }, 100);
     } else {
-      resolve3();
+      resolve4();
     }
   });
 }
@@ -2075,10 +2075,106 @@ var ConfigService = class {
   }
 };
 
+// src/services/gitignore.service.ts
+import { readFile as readFile3, writeFile as writeFile3, access as access2 } from "fs/promises";
+import { join as join5 } from "path";
+var REQUIRED_PATTERNS = [
+  ".bluera/",
+  "!.bluera/",
+  "!.bluera/bluera-knowledge/",
+  "!.bluera/bluera-knowledge/stores.config.json",
+  ".bluera/bluera-knowledge/data/"
+];
+var SECTION_HEADER = `
+# Bluera Knowledge
+# Store definitions (stores.config.json) are committed for team sharing
+# Data directory (vector DB, cloned repos) is not committed
+`;
+async function fileExists2(path4) {
+  try {
+    await access2(path4);
+    return true;
+  } catch {
+    return false;
+  }
+}
+var GitignoreService = class {
+  gitignorePath;
+  constructor(projectRoot) {
+    this.gitignorePath = join5(projectRoot, ".gitignore");
+  }
+  /**
+   * Check if all required patterns are present in .gitignore
+   */
+  async hasRequiredPatterns() {
+    const exists = await fileExists2(this.gitignorePath);
+    if (!exists) {
+      return false;
+    }
+    const content = await readFile3(this.gitignorePath, "utf-8");
+    const lines = content.split("\n").map((l) => l.trim());
+    for (const pattern of REQUIRED_PATTERNS) {
+      if (!lines.includes(pattern)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  /**
+   * Ensure required .gitignore patterns are present.
+   *
+   * - Creates .gitignore if it doesn't exist
+   * - Appends missing patterns if .gitignore exists
+   * - Does nothing if all patterns are already present
+   *
+   * @returns Object with updated flag and descriptive message
+   */
+  async ensureGitignorePatterns() {
+    const exists = await fileExists2(this.gitignorePath);
+    if (!exists) {
+      const content = `${SECTION_HEADER.trim()}
+${REQUIRED_PATTERNS.join("\n")}
+`;
+      await writeFile3(this.gitignorePath, content);
+      return {
+        updated: true,
+        message: "Created .gitignore with Bluera Knowledge patterns"
+      };
+    }
+    const existingContent = await readFile3(this.gitignorePath, "utf-8");
+    const lines = existingContent.split("\n").map((l) => l.trim());
+    const missingPatterns = REQUIRED_PATTERNS.filter((pattern) => !lines.includes(pattern));
+    if (missingPatterns.length === 0) {
+      return {
+        updated: false,
+        message: "All Bluera Knowledge patterns already present in .gitignore"
+      };
+    }
+    let newContent = existingContent;
+    if (!newContent.endsWith("\n")) {
+      newContent += "\n";
+    }
+    newContent += SECTION_HEADER;
+    newContent += `${missingPatterns.join("\n")}
+`;
+    await writeFile3(this.gitignorePath, newContent);
+    return {
+      updated: true,
+      message: `Updated .gitignore with ${String(missingPatterns.length)} Bluera Knowledge pattern(s)`
+    };
+  }
+  /**
+   * Get the path to the .gitignore file
+   */
+  getGitignorePath() {
+    return this.gitignorePath;
+  }
+};
+
 // src/services/index.service.ts
 import { createHash as createHash2 } from "crypto";
-import { readFile as readFile3, readdir } from "fs/promises";
-import { join as join5, extname, basename } from "path";
+import { readFile as readFile4, readdir } from "fs/promises";
+import { join as join6, extname, basename } from "path";
 
 // src/services/chunking.service.ts
 var CHUNK_PRESETS = {
@@ -2533,7 +2629,7 @@ var IndexService = class {
    * Extracted for parallel processing.
    */
   async processFile(filePath, store) {
-    const content = await readFile3(filePath, "utf-8");
+    const content = await readFile4(filePath, "utf-8");
     const fileHash = createHash2("md5").update(content).digest("hex");
     const chunks = this.chunker.chunk(content, filePath);
     const ext = extname(filePath).toLowerCase();
@@ -2581,7 +2677,7 @@ var IndexService = class {
     const files = [];
     const entries = await readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = join5(dir, entry.name);
+      const fullPath = join6(dir, entry.name);
       if (entry.isDirectory()) {
         if (!["node_modules", ".git", "dist", "build"].includes(entry.name)) {
           files.push(...await this.scanDirectory(fullPath));
@@ -3780,36 +3876,240 @@ var SearchService = class {
   }
 };
 
+// src/services/store-definition.service.ts
+import { readFile as readFile5, writeFile as writeFile4, mkdir as mkdir3, access as access3 } from "fs/promises";
+import { dirname as dirname4, resolve as resolve2, isAbsolute, join as join7 } from "path";
+
+// src/types/store-definition.ts
+import { z as z2 } from "zod";
+var BaseStoreDefinitionSchema = z2.object({
+  name: z2.string().min(1, "Store name is required"),
+  description: z2.string().optional(),
+  tags: z2.array(z2.string()).optional()
+});
+var FileStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
+  type: z2.literal("file"),
+  path: z2.string().min(1, "Path is required for file stores")
+});
+var RepoStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
+  type: z2.literal("repo"),
+  url: z2.url("Valid URL is required for repo stores"),
+  branch: z2.string().optional(),
+  depth: z2.number().int().positive("Depth must be a positive integer").optional()
+});
+var WebStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
+  type: z2.literal("web"),
+  url: z2.url("Valid URL is required for web stores"),
+  depth: z2.number().int().min(0, "Depth must be non-negative").default(1),
+  maxPages: z2.number().int().positive("maxPages must be a positive integer").optional(),
+  crawlInstructions: z2.string().optional(),
+  extractInstructions: z2.string().optional()
+});
+var StoreDefinitionSchema = z2.discriminatedUnion("type", [
+  FileStoreDefinitionSchema,
+  RepoStoreDefinitionSchema,
+  WebStoreDefinitionSchema
+]);
+var StoreDefinitionsConfigSchema = z2.object({
+  version: z2.literal(1),
+  stores: z2.array(StoreDefinitionSchema)
+});
+function isFileStoreDefinition(def) {
+  return def.type === "file";
+}
+function isRepoStoreDefinition(def) {
+  return def.type === "repo";
+}
+function isWebStoreDefinition(def) {
+  return def.type === "web";
+}
+var DEFAULT_STORE_DEFINITIONS_CONFIG = {
+  version: 1,
+  stores: []
+};
+
+// src/services/store-definition.service.ts
+async function fileExists3(path4) {
+  try {
+    await access3(path4);
+    return true;
+  } catch {
+    return false;
+  }
+}
+var StoreDefinitionService = class {
+  configPath;
+  projectRoot;
+  config = null;
+  constructor(projectRoot) {
+    this.projectRoot = projectRoot ?? ProjectRootService.resolve();
+    this.configPath = join7(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
+  }
+  /**
+   * Load store definitions from config file.
+   * Returns empty config if file doesn't exist.
+   * Throws on parse/validation errors (fail fast per CLAUDE.md).
+   */
+  async load() {
+    if (this.config !== null) {
+      return this.config;
+    }
+    const exists = await fileExists3(this.configPath);
+    if (!exists) {
+      this.config = {
+        ...DEFAULT_STORE_DEFINITIONS_CONFIG,
+        stores: [...DEFAULT_STORE_DEFINITIONS_CONFIG.stores]
+      };
+      return this.config;
+    }
+    const content = await readFile5(this.configPath, "utf-8");
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (error) {
+      throw new Error(
+        `Failed to parse store definitions at ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+    const result = StoreDefinitionsConfigSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error(`Invalid store definitions at ${this.configPath}: ${result.error.message}`);
+    }
+    this.config = result.data;
+    return this.config;
+  }
+  /**
+   * Save store definitions to config file.
+   */
+  async save(config) {
+    await mkdir3(dirname4(this.configPath), { recursive: true });
+    await writeFile4(this.configPath, JSON.stringify(config, null, 2));
+    this.config = config;
+  }
+  /**
+   * Add a store definition.
+   * Throws if a definition with the same name already exists.
+   */
+  async addDefinition(definition) {
+    const config = await this.load();
+    const existing = config.stores.find((s) => s.name === definition.name);
+    if (existing !== void 0) {
+      throw new Error(`Store definition "${definition.name}" already exists`);
+    }
+    config.stores.push(definition);
+    await this.save(config);
+  }
+  /**
+   * Remove a store definition by name.
+   * Returns true if removed, false if not found.
+   */
+  async removeDefinition(name) {
+    const config = await this.load();
+    const index = config.stores.findIndex((s) => s.name === name);
+    if (index === -1) {
+      return false;
+    }
+    config.stores.splice(index, 1);
+    await this.save(config);
+    return true;
+  }
+  /**
+   * Update an existing store definition.
+   * Only updates the provided fields, preserving others.
+   * Throws if definition not found.
+   */
+  async updateDefinition(name, updates) {
+    const config = await this.load();
+    const index = config.stores.findIndex((s) => s.name === name);
+    if (index === -1) {
+      throw new Error(`Store definition "${name}" not found`);
+    }
+    const existing = config.stores[index];
+    if (existing === void 0) {
+      throw new Error(`Store definition "${name}" not found at index ${String(index)}`);
+    }
+    if (updates.description !== void 0) {
+      existing.description = updates.description;
+    }
+    if (updates.tags !== void 0) {
+      existing.tags = updates.tags;
+    }
+    await this.save(config);
+  }
+  /**
+   * Get a store definition by name.
+   * Returns undefined if not found.
+   */
+  async getByName(name) {
+    const config = await this.load();
+    return config.stores.find((s) => s.name === name);
+  }
+  /**
+   * Check if any definitions exist.
+   */
+  async hasDefinitions() {
+    const config = await this.load();
+    return config.stores.length > 0;
+  }
+  /**
+   * Resolve a file store path relative to project root.
+   */
+  resolvePath(path4) {
+    if (isAbsolute(path4)) {
+      return path4;
+    }
+    return resolve2(this.projectRoot, path4);
+  }
+  /**
+   * Get the config file path.
+   */
+  getConfigPath() {
+    return this.configPath;
+  }
+  /**
+   * Get the project root.
+   */
+  getProjectRoot() {
+    return this.projectRoot;
+  }
+  /**
+   * Clear the cached config (useful for testing).
+   */
+  clearCache() {
+    this.config = null;
+  }
+};
+
 // src/services/store.service.ts
 import { randomUUID as randomUUID2 } from "crypto";
-import { readFile as readFile4, writeFile as writeFile3, mkdir as mkdir4, stat, access as access2 } from "fs/promises";
-import { join as join6, resolve as resolve2 } from "path";
+import { readFile as readFile6, writeFile as writeFile5, mkdir as mkdir5, stat, access as access4 } from "fs/promises";
+import { join as join8, resolve as resolve3 } from "path";
 
 // src/plugin/git-clone.ts
 import { spawn } from "child_process";
-import { mkdir as mkdir3 } from "fs/promises";
+import { mkdir as mkdir4 } from "fs/promises";
 async function cloneRepository(options) {
   const { url, targetDir, branch, depth = 1 } = options;
-  await mkdir3(targetDir, { recursive: true });
+  await mkdir4(targetDir, { recursive: true });
   const args = ["clone", "--depth", String(depth)];
   if (branch !== void 0) {
     args.push("--branch", branch);
   }
   args.push(url, targetDir);
-  return new Promise((resolve3) => {
+  return new Promise((resolve4) => {
     const git = spawn("git", args, { stdio: ["ignore", "pipe", "pipe"] });
     let stderr = "";
     git.stderr.on("data", (data) => {
       stderr += data.toString();
     });
     git.on("error", (error) => {
-      resolve3(err(error));
+      resolve4(err(error));
     });
     git.on("close", (code) => {
       if (code === 0) {
-        resolve3(ok(targetDir));
+        resolve4(ok(targetDir));
       } else {
-        resolve3(err(new Error(`Git clone failed: ${stderr}`)));
+        resolve4(err(new Error(`Git clone failed: ${stderr}`)));
       }
     });
   });
@@ -3824,9 +4124,9 @@ function extractRepoName(url) {
 }
 
 // src/services/store.service.ts
-async function fileExists2(path4) {
+async function fileExists4(path4) {
   try {
-    await access2(path4);
+    await access4(path4);
     return true;
   } catch {
     return false;
@@ -3835,13 +4135,15 @@ async function fileExists2(path4) {
 var StoreService = class {
   dataDir;
   definitionService;
+  gitignoreService;
   registry = { stores: [] };
   constructor(dataDir, options) {
     this.dataDir = dataDir;
     this.definitionService = options?.definitionService ?? void 0;
+    this.gitignoreService = options?.gitignoreService ?? void 0;
   }
   async initialize() {
-    await mkdir4(this.dataDir, { recursive: true });
+    await mkdir5(this.dataDir, { recursive: true });
     await this.loadRegistry();
   }
   /**
@@ -3904,7 +4206,7 @@ var StoreService = class {
         if (input.path === void 0) {
           return err(new Error("Path is required for file stores"));
         }
-        const normalizedPath = resolve2(input.path);
+        const normalizedPath = resolve3(input.path);
         try {
           const stats = await stat(normalizedPath);
           if (!stats.isDirectory()) {
@@ -3929,7 +4231,7 @@ var StoreService = class {
       case "repo": {
         let repoPath = input.path;
         if (input.url !== void 0) {
-          const cloneDir = join6(this.dataDir, "repos", id);
+          const cloneDir = join8(this.dataDir, "repos", id);
           const result = await cloneRepository({
             url: input.url,
             targetDir: cloneDir,
@@ -3944,7 +4246,7 @@ var StoreService = class {
         if (repoPath === void 0) {
           return err(new Error("Path or URL required for repo stores"));
         }
-        const normalizedRepoPath = resolve2(repoPath);
+        const normalizedRepoPath = resolve3(repoPath);
         store = {
           type: "repo",
           id,
@@ -3984,6 +4286,9 @@ var StoreService = class {
     }
     this.registry.stores.push(store);
     await this.saveRegistry();
+    if (this.gitignoreService !== void 0) {
+      await this.gitignoreService.ensureGitignorePatterns();
+    }
     if (this.definitionService !== void 0 && options?.skipDefinitionSync !== true) {
       const definition = this.createDefinitionFromStore(store, input);
       await this.definitionService.addDefinition(definition);
@@ -4053,14 +4358,14 @@ var StoreService = class {
     return ok(void 0);
   }
   async loadRegistry() {
-    const registryPath = join6(this.dataDir, "stores.json");
-    const exists = await fileExists2(registryPath);
+    const registryPath = join8(this.dataDir, "stores.json");
+    const exists = await fileExists4(registryPath);
     if (!exists) {
       this.registry = { stores: [] };
       await this.saveRegistry();
       return;
     }
-    const content = await readFile4(registryPath, "utf-8");
+    const content = await readFile6(registryPath, "utf-8");
     try {
       const data = JSON.parse(content);
       this.registry = {
@@ -4078,8 +4383,8 @@ var StoreService = class {
     }
   }
   async saveRegistry() {
-    const registryPath = join6(this.dataDir, "stores.json");
-    await writeFile3(registryPath, JSON.stringify(this.registry, null, 2));
+    const registryPath = join8(this.dataDir, "stores.json");
+    await writeFile5(registryPath, JSON.stringify(this.registry, null, 2));
   }
 };
 
@@ -4093,33 +4398,33 @@ import { fileURLToPath } from "url";
 import { ZodError } from "zod";
 
 // src/crawl/schemas.ts
-import { z as z2 } from "zod";
-var CrawledLinkSchema = z2.object({
-  href: z2.string(),
-  text: z2.string(),
-  title: z2.string().optional(),
-  base_domain: z2.string().optional(),
-  head_data: z2.unknown().optional(),
-  head_extraction_status: z2.unknown().optional(),
-  head_extraction_error: z2.unknown().optional(),
-  intrinsic_score: z2.number().optional(),
-  contextual_score: z2.unknown().optional(),
-  total_score: z2.unknown().optional()
+import { z as z3 } from "zod";
+var CrawledLinkSchema = z3.object({
+  href: z3.string(),
+  text: z3.string(),
+  title: z3.string().optional(),
+  base_domain: z3.string().optional(),
+  head_data: z3.unknown().optional(),
+  head_extraction_status: z3.unknown().optional(),
+  head_extraction_error: z3.unknown().optional(),
+  intrinsic_score: z3.number().optional(),
+  contextual_score: z3.unknown().optional(),
+  total_score: z3.unknown().optional()
 });
-var CrawlPageSchema = z2.object({
-  url: z2.string(),
-  title: z2.string(),
-  content: z2.string(),
-  links: z2.array(z2.string()),
-  crawledAt: z2.string()
+var CrawlPageSchema = z3.object({
+  url: z3.string(),
+  title: z3.string(),
+  content: z3.string(),
+  links: z3.array(z3.string()),
+  crawledAt: z3.string()
 });
-var CrawlResultSchema = z2.object({
-  pages: z2.array(CrawlPageSchema)
+var CrawlResultSchema = z3.object({
+  pages: z3.array(CrawlPageSchema)
 });
-var HeadlessResultSchema = z2.object({
-  html: z2.string(),
-  markdown: z2.string(),
-  links: z2.array(z2.union([CrawledLinkSchema, z2.string()]))
+var HeadlessResultSchema = z3.object({
+  html: z3.string(),
+  markdown: z3.string(),
+  links: z3.array(z3.union([CrawledLinkSchema, z3.string()]))
 });
 function validateHeadlessResult(data) {
   return HeadlessResultSchema.parse(data);
@@ -4127,33 +4432,33 @@ function validateHeadlessResult(data) {
 function validateCrawlResult(data) {
   return CrawlResultSchema.parse(data);
 }
-var MethodInfoSchema = z2.object({
-  name: z2.string(),
-  async: z2.boolean(),
-  signature: z2.string(),
-  startLine: z2.number(),
-  endLine: z2.number(),
-  calls: z2.array(z2.string())
+var MethodInfoSchema = z3.object({
+  name: z3.string(),
+  async: z3.boolean(),
+  signature: z3.string(),
+  startLine: z3.number(),
+  endLine: z3.number(),
+  calls: z3.array(z3.string())
 });
-var CodeNodeSchema = z2.object({
-  type: z2.enum(["function", "class"]),
-  name: z2.string(),
-  exported: z2.boolean(),
-  startLine: z2.number(),
-  endLine: z2.number(),
-  async: z2.boolean().optional(),
-  signature: z2.string().optional(),
-  calls: z2.array(z2.string()).optional(),
-  methods: z2.array(MethodInfoSchema).optional()
+var CodeNodeSchema = z3.object({
+  type: z3.enum(["function", "class"]),
+  name: z3.string(),
+  exported: z3.boolean(),
+  startLine: z3.number(),
+  endLine: z3.number(),
+  async: z3.boolean().optional(),
+  signature: z3.string().optional(),
+  calls: z3.array(z3.string()).optional(),
+  methods: z3.array(MethodInfoSchema).optional()
 });
-var ImportInfoSchema = z2.object({
-  source: z2.string(),
-  imported: z2.string(),
-  alias: z2.string().optional().nullable()
+var ImportInfoSchema = z3.object({
+  source: z3.string(),
+  imported: z3.string(),
+  alias: z3.string().optional().nullable()
 });
-var ParsePythonResultSchema = z2.object({
-  nodes: z2.array(CodeNodeSchema),
-  imports: z2.array(ImportInfoSchema)
+var ParsePythonResultSchema = z3.object({
+  nodes: z3.array(CodeNodeSchema),
+  imports: z3.array(ImportInfoSchema)
 });
 function validateParsePythonResult(data) {
   return ParsePythonResultSchema.parse(data);
@@ -4285,7 +4590,7 @@ var PythonBridge = class {
       method: "crawl",
       params: { url }
     };
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       const timeout = setTimeout(() => {
         const pending = this.pending.get(id);
         if (pending) {
@@ -4295,7 +4600,7 @@ var PythonBridge = class {
       }, timeoutMs);
       this.pending.set(id, {
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Promise resolve type narrowing
-        resolve: resolve3,
+        resolve: resolve4,
         reject,
         timeout,
         method: "crawl"
@@ -4317,7 +4622,7 @@ var PythonBridge = class {
       method: "fetch_headless",
       params: { url }
     };
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       const timeout = setTimeout(() => {
         const pending = this.pending.get(id);
         if (pending) {
@@ -4327,7 +4632,7 @@ var PythonBridge = class {
       }, timeoutMs);
       this.pending.set(id, {
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Promise resolve type narrowing
-        resolve: resolve3,
+        resolve: resolve4,
         reject,
         timeout,
         method: "fetch_headless"
@@ -4349,7 +4654,7 @@ var PythonBridge = class {
       method: "parse_python",
       params: { code, filePath }
     };
-    return new Promise((resolve3, reject) => {
+    return new Promise((resolve4, reject) => {
       const timeout = setTimeout(() => {
         const pending = this.pending.get(id);
         if (pending) {
@@ -4361,7 +4666,7 @@ var PythonBridge = class {
       }, timeoutMs);
       this.pending.set(id, {
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Promise resolve type narrowing
-        resolve: resolve3,
+        resolve: resolve4,
         reject,
         timeout,
         method: "parse_python"
@@ -4378,7 +4683,7 @@ var PythonBridge = class {
     if (!this.process) {
       return Promise.resolve();
     }
-    return new Promise((resolve3) => {
+    return new Promise((resolve4) => {
       this.stoppingIntentionally = true;
       this.rejectAllPending(new Error("Python bridge stopped"));
       if (this.stdoutReadline) {
@@ -4391,11 +4696,11 @@ var PythonBridge = class {
       }
       const proc = this.process;
       if (proc === null) {
-        resolve3();
+        resolve4();
         return;
       }
       const onExit = () => {
-        resolve3();
+        resolve4();
       };
       proc.once("exit", onExit);
       proc.kill();
@@ -4405,7 +4710,7 @@ var PythonBridge = class {
           proc.kill("SIGKILL");
           this.process = null;
         }
-        resolve3();
+        resolve4();
       }, 1e3);
     });
   }
@@ -4420,9 +4725,9 @@ var PythonBridge = class {
 
 // src/db/embeddings.ts
 import { homedir as homedir3 } from "os";
-import { join as join7 } from "path";
+import { join as join9 } from "path";
 import { pipeline, env } from "@huggingface/transformers";
-env.cacheDir = join7(homedir3(), ".cache", "huggingface-transformers");
+env.cacheDir = join9(homedir3(), ".cache", "huggingface-transformers");
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
@@ -4459,7 +4764,7 @@ var EmbeddingEngine = class {
       const batchResults = await Promise.all(batch.map((text) => this.embed(text)));
       results.push(...batchResults);
       if (i + BATCH_SIZE < texts.length) {
-        await new Promise((resolve3) => setTimeout(resolve3, 100));
+        await new Promise((resolve4) => setTimeout(resolve4, 100));
       }
     }
     return results;
@@ -4483,17 +4788,17 @@ var EmbeddingEngine = class {
 import * as lancedb from "@lancedb/lancedb";
 
 // src/types/document.ts
-import { z as z3 } from "zod";
-var DocumentTypeSchema = z3.enum(["file", "chunk", "web"]);
-var DocumentMetadataSchema = z3.object({
-  path: z3.string().optional(),
-  url: z3.string().optional(),
+import { z as z4 } from "zod";
+var DocumentTypeSchema = z4.enum(["file", "chunk", "web"]);
+var DocumentMetadataSchema = z4.object({
+  path: z4.string().optional(),
+  url: z4.string().optional(),
   type: DocumentTypeSchema,
-  storeId: z3.string(),
-  indexedAt: z3.union([z3.string(), z3.date()]),
-  fileHash: z3.string().optional(),
-  chunkIndex: z3.number().optional(),
-  totalChunks: z3.number().optional()
+  storeId: z4.string(),
+  indexedAt: z4.union([z4.string(), z4.date()]),
+  fileHash: z4.string().optional(),
+  chunkIndex: z4.number().optional(),
+  totalChunks: z4.number().optional()
 }).loose();
 
 // src/db/lance.ts
@@ -4702,7 +5007,13 @@ async function createLazyServices(configPath, dataDir, projectRoot) {
   const pythonBridge = new PythonBridge();
   await pythonBridge.start();
   const lance = new LanceStore(resolvedDataDir);
-  const store = new StoreService(resolvedDataDir);
+  let storeOptions;
+  if (projectRoot !== void 0) {
+    const definitionService = new StoreDefinitionService(projectRoot);
+    const gitignoreService = new GitignoreService(projectRoot);
+    storeOptions = { definitionService, gitignoreService };
+  }
+  const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
   const durationMs = Date.now() - startTime;
   logger4.info({ dataDir: resolvedDataDir, durationMs }, "Lazy services initialized");
@@ -4718,7 +5029,13 @@ async function createServices(configPath, dataDir, projectRoot) {
   const lance = new LanceStore(resolvedDataDir);
   const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.dimensions);
   await embeddings.initialize();
-  const store = new StoreService(resolvedDataDir);
+  let storeOptions;
+  if (projectRoot !== void 0) {
+    const definitionService = new StoreDefinitionService(projectRoot);
+    const gitignoreService = new GitignoreService(projectRoot);
+    storeOptions = { definitionService, gitignoreService };
+  }
+  const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
   const search = new SearchService(lance, embeddings, codeGraph);
@@ -4782,16 +5099,19 @@ export {
   PythonBridge,
   ChunkingService,
   ASTParser,
-  ProjectRootService,
   createStoreId,
   createDocumentId,
   ok,
   err,
   classifyWebContentType,
+  isFileStoreDefinition,
+  isRepoStoreDefinition,
+  isWebStoreDefinition,
+  StoreDefinitionService,
   extractRepoName,
   JobService,
   createLazyServices,
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RT23R3O6.js.map
+//# sourceMappingURL=chunk-WYZQUKUD.js.map

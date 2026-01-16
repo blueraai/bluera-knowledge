@@ -622,6 +622,40 @@ declare class SearchService {
 }
 
 /**
+ * Service for managing .gitignore patterns for Bluera Knowledge.
+ *
+ * When stores are created, this service ensures the project's .gitignore
+ * is updated to:
+ * - Ignore the .bluera/ data directory (not committed)
+ * - Allow committing .bluera/bluera-knowledge/stores.config.json (for team sharing)
+ */
+declare class GitignoreService {
+    private readonly gitignorePath;
+    constructor(projectRoot: string);
+    /**
+     * Check if all required patterns are present in .gitignore
+     */
+    hasRequiredPatterns(): Promise<boolean>;
+    /**
+     * Ensure required .gitignore patterns are present.
+     *
+     * - Creates .gitignore if it doesn't exist
+     * - Appends missing patterns if .gitignore exists
+     * - Does nothing if all patterns are already present
+     *
+     * @returns Object with updated flag and descriptive message
+     */
+    ensureGitignorePatterns(): Promise<{
+        updated: boolean;
+        message: string;
+    }>;
+    /**
+     * Get the path to the .gitignore file
+     */
+    getGitignorePath(): string;
+}
+
+/**
  * Discriminated union of all store definition types.
  * Use the `type` field to narrow the type.
  */
@@ -769,6 +803,8 @@ interface CreateStoreInput {
 interface StoreServiceOptions {
     /** Optional definition service for auto-updating git-committable config */
     definitionService?: StoreDefinitionService;
+    /** Optional gitignore service for ensuring .gitignore patterns */
+    gitignoreService?: GitignoreService;
 }
 interface OperationOptions {
     /** Skip syncing to store definitions (used by stores:sync command) */
@@ -777,6 +813,7 @@ interface OperationOptions {
 declare class StoreService {
     private readonly dataDir;
     private readonly definitionService;
+    private readonly gitignoreService;
     private registry;
     constructor(dataDir: string, options?: StoreServiceOptions);
     initialize(): Promise<void>;

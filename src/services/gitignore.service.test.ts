@@ -39,8 +39,10 @@ describe('GitignoreService', () => {
       const content = `
 node_modules/
 .bluera/
+!.bluera/
 !.bluera/bluera-knowledge/
 !.bluera/bluera-knowledge/stores.config.json
+.bluera/bluera-knowledge/data/
 `;
       await writeFile(join(projectRoot, '.gitignore'), content);
       const has = await service.hasRequiredPatterns();
@@ -79,8 +81,10 @@ node_modules/
 
       const content = await readFile(join(projectRoot, '.gitignore'), 'utf-8');
       expect(content).toContain('.bluera/');
+      expect(content).toContain('!.bluera/');
       expect(content).toContain('!.bluera/bluera-knowledge/');
       expect(content).toContain('!.bluera/bluera-knowledge/stores.config.json');
+      expect(content).toContain('.bluera/bluera-knowledge/data/');
     });
 
     it('appends patterns to existing .gitignore', async () => {
@@ -104,8 +108,10 @@ node_modules/
       const existingContent = `
 node_modules/
 .bluera/
+!.bluera/
 !.bluera/bluera-knowledge/
 !.bluera/bluera-knowledge/stores.config.json
+.bluera/bluera-knowledge/data/
 `;
       await writeFile(join(projectRoot, '.gitignore'), existingContent);
 
@@ -124,8 +130,10 @@ node_modules/
       expect(result.updated).toBe(true);
 
       const content = await readFile(join(projectRoot, '.gitignore'), 'utf-8');
+      expect(content).toContain('!.bluera/');
       expect(content).toContain('!.bluera/bluera-knowledge/');
       expect(content).toContain('!.bluera/bluera-knowledge/stores.config.json');
+      expect(content).toContain('.bluera/bluera-knowledge/data/');
     });
 
     it('includes header comment in new additions', async () => {
