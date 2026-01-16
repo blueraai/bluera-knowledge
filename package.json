@@ -64,6 +64,17 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "dist/",
+    "python/",
+    "hooks/",
+    "commands/",
+    "skills/",
+    ".claude-plugin/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/babel__core": "^7.20.5",
