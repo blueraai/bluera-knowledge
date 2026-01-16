@@ -5,7 +5,11 @@
 # MCP servers start before SessionStart hooks fire, so we must install
 # dependencies here before starting the server.
 
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
+# Resolve absolute path to plugin root
+# BASH_SOURCE[0] is more reliable than $0 for sourced scripts
+# cd + pwd ensures we get an absolute path even if invoked with relative path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$SCRIPT_DIR")}"
 
 # Install dependencies if missing
 if [ ! -d "$PLUGIN_ROOT/node_modules" ]; then
