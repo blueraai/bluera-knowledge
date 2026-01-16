@@ -182,10 +182,25 @@ run_test "bluera-knowledge add-folder" "bluera-knowledge add-folder '$TEST_FOLDE
 # Verify store was created
 run_test_contains "Store appears in list" "$TEST_STORE" "bluera-knowledge stores -d '$DATA_DIR'"
 
+# Test add-repo
+log_header "Testing add-repo"
+REPO_STORE="npm-validation-repo-$TIMESTAMP"
+# Use a small, stable repo (sindresorhus/is - tiny, well-maintained)
+run_test "bluera-knowledge add-repo" "bluera-knowledge add-repo 'https://github.com/sindresorhus/is' --name '$REPO_STORE' -d '$DATA_DIR'"
+run_test_contains "Repo store appears in list" "$REPO_STORE" "bluera-knowledge stores -d '$DATA_DIR'"
+bluera-knowledge store delete "$REPO_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
+
 # Test store info
 log_header "Testing store info"
 
 run_test_contains "bluera-knowledge store info" "$TEST_STORE" "bluera-knowledge store info '$TEST_STORE' -d '$DATA_DIR'"
+
+# Test store create (manual store creation)
+log_header "Testing store create"
+MANUAL_STORE="npm-validation-manual-$TIMESTAMP"
+run_test "bluera-knowledge store create" "bluera-knowledge store create '$MANUAL_STORE' -t file -s '$TEST_FOLDER' -d '$DATA_DIR'"
+run_test_contains "Manual store appears in list" "$MANUAL_STORE" "bluera-knowledge stores -d '$DATA_DIR'"
+bluera-knowledge store delete "$MANUAL_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
 
 # Test search (may return no results, but should not error)
 log_header "Testing search"
@@ -246,6 +261,42 @@ run_test_contains "Sync created store" "sync-test-store" "bluera-knowledge store
 
 # Clean up sync test store
 bluera-knowledge store delete "sync-test-store" --force -d "$DATA_DIR" 2>/dev/null || true
+
+# Test crawl
+log_header "Testing crawl"
+CRAWL_STORE="npm-validation-crawl-$TIMESTAMP"
+# Create web store first
+run_test "bluera-knowledge store create (web)" "bluera-knowledge store create '$CRAWL_STORE' -t web -s 'https://code.claude.com' -d '$DATA_DIR'"
+# Crawl Claude Code docs - should find main section headings
+run_test "bluera-knowledge crawl" "bluera-knowledge crawl 'https://code.claude.com/docs/' '$CRAWL_STORE' --crawl 'all documentation section links' --max-pages 5 -d '$DATA_DIR'"
+# Verify crawl indexed content (should find "Getting Started" section)
+run_test_contains "Crawl indexed docs content" "Getting Started" "bluera-knowledge search 'getting started guide' --stores '$CRAWL_STORE' -d '$DATA_DIR' --include-content"
+bluera-knowledge store delete "$CRAWL_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
+
+# Test setup repos (list only - don't actually clone all repos)
+log_header "Testing setup repos"
+run_test_contains "bluera-knowledge setup repos --list" "claude-code" "bluera-knowledge setup repos --list"
+
+# Test index watch (start, verify running, stop)
+log_header "Testing index watch"
+# Create a store to watch
+WATCH_STORE="npm-validation-watch-$TIMESTAMP"
+bluera-knowledge add-folder "$TEST_FOLDER" --name "$WATCH_STORE" -d "$DATA_DIR" 2>/dev/null || true
+
+# Start watch in background
+bluera-knowledge index watch "$WATCH_STORE" -d "$DATA_DIR" &
+WATCH_PID=$!
+sleep 2
+
+if kill -0 $WATCH_PID 2>/dev/null; then
+    pass "bluera-knowledge index watch (starts and runs)"
+    kill $WATCH_PID 2>/dev/null || true
+    wait $WATCH_PID 2>/dev/null || true
+else
+    fail "bluera-knowledge index watch (failed to start)"
+fi
+
+bluera-knowledge store delete "$WATCH_STORE" --force -d "$DATA_DIR" 2>/dev/null || true
 
 # Test serve command (start, test, stop)
 log_header "Testing serve"
