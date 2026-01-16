@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.13.3](https://github.com/blueraai/bluera-knowledge/compare/v0.13.2...v0.13.3) (2026-01-16)
+
+
+### Bug Fixes
+
+* **crawl:** use absolute path for Python worker in PythonBridge ([f9a45cd](https://github.com/blueraai/bluera-knowledge/commit/f9a45cdcdcee3be1090843fcb17ed3251b5c5a4a))
+
 ## [0.13.2](https://github.com/blueraai/bluera-knowledge/compare/v0.13.1...v0.13.2) (2026-01-16)
 
 
