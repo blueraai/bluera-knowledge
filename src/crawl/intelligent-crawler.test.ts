@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { IntelligentCrawler } from './intelligent-crawler.js';
+import { IntelligentCrawler, getCrawlStrategy } from './intelligent-crawler.js';
 import type { CrawlProgress } from './intelligent-crawler.js';
 import axios from 'axios';
 import * as articleConverter from './article-converter.js';
@@ -1024,5 +1024,169 @@ describe('IntelligentCrawler', () => {
       );
       expect(warningEvents).toHaveLength(0);
     });
+  });
+
+  describe('Pre-computed Strategy', () => {
+    it('should use pre-computed strategy and skip Claude call', async () => {
+      const preComputedStrategy = {
+        urls: ['https://example.com/page1', 'https://example.com/page2'],
+        reasoning: 'Pre-computed URLs',
+      };
+
+      const results = [];
+      for await (const result of crawler.crawl('https://example.com', {
+        crawlInstruction: 'Find all docs',
+        preComputedStrategy,
+      })) {
+        results.push(result);
+      }
+
+      // Should NOT call Claude to determine strategy
+      expect(mockClaudeClient.determineCrawlUrls).not.toHaveBeenCalled();
+      // Should crawl the pre-computed URLs
+      expect(results).toHaveLength(2);
+      expect(results[0]?.url).toBe('https://example.com/page1');
+      expect(results[1]?.url).toBe('https://example.com/page2');
+    });
+
+    it('should emit strategy progress with pre-computed strategy', async () => {
+      const preComputedStrategy = {
+        urls: ['https://example.com/page1'],
+        reasoning: 'Pre-computed reasoning',
+      };
+
+      const results = [];
+      for await (const result of crawler.crawl('https://example.com', {
+        crawlInstruction: 'Find all',
+        preComputedStrategy,
+      })) {
+        results.push(result);
+      }
+
+      const strategyEvents = progressEvents.filter((e) => e.type === 'strategy');
+      expect(strategyEvents).toHaveLength(1);
+      expect(strategyEvents[0]?.message).toContain('pre-computed');
+      expect(strategyEvents[0]?.message).toContain('1 URLs');
+    });
+  });
+});
+
+describe('getCrawlStrategy', () => {
+  let mockClaudeClient: any;
+  let mockPythonBridge: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Setup ClaudeClient mock
+    mockClaudeClient = {
+      determineCrawlUrls: vi.fn(),
+    };
+    vi.mocked(ClaudeClient).mockImplementation(function () {
+      return mockClaudeClient;
+    });
+    vi.mocked(ClaudeClient.isAvailable).mockReturnValue(true);
+
+    // Setup PythonBridge mock
+    mockPythonBridge = {
+      fetchHeadless: vi.fn(),
+      stop: vi.fn().mockResolvedValue(undefined),
+    };
+    vi.mocked(PythonBridge).mockImplementation(function () {
+      return mockPythonBridge;
+    });
+  });
+
+  it('should throw when Claude CLI not available', async () => {
+    vi.mocked(ClaudeClient.isAvailable).mockReturnValue(false);
+
+    await expect(getCrawlStrategy('https://example.com', 'Find all docs')).rejects.toThrow(
+      'Claude CLI not available'
+    );
+  });
+
+  it('should use axios for non-headless mode', async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: '<html><body>Test</body></html>',
+    });
+    mockClaudeClient.determineCrawlUrls.mockResolvedValue({
+      urls: ['https://example.com/page1'],
+      reasoning: 'Found docs',
+    });
+
+    const result = await getCrawlStrategy('https://example.com', 'Find all docs', false);
+
+    expect(axios.get).toHaveBeenCalledWith('https://example.com', expect.any(Object));
+    expect(mockPythonBridge.fetchHeadless).not.toHaveBeenCalled();
+    expect(mockClaudeClient.determineCrawlUrls).toHaveBeenCalledWith(
+      'https://example.com',
+      '<html><body>Test</body></html>',
+      'Find all docs'
+    );
+    expect(result.urls).toEqual(['https://example.com/page1']);
+    expect(result.reasoning).toBe('Found docs');
+  });
+
+  it('should use headless mode when enabled', async () => {
+    mockPythonBridge.fetchHeadless.mockResolvedValue({
+      html: '<html><body>Headless content</body></html>',
+    });
+    mockClaudeClient.determineCrawlUrls.mockResolvedValue({
+      urls: ['https://example.com/page1'],
+      reasoning: 'Found docs',
+    });
+
+    const result = await getCrawlStrategy('https://example.com', 'Find all docs', true);
+
+    expect(mockPythonBridge.fetchHeadless).toHaveBeenCalledWith('https://example.com');
+    expect(axios.get).not.toHaveBeenCalled();
+    expect(mockClaudeClient.determineCrawlUrls).toHaveBeenCalledWith(
+      'https://example.com',
+      '<html><body>Headless content</body></html>',
+      'Find all docs'
+    );
+    expect(result.urls).toEqual(['https://example.com/page1']);
+  });
+
+  it('should stringify non-string axios response data', async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: { json: 'content' }, // Non-string response
+    });
+    mockClaudeClient.determineCrawlUrls.mockResolvedValue({
+      urls: [],
+      reasoning: 'No docs found',
+    });
+
+    await getCrawlStrategy('https://example.com', 'Find all docs', false);
+
+    expect(mockClaudeClient.determineCrawlUrls).toHaveBeenCalledWith(
+      'https://example.com',
+      '{"json":"content"}',
+      'Find all docs'
+    );
+  });
+
+  it('should stop Python bridge after completion', async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: '<html/>',
+    });
+    mockClaudeClient.determineCrawlUrls.mockResolvedValue({
+      urls: [],
+      reasoning: 'No docs',
+    });
+
+    await getCrawlStrategy('https://example.com', 'Find all docs', false);
+
+    expect(mockPythonBridge.stop).toHaveBeenCalled();
+  });
+
+  it('should stop Python bridge even on error', async () => {
+    vi.mocked(axios.get).mockRejectedValue(new Error('Network error'));
+
+    await expect(getCrawlStrategy('https://example.com', 'Find all docs', false)).rejects.toThrow(
+      'Network error'
+    );
+
+    expect(mockPythonBridge.stop).toHaveBeenCalled();
   });
 });
