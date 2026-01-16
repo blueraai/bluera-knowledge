@@ -4626,13 +4626,13 @@ async function createServices(configPath, dataDir, projectRoot) {
   const config = new ConfigService(configPath, dataDir, projectRoot);
   const appConfig = await config.load();
   const resolvedDataDir = config.resolveDataDir();
+  const pythonBridge = new PythonBridge();
+  await pythonBridge.start();
   const lance = new LanceStore(resolvedDataDir);
   const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.dimensions);
   await embeddings.initialize();
   const store = new StoreService(resolvedDataDir);
   await store.initialize();
-  const pythonBridge = new PythonBridge();
-  await pythonBridge.start();
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
   const search = new SearchService(lance, embeddings, codeGraph);
   const index = new IndexService(lance, embeddings, { codeGraphService: codeGraph });
@@ -4701,4 +4701,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-Y24ZJRZP.js.map
+//# sourceMappingURL=chunk-PWOIOCTW.js.map

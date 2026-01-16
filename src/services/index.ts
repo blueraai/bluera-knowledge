@@ -41,6 +41,13 @@ export async function createServices(
   const appConfig = await config.load();
   const resolvedDataDir = config.resolveDataDir();
 
+  // IMPORTANT: Start PythonBridge BEFORE creating LanceStore.
+  // LanceDB's native Rust code is not fork-safe. Spawning subprocesses after
+  // lancedb is loaded corrupts the mutex state, causing crashes on shutdown.
+  const pythonBridge = new PythonBridge();
+  await pythonBridge.start();
+
+  // Now safe to initialize lancedb and other services
   const lance = new LanceStore(resolvedDataDir);
   const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.dimensions);
 
@@ -48,9 +55,6 @@ export async function createServices(
 
   const store = new StoreService(resolvedDataDir);
   await store.initialize();
-
-  const pythonBridge = new PythonBridge();
-  await pythonBridge.start();
 
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
   const search = new SearchService(lance, embeddings, codeGraph);

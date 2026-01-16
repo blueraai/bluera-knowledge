@@ -1,8 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { destroyServices, type ServiceContainer } from './index.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createServices, destroyServices, type ServiceContainer } from './index.js';
 import type { PythonBridge } from '../crawl/bridge.js';
 import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
+
+// Mock all dependencies for createServices tests
+vi.mock('../crawl/bridge.js');
+vi.mock('../db/lance.js');
+vi.mock('../db/embeddings.js');
+vi.mock('./config.service.js');
+vi.mock('./store.service.js');
+vi.mock('./code-graph.service.js');
+vi.mock('./search.service.js');
+vi.mock('./index.service.js');
 
 describe('destroyServices', () => {
   let mockPythonBridge: { stop: ReturnType<typeof vi.fn> };
@@ -104,5 +114,96 @@ describe('destroyServices', () => {
     await expect(destroyServices(mockServices)).rejects.toThrow(
       'Service shutdown failed: dispose failed'
     );
+  });
+});
+
+describe('createServices', () => {
+  let callOrder: string[];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    callOrder = [];
+
+    // Import mocked modules
+    const { PythonBridge } = await import('../crawl/bridge.js');
+    const { LanceStore } = await import('../db/lance.js');
+    const { EmbeddingEngine } = await import('../db/embeddings.js');
+    const { ConfigService } = await import('./config.service.js');
+    const { StoreService } = await import('./store.service.js');
+    const { CodeGraphService } = await import('./code-graph.service.js');
+    const { SearchService } = await import('./search.service.js');
+    const { IndexService } = await import('./index.service.js');
+
+    // Track call order for fork-safety verification
+    vi.mocked(PythonBridge).mockImplementation(function () {
+      return {
+        start: vi.fn().mockImplementation(async () => {
+          callOrder.push('PythonBridge.start');
+        }),
+        stop: vi.fn().mockResolvedValue(undefined),
+      } as unknown as PythonBridge;
+    });
+
+    vi.mocked(LanceStore).mockImplementation(function () {
+      callOrder.push('LanceStore.constructor');
+      return {
+        closeAsync: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn(),
+      } as unknown as LanceStore;
+    });
+
+    vi.mocked(EmbeddingEngine).mockImplementation(function () {
+      return {
+        initialize: vi.fn().mockResolvedValue(undefined),
+        dispose: vi.fn().mockResolvedValue(undefined),
+      } as unknown as EmbeddingEngine;
+    });
+
+    vi.mocked(ConfigService).mockImplementation(function () {
+      return {
+        load: vi.fn().mockResolvedValue({ embedding: { model: 'test', dimensions: 384 } }),
+        resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),
+      };
+    });
+
+    vi.mocked(StoreService).mockImplementation(function () {
+      return {
+        initialize: vi.fn().mockResolvedValue(undefined),
+      };
+    });
+
+    vi.mocked(CodeGraphService).mockImplementation(function () {
+      return {};
+    });
+
+    vi.mocked(SearchService).mockImplementation(function () {
+      return {};
+    });
+
+    vi.mocked(IndexService).mockImplementation(function () {
+      return {};
+    });
+  });
+
+  afterEach(async () => {
+    vi.clearAllMocks();
+  });
+
+  it('starts PythonBridge BEFORE creating LanceStore (fork-safety)', async () => {
+    // This test verifies the fix for lancedb fork-safety issue.
+    // LanceDB's native Rust code is not fork-safe. If we spawn subprocesses
+    // after lancedb is loaded, the mutex state gets corrupted.
+    const services = await createServices();
+
+    // Verify PythonBridge.start() was called before LanceStore constructor
+    const pythonStartIndex = callOrder.indexOf('PythonBridge.start');
+    const lanceConstructorIndex = callOrder.indexOf('LanceStore.constructor');
+
+    expect(pythonStartIndex).toBeGreaterThanOrEqual(0);
+    expect(lanceConstructorIndex).toBeGreaterThanOrEqual(0);
+    expect(pythonStartIndex).toBeLessThan(lanceConstructorIndex);
+
+    // Cleanup
+    await destroyServices(services);
   });
 });
