@@ -377,6 +377,7 @@ Workaround patterns:
 Claude Code installs plugins via `git clone` without running `npm install`. MCP servers start before `SessionStart` hooks fire ([#10997](https://github.com/anthropics/claude-code/issues/10997)), so dependencies aren't available.
 Workaround:
 - Use a bash wrapper script instead of directly invoking `node dist/server.js`. The wrapper checks for `node_modules` and runs `bun install` or `npm ci` before starting the server.
+- **Critical:** Use `BASH_SOURCE[0]` with `cd + pwd` for path resolution, not `dirname "$0"`. When `${CLAUDE_PLUGIN_ROOT:-.}` falls back to `.`, relative paths break `dirname`. Pattern: `SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"`
 - A `PostInstall` hook has been requested ([#11240](https://github.com/anthropics/claude-code/issues/11240)) but is not yet available.
 
 ---

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.15.3](https://github.com/blueraai/bluera-knowledge/compare/v0.15.1...v0.15.3) (2026-01-16)
+
+
+### Bug Fixes
+
+* **mcp:** add wrapper script to install deps before server start ([0029bd4](https://github.com/blueraai/bluera-knowledge/commit/0029bd485cdd7d6d3317987807415b454f3f40ac))
+* **mcp:** use BASH_SOURCE with absolute path resolution ([4c99e28](https://github.com/blueraai/bluera-knowledge/commit/4c99e28227b8d692d8b7856ac9681bba950c259e))
+
 ## [0.15.2](https://github.com/blueraai/bluera-knowledge/compare/v0.15.1...v0.15.2) (2026-01-16)
 
 

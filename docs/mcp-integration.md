@@ -37,7 +37,10 @@ Claude Code installs plugins via `git clone` without running `npm install`. MCP 
 
 ```bash
 #!/bin/bash
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
+# Use BASH_SOURCE with cd+pwd for reliable absolute path resolution
+# This works even when ${CLAUDE_PLUGIN_ROOT:-.} isn't expanded correctly
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$SCRIPT_DIR")}"
 
 if [ ! -d "$PLUGIN_ROOT/node_modules" ]; then
     if command -v bun &> /dev/null; then
@@ -49,6 +52,8 @@ fi
 
 exec node "$PLUGIN_ROOT/dist/mcp/server.js"
 ```
+
+**Why BASH_SOURCE + cd + pwd?** The `.mcp.json` uses `${CLAUDE_PLUGIN_ROOT:-.}` but environment variable expansion in plugin `.mcp.json` files can be unreliable (see [#9427](https://github.com/anthropics/claude-code/issues/9427)). When the variable isn't expanded and falls back to `.`, the script must resolve its own absolute path. Using `dirname "$0"` alone fails with relative paths because it returns another relative path. The `cd + pwd` pattern ensures we always get an absolute path.
 
 This pattern is necessary until Claude Code adds a `PostInstall` hook (see [#11240](https://github.com/anthropics/claude-code/issues/11240)).
 
@@ -158,3 +163,4 @@ If you're developing a Claude Code plugin with MCP integration, we recommend:
 | [#18336](https://github.com/anthropics/claude-code/issues/18336) | Open | MCP plugin shows enabled but no resources available |
 | [#10997](https://github.com/anthropics/claude-code/issues/10997) | Open | SessionStart hooks don't execute on first run |
 | [#11240](https://github.com/anthropics/claude-code/issues/11240) | Open | PostInstall hook requested (for dependency installation) |
+| [#9427](https://github.com/anthropics/claude-code/issues/9427) | Closed | Env variable expansion not working in plugin .mcp.json |
