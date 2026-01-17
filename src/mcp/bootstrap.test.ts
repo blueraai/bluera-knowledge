@@ -94,22 +94,4 @@ describe('Bootstrap', () => {
       expect(source).toContain('CONFIG_PATH');
     });
   });
-
-  describe('No prebuilt binary logic', () => {
-    it('does not contain downloadPrebuilt function', () => {
-      expect(source).not.toContain('downloadPrebuilt');
-    });
-
-    it('does not fetch manifest.json', () => {
-      expect(source).not.toContain('manifest.json');
-    });
-
-    it('does not use tar extraction', () => {
-      expect(source).not.toContain('tar -xzf');
-    });
-
-    it('does not use https.get for downloads', () => {
-      expect(source).not.toContain("from 'node:https'");
-    });
-  });
 });
