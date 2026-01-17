@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.16.2](https://github.com/blueraai/bluera-knowledge/compare/v0.16.1...v0.16.2) (2026-01-17)
+
+
+### Bug Fixes
+
+* **plugin:** add author field to manifest ([9bf15c2](https://github.com/blueraai/bluera-knowledge/commit/9bf15c243b735d4a1763de9b3601781c6e4aeaf6))
+
 ## [0.16.1](https://github.com/blueraai/bluera-knowledge/compare/v0.15.7...v0.16.1) (2026-01-17)
 
 
