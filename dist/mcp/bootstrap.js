@@ -4,8 +4,6 @@
 import { execSync } from "child_process";
 import {
   appendFileSync,
-  chmodSync,
-  createReadStream,
   createWriteStream,
   existsSync,
   mkdirSync,
@@ -16,7 +14,6 @@ import { get } from "https";
 import { arch, homedir, platform } from "os";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import { createGunzip } from "zlib";
 var logDir = join(homedir(), ".bluera", "bluera-knowledge", "logs");
 var logFile = join(logDir, "app.log");
 var log = (level, msg, data) => {
@@ -115,107 +112,6 @@ function downloadFile(url, destPath) {
     request(url);
   });
 }
-function extractTar(tarPath, destDir) {
-  return new Promise((resolve, reject) => {
-    const gunzip = createGunzip();
-    const input = createReadStream(tarPath);
-    let buffer = Buffer.alloc(0);
-    let currentFile = null;
-    let bytesRemaining = 0;
-    let fileStream = null;
-    const parseHeader = (header) => {
-      if (header.every((b) => b === 0)) {
-        return null;
-      }
-      const name = header.subarray(0, 100).toString("utf-8").replace(/\0/g, "");
-      const mode = parseInt(header.subarray(100, 108).toString("utf-8").trim(), 8);
-      const size = parseInt(header.subarray(124, 136).toString("utf-8").trim(), 8);
-      const typeByte = header[156];
-      const typeFlag = typeByte !== void 0 ? String.fromCharCode(typeByte) : "0";
-      let type = "file";
-      if (typeFlag === "5") type = "directory";
-      else if (typeFlag === "2") type = "symlink";
-      return { name, size, type, mode: isNaN(mode) ? 420 : mode };
-    };
-    const processChunk = (chunk) => {
-      buffer = Buffer.concat([buffer, chunk]);
-      while (buffer.length > 0) {
-        if (currentFile === null) {
-          if (buffer.length < 512) break;
-          const header = buffer.subarray(0, 512);
-          buffer = buffer.subarray(512);
-          const parsed = parseHeader(header);
-          if (parsed === null) {
-            continue;
-          }
-          currentFile = parsed;
-          bytesRemaining = currentFile.size;
-          let filePath = currentFile.name;
-          if (filePath.startsWith("./")) {
-            filePath = filePath.slice(2);
-          }
-          if (filePath.length === 0 || filePath === ".") {
-            currentFile = null;
-            continue;
-          }
-          const fullPath = join(destDir, filePath);
-          if (currentFile.type === "directory") {
-            mkdirSync(fullPath, { recursive: true });
-            currentFile = null;
-          } else if (currentFile.type === "file" && bytesRemaining > 0) {
-            mkdirSync(dirname(fullPath), { recursive: true });
-            fileStream = createWriteStream(fullPath, {
-              mode: currentFile.mode
-            });
-          } else if (currentFile.type === "file" && bytesRemaining === 0) {
-            mkdirSync(dirname(fullPath), { recursive: true });
-            createWriteStream(fullPath, { mode: currentFile.mode }).close();
-            currentFile = null;
-          } else {
-            currentFile = null;
-          }
-        } else {
-          const toRead = Math.min(bytesRemaining, buffer.length);
-          if (fileStream !== null && toRead > 0) {
-            fileStream.write(buffer.subarray(0, toRead));
-          }
-          buffer = buffer.subarray(toRead);
-          bytesRemaining -= toRead;
-          if (bytesRemaining === 0) {
-            if (fileStream !== null) {
-              const stream = fileStream;
-              const file = currentFile;
-              stream.end(() => {
-                if ((file.mode & 73) !== 0) {
-                  try {
-                    const fullPath = join(
-                      destDir,
-                      file.name.startsWith("./") ? file.name.slice(2) : file.name
-                    );
-                    chmodSync(fullPath, file.mode);
-                  } catch {
-                  }
-                }
-              });
-              fileStream = null;
-            }
-            currentFile = null;
-            const padding = (512 - toRead % 512) % 512;
-            if (buffer.length >= padding) {
-              buffer = buffer.subarray(padding);
-            }
-          }
-        }
-      }
-    };
-    input.pipe(gunzip).on("data", processChunk).on("end", () => {
-      if (fileStream !== null) {
-        fileStream.end();
-      }
-      resolve();
-    }).on("error", reject);
-  });
-}
 function isManifest(value) {
   return typeof value === "object" && value !== null && "version" in value && "platforms" in value && typeof value.platforms === "object";
 }
@@ -241,7 +137,7 @@ async function downloadPrebuilt() {
     const tarPath = join(tmpDir, `bluera-knowledge-${platformKey}.tar.gz`);
     await downloadFile(platformInfo.url, tarPath);
     log("info", "Download complete, extracting", { tarPath, destDir: pluginRoot });
-    await extractTar(tarPath, pluginRoot);
+    execSync(`tar -xzf "${tarPath}" -C "${pluginRoot}"`, { stdio: "pipe" });
     try {
       unlinkSync(tarPath);
     } catch {

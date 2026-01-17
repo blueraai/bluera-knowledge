@@ -16,8 +16,6 @@
 import { execSync } from 'node:child_process';
 import {
   appendFileSync,
-  chmodSync,
-  createReadStream,
   createWriteStream,
   existsSync,
   mkdirSync,
@@ -28,7 +26,6 @@ import { get } from 'node:https';
 import { arch, homedir, platform } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createGunzip } from 'node:zlib';
 
 // Logging helper - writes to file since MCP servers must NOT use stderr
 // (Claude Code treats stderr as error and may fail the server)
@@ -169,155 +166,6 @@ function downloadFile(url: string, destPath: string): Promise<void> {
   });
 }
 
-/**
- * Simple tar parser using Node.js built-ins.
- *
- * TAR format:
- * - 512-byte header blocks
- * - File data follows, padded to 512-byte boundary
- * - Two empty 512-byte blocks at end
- */
-function extractTar(tarPath: string, destDir: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const gunzip = createGunzip();
-    const input = createReadStream(tarPath);
-
-    let buffer = Buffer.alloc(0);
-    let currentFile: {
-      name: string;
-      size: number;
-      type: string;
-      mode: number;
-    } | null = null;
-    let bytesRemaining = 0;
-    let fileStream: ReturnType<typeof createWriteStream> | null = null;
-
-    const parseHeader = (
-      header: Buffer
-    ): { name: string; size: number; type: string; mode: number } | null => {
-      // Check for empty block (end of archive)
-      if (header.every((b) => b === 0)) {
-        return null;
-      }
-
-      // Parse tar header fields
-      const name = header.subarray(0, 100).toString('utf-8').replace(/\0/g, '');
-      const mode = parseInt(header.subarray(100, 108).toString('utf-8').trim(), 8);
-      const size = parseInt(header.subarray(124, 136).toString('utf-8').trim(), 8);
-      const typeByte = header[156];
-      const typeFlag = typeByte !== undefined ? String.fromCharCode(typeByte) : '0';
-
-      // Type: '0' or '' = file, '5' = directory, '2' = symlink
-      let type = 'file';
-      if (typeFlag === '5') type = 'directory';
-      else if (typeFlag === '2') type = 'symlink';
-
-      return { name, size, type, mode: isNaN(mode) ? 0o644 : mode };
-    };
-
-    const processChunk = (chunk: Buffer): void => {
-      buffer = Buffer.concat([buffer, chunk]);
-
-      while (buffer.length > 0) {
-        if (currentFile === null) {
-          // Need to read a header
-          if (buffer.length < 512) break;
-
-          const header = buffer.subarray(0, 512);
-          buffer = buffer.subarray(512);
-
-          const parsed = parseHeader(header);
-          if (parsed === null) {
-            // End of archive
-            continue;
-          }
-
-          currentFile = parsed;
-          bytesRemaining = currentFile.size;
-
-          // Skip ./ prefix and handle path
-          let filePath = currentFile.name;
-          if (filePath.startsWith('./')) {
-            filePath = filePath.slice(2);
-          }
-          if (filePath.length === 0 || filePath === '.') {
-            currentFile = null;
-            continue;
-          }
-
-          const fullPath = join(destDir, filePath);
-
-          if (currentFile.type === 'directory') {
-            mkdirSync(fullPath, { recursive: true });
-            currentFile = null;
-          } else if (currentFile.type === 'file' && bytesRemaining > 0) {
-            mkdirSync(dirname(fullPath), { recursive: true });
-            fileStream = createWriteStream(fullPath, {
-              mode: currentFile.mode,
-            });
-          } else if (currentFile.type === 'file' && bytesRemaining === 0) {
-            // Empty file
-            mkdirSync(dirname(fullPath), { recursive: true });
-            createWriteStream(fullPath, { mode: currentFile.mode }).close();
-            currentFile = null;
-          } else {
-            // Skip symlinks and other types
-            currentFile = null;
-          }
-        } else {
-          // Reading file content
-          const toRead = Math.min(bytesRemaining, buffer.length);
-          if (fileStream !== null && toRead > 0) {
-            fileStream.write(buffer.subarray(0, toRead));
-          }
-          buffer = buffer.subarray(toRead);
-          bytesRemaining -= toRead;
-
-          if (bytesRemaining === 0) {
-            if (fileStream !== null) {
-              const stream = fileStream;
-              const file = currentFile;
-              stream.end(() => {
-                // Set executable bit for scripts
-                if ((file.mode & 0o111) !== 0) {
-                  try {
-                    const fullPath = join(
-                      destDir,
-                      file.name.startsWith('./') ? file.name.slice(2) : file.name
-                    );
-                    chmodSync(fullPath, file.mode);
-                  } catch {
-                    // Ignore chmod errors
-                  }
-                }
-              });
-              fileStream = null;
-            }
-            currentFile = null;
-
-            // Skip padding to 512-byte boundary
-            const padding = (512 - (toRead % 512)) % 512;
-            if (buffer.length >= padding) {
-              buffer = buffer.subarray(padding);
-            }
-          }
-        }
-      }
-    };
-
-    input
-      .pipe(gunzip)
-      .on('data', processChunk)
-      .on('end', () => {
-        if (fileStream !== null) {
-          fileStream.end();
-        }
-        resolve();
-      })
-      .on('error', reject);
-  });
-}
-
 interface PlatformInfo {
   url: string;
   sha256: string;
@@ -370,7 +218,8 @@ async function downloadPrebuilt(): Promise<boolean> {
     await downloadFile(platformInfo.url, tarPath);
     log('info', 'Download complete, extracting', { tarPath, destDir: pluginRoot });
 
-    await extractTar(tarPath, pluginRoot);
+    // Use system tar - handles all formats (PAX, GNU, USTAR) correctly
+    execSync(`tar -xzf "${tarPath}" -C "${pluginRoot}"`, { stdio: 'pipe' });
 
     // Cleanup temp file
     try {
