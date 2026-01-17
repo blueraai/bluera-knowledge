@@ -7,23 +7,14 @@
  *
  * Dependency installation strategy:
  * 1. Fast path: node_modules already exists → skip
- * 2. Try prebuilt: Download platform-specific tarball from GitHub release
- * 3. Package manager: Run bun install or npm ci if prebuilt unavailable
+ * 2. Package manager: Run bun install or npm ci
  *
  * IMPORTANT: MCP servers must NOT log to stderr - Claude Code treats stderr output
  * as an error and may mark the MCP server as failed. All logging goes to file.
  */
 import { execSync } from 'node:child_process';
-import {
-  appendFileSync,
-  createWriteStream,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  unlinkSync,
-} from 'node:fs';
-import { get } from 'node:https';
-import { arch, homedir, platform } from 'node:os';
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,7 +50,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const pluginRoot = join(__dirname, '..', '..');
 
-// Get version from package.json
+// Get version from package.json for logging
 const getVersion = (): string => {
   try {
     const pkg: unknown = JSON.parse(readFileSync(join(pluginRoot, 'package.json'), 'utf-8'));
@@ -76,168 +67,6 @@ const getVersion = (): string => {
     return 'unknown';
   }
 };
-
-const VERSION = getVersion();
-const MANIFEST_URL = `https://github.com/blueraai/bluera-knowledge/releases/download/${VERSION}/manifest.json`;
-
-/**
- * Fetch JSON from URL with redirect handling.
- * Uses only Node.js built-ins.
- */
-function fetchJSON(url: string): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    const request = (targetUrl: string, redirectCount = 0): void => {
-      if (redirectCount > 5) {
-        reject(new Error('Too many redirects'));
-        return;
-      }
-
-      get(targetUrl, { headers: { 'User-Agent': 'bluera-knowledge' } }, (res) => {
-        // Follow redirects
-        const location = res.headers.location;
-        if (
-          (res.statusCode === 302 || res.statusCode === 301) &&
-          typeof location === 'string' &&
-          location.length > 0
-        ) {
-          request(location, redirectCount + 1);
-          return;
-        }
-        const statusCode = res.statusCode ?? 0;
-        if (statusCode !== 200) {
-          reject(new Error(`HTTP ${String(statusCode)}`));
-          return;
-        }
-        let data = '';
-        res.on('data', (chunk: Buffer) => (data += chunk.toString()));
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch (e) {
-            reject(e instanceof Error ? e : new Error(String(e)));
-          }
-        });
-      }).on('error', reject);
-    };
-    request(url);
-  });
-}
-
-/**
- * Download file from URL to destination path.
- * Uses only Node.js built-ins.
- */
-function downloadFile(url: string, destPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = (targetUrl: string, redirectCount = 0): void => {
-      if (redirectCount > 10) {
-        reject(new Error('Too many redirects'));
-        return;
-      }
-
-      get(targetUrl, { headers: { 'User-Agent': 'bluera-knowledge' } }, (res) => {
-        const location = res.headers.location;
-        if (
-          (res.statusCode === 302 || res.statusCode === 301) &&
-          typeof location === 'string' &&
-          location.length > 0
-        ) {
-          request(location, redirectCount + 1);
-          return;
-        }
-        const statusCode = res.statusCode ?? 0;
-        if (statusCode !== 200) {
-          reject(new Error(`HTTP ${String(statusCode)}`));
-          return;
-        }
-        const file = createWriteStream(destPath);
-        res.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          resolve();
-        });
-        file.on('error', (err) => {
-          file.close();
-          reject(err);
-        });
-      }).on('error', reject);
-    };
-    request(url);
-  });
-}
-
-interface PlatformInfo {
-  url: string;
-  sha256: string;
-}
-
-interface Manifest {
-  version: string;
-  platforms: Record<string, PlatformInfo>;
-}
-
-function isManifest(value: unknown): value is Manifest {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'version' in value &&
-    'platforms' in value &&
-    typeof value.platforms === 'object'
-  );
-}
-
-/**
- * Try to download and extract prebuilt binary for current platform.
- * Returns true if successful, false if prebuilt is not available.
- */
-async function downloadPrebuilt(): Promise<boolean> {
-  const plat = platform(); // 'darwin', 'linux', 'win32'
-  const ar = arch(); // 'arm64', 'x64'
-  const platformKey = `${plat}-${ar}`;
-
-  try {
-    log('info', 'Checking for prebuilt binary', { platformKey, version: VERSION });
-
-    const manifestData = await fetchJSON(MANIFEST_URL);
-    if (!isManifest(manifestData)) {
-      log('info', 'Invalid manifest format');
-      return false;
-    }
-
-    const platformInfo = manifestData.platforms[platformKey];
-    if (platformInfo === undefined) {
-      log('info', 'No prebuilt binary available for platform', { platformKey });
-      return false;
-    }
-
-    log('info', 'Downloading prebuilt binary', { url: platformInfo.url });
-    const tmpDir = join(homedir(), '.bluera', 'tmp');
-    mkdirSync(tmpDir, { recursive: true });
-    const tarPath = join(tmpDir, `bluera-knowledge-${platformKey}.tar.gz`);
-
-    await downloadFile(platformInfo.url, tarPath);
-    log('info', 'Download complete, extracting', { tarPath, destDir: pluginRoot });
-
-    // Use system tar - handles all formats (PAX, GNU, USTAR) correctly
-    execSync(`tar -xzf "${tarPath}" -C "${pluginRoot}"`, { stdio: 'pipe' });
-
-    // Cleanup temp file
-    try {
-      unlinkSync(tarPath);
-    } catch {
-      // Ignore cleanup errors
-    }
-
-    log('info', 'Prebuilt binary installed successfully');
-    return true;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    log('debug', 'Prebuilt download failed, will use package manager', {
-      error: message,
-    });
-    return false;
-  }
-}
 
 /**
  * Install dependencies using bun or npm.
@@ -260,29 +89,23 @@ function installWithPackageManager(): void {
 
 /**
  * Ensure dependencies are available.
- * Tries prebuilt first, falls back to package manager.
  */
-async function ensureDependencies(): Promise<void> {
+function ensureDependencies(): void {
   // Fast path: already installed
   if (existsSync(join(pluginRoot, 'node_modules'))) {
     log('info', 'Dependencies already installed');
     return;
   }
 
-  // Try prebuilt binary first (faster, no npm install needed)
-  const prebuiltSuccess = await downloadPrebuilt();
-  if (prebuiltSuccess) {
-    return;
-  }
-
-  // Prebuilt not available, use package manager instead
+  // Install via package manager
   installWithPackageManager();
 }
 
 // Main entry point
+const VERSION = getVersion();
 log('info', 'Bootstrap starting', { pluginRoot, version: VERSION });
 
-await ensureDependencies();
+ensureDependencies();
 
 // Now that dependencies are installed, import and run the server
 // Dynamic import required because @modelcontextprotocol/sdk wouldn't be available before install
