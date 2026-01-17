@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.16.3](https://github.com/blueraai/bluera-knowledge/compare/v0.16.1...v0.16.3) (2026-01-17)
+
+
+### Bug Fixes
+
+* **plugin:** add author field to manifest ([9bf15c2](https://github.com/blueraai/bluera-knowledge/commit/9bf15c243b735d4a1763de9b3601781c6e4aeaf6))
+* **plugin:** remove unrecognized prebuiltBinaries field ([329ac08](https://github.com/blueraai/bluera-knowledge/commit/329ac08b4f794e016bbfedc0d24c63491e9a7dfb))
+
 ## [0.16.2](https://github.com/blueraai/bluera-knowledge/compare/v0.16.1...v0.16.2) (2026-01-17)
 
 
