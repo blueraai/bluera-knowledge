@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.16.4](https://github.com/blueraai/bluera-knowledge/compare/v0.16.3...v0.16.4) (2026-01-17)
+
+
+### Features
+
+* **test:** expand test-plugin to cover full API surface ([e473f09](https://github.com/blueraai/bluera-knowledge/commit/e473f09003f311ca8648d60ccf56fbd7f99bd480))
+
+
+### Bug Fixes
+
+* **bootstrap:** use system tar for extraction ([3a17b33](https://github.com/blueraai/bluera-knowledge/commit/3a17b33b99aa6ae0d35b2f2a4a96daa444336e99))
+
 ## [0.16.3](https://github.com/blueraai/bluera-knowledge/compare/v0.16.1...v0.16.3) (2026-01-17)
 
 
