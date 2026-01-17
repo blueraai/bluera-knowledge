@@ -33,3 +33,8 @@ package-lock.json
 # Data directory (vector DB, cloned repos) is not committed
 !.bluera/
 .bluera/bluera-knowledge/data/
+
+# Bluera plugins
+!.bluera/bluera-base/
+!.bluera/bluera-base/config.json
+!.bluera/bluera-base/TODO.txt
