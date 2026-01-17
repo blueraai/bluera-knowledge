@@ -2,6 +2,10 @@
   "name": "bluera-knowledge",
   "version": "0.16.1",
   "description": "Clone repos, crawl docs, search locally. Fast, authoritative answers for AI coding agents.",
+  "author": {
+    "name": "Bluera Inc",
+    "url": "https://bluera.ai"
+  },
   "prebuiltBinaries": {
     "manifestUrl": "https://github.com/blueraai/bluera-knowledge/releases/latest/download/manifest.json",
     "platforms": [
