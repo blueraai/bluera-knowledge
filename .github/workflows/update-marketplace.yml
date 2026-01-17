@@ -1,8 +1,8 @@
-name: Update Marketplace
+name: Update bluera-marketplace
 
 on:
   workflow_run:
-    workflows: ["Release"]
+    workflows: ["Release (npm + GitHub)"]
     types: [completed]
 
 # Prevent parallel marketplace updates - queue instead of cancel

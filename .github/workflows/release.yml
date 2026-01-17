@@ -1,4 +1,4 @@
-name: Release
+name: Release (npm + GitHub)
 
 # Publishes to npm when a tag is pushed.
 #
