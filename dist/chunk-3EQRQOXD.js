@@ -697,14 +697,18 @@ var ExecuteArgsSchema = z.object({
 });
 
 // src/mcp/handlers/job.handler.ts
+var logger = createLogger("mcp-job");
 var handleCheckJobStatus = (args, context) => {
   const validated = CheckJobStatusArgsSchema.parse(args);
+  logger.info({ jobId: validated.jobId }, "Check job status started");
   const { options } = context;
   const jobService = new JobService(options.dataDir);
   const job = jobService.getJob(validated.jobId);
   if (!job) {
+    logger.warn({ jobId: validated.jobId }, "Job not found");
     throw new Error(`Job not found: ${validated.jobId}`);
   }
+  logger.info({ jobId: validated.jobId, status: job.status }, "Check job status completed");
   return Promise.resolve({
     content: [
       {
@@ -716,6 +720,7 @@ var handleCheckJobStatus = (args, context) => {
 };
 var handleListJobs = (args, context) => {
   const validated = ListJobsArgsSchema.parse(args);
+  logger.info({ activeOnly: validated.activeOnly, status: validated.status }, "List jobs started");
   const { options } = context;
   const jobService = new JobService(options.dataDir);
   jobService.cleanupStalePendingJobs(2, { markAsFailed: true });
@@ -727,6 +732,7 @@ var handleListJobs = (args, context) => {
   } else {
     jobs = jobService.listJobs();
   }
+  logger.info({ count: jobs.length, activeOnly: validated.activeOnly }, "List jobs completed");
   return Promise.resolve({
     content: [
       {
@@ -738,13 +744,16 @@ var handleListJobs = (args, context) => {
 };
 var handleCancelJob = (args, context) => {
   const validated = CancelJobArgsSchema.parse(args);
+  logger.info({ jobId: validated.jobId }, "Cancel job started");
   const { options } = context;
   const jobService = new JobService(options.dataDir);
   const result = jobService.cancelJob(validated.jobId);
   if (!result.success) {
+    logger.error({ jobId: validated.jobId, error: result.error.message }, "Cancel job failed");
     throw new Error(result.error.message);
   }
   const job = jobService.getJob(validated.jobId);
+  logger.info({ jobId: validated.jobId, cancelled: true }, "Cancel job completed");
   return Promise.resolve({
     content: [
       {
@@ -797,6 +806,7 @@ import { z as z4 } from "zod";
 
 // src/mcp/commands/registry.ts
 import { z as z3 } from "zod";
+var logger2 = createLogger("mcp-commands");
 var CommandRegistry = class {
   commands = /* @__PURE__ */ new Map();
   /**
@@ -853,10 +863,12 @@ var commandRegistry = new CommandRegistry();
 async function executeCommand(commandName, args, context) {
   const command = commandRegistry.get(commandName);
   if (command === void 0) {
+    logger2.warn({ commandName }, "Unknown command requested");
     throw new Error(
       `Unknown command: ${commandName}. Use execute("commands") to list available commands.`
     );
   }
+  logger2.debug({ commandName, hasArgs: Object.keys(args).length > 0 }, "Executing command");
   const validatedArgs = command.argsSchema !== void 0 ? command.argsSchema.parse(args) : args;
   return command.handler(validatedArgs, context);
 }
@@ -949,7 +961,7 @@ import { join } from "path";
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
-var logger = createLogger("spawn-worker");
+var logger3 = createLogger("spawn-worker");
 function spawnBackgroundWorker(jobId, dataDir) {
   const currentFilePath = fileURLToPath(import.meta.url);
   const currentDir = path.dirname(currentFilePath);
@@ -962,14 +974,14 @@ function spawnBackgroundWorker(jobId, dataDir) {
     const workerScript = path.join(distDir, "workers", "background-worker-cli.js");
     command = process.execPath;
     args = [workerScript, jobId];
-    logger.debug({ workerScript, distDir, currentFilePath }, "Production worker path");
+    logger3.debug({ workerScript, distDir, currentFilePath }, "Production worker path");
   } else {
     const workerScript = path.join(currentDir, "background-worker-cli.ts");
     command = "npx";
     args = ["tsx", workerScript, jobId];
-    logger.debug({ workerScript, currentDir }, "Development worker path");
+    logger3.debug({ workerScript, currentDir }, "Development worker path");
   }
-  logger.info({ jobId, command, args, dataDir, isProduction }, "Spawning background worker");
+  logger3.info({ jobId, command, args, dataDir, isProduction }, "Spawning background worker");
   const worker = spawn(command, args, {
     detached: true,
     // Detach from parent process
@@ -983,18 +995,21 @@ function spawnBackgroundWorker(jobId, dataDir) {
     }
   });
   worker.on("error", (err) => {
-    logger.error({ jobId, error: err.message }, "Failed to spawn background worker");
+    logger3.error({ jobId, error: err.message }, "Failed to spawn background worker");
   });
-  logger.info({ jobId, pid: worker.pid }, "Background worker spawned");
+  logger3.info({ jobId, pid: worker.pid }, "Background worker spawned");
   worker.unref();
 }
 
 // src/mcp/handlers/store.handler.ts
+var logger4 = createLogger("mcp-store");
 var handleListStores = async (args, context) => {
   const validated = ListStoresArgsSchema.parse(args);
+  logger4.info({ type: validated.type }, "List stores started");
   const { services } = context;
   const stores = await services.store.list();
   const filtered = validated.type !== void 0 ? stores.filter((s) => s.type === validated.type) : stores;
+  logger4.info({ count: filtered.length, type: validated.type }, "List stores completed");
   return {
     content: [
       {
@@ -1020,11 +1035,14 @@ var handleListStores = async (args, context) => {
 };
 var handleGetStoreInfo = async (args, context) => {
   const validated = GetStoreInfoArgsSchema.parse(args);
+  logger4.info({ store: validated.store }, "Get store info started");
   const { services } = context;
   const store = await services.store.getByIdOrName(createStoreId(validated.store));
   if (store === void 0) {
+    logger4.warn({ store: validated.store }, "Store not found");
     throw new Error(`Store not found: ${validated.store}`);
   }
+  logger4.info({ storeId: store.id, storeName: store.name }, "Get store info completed");
   return {
     content: [
       {
@@ -1051,6 +1069,10 @@ var handleGetStoreInfo = async (args, context) => {
 };
 var handleCreateStore = async (args, context) => {
   const validated = CreateStoreArgsSchema.parse(args);
+  logger4.info(
+    { name: validated.name, type: validated.type, source: validated.source },
+    "Create store started"
+  );
   const { services, options } = context;
   const isUrl = validated.source.startsWith("http://") || validated.source.startsWith("https://") || validated.source.startsWith("git@");
   const result = await services.store.create({
@@ -1061,6 +1083,7 @@ var handleCreateStore = async (args, context) => {
     ...validated.description !== void 0 ? { description: validated.description } : {}
   });
   if (!result.success) {
+    logger4.error({ name: validated.name, error: result.error.message }, "Create store failed");
     throw new Error(result.error.message);
   }
   const jobService = new JobService(options.dataDir);
@@ -1080,6 +1103,10 @@ var handleCreateStore = async (args, context) => {
     message: `Indexing ${result.data.name}...`
   });
   spawnBackgroundWorker(job.id, options.dataDir);
+  logger4.info(
+    { storeId: result.data.id, storeName: result.data.name, jobId: job.id },
+    "Create store completed"
+  );
   return {
     content: [
       {
@@ -1108,9 +1135,11 @@ var handleCreateStore = async (args, context) => {
 };
 var handleIndexStore = async (args, context) => {
   const validated = IndexStoreArgsSchema.parse(args);
+  logger4.info({ store: validated.store }, "Index store started");
   const { services, options } = context;
   const store = await services.store.getByIdOrName(createStoreId(validated.store));
   if (store === void 0) {
+    logger4.warn({ store: validated.store }, "Store not found for indexing");
     throw new Error(`Store not found: ${validated.store}`);
   }
   const jobService = new JobService(options.dataDir);
@@ -1127,6 +1156,7 @@ var handleIndexStore = async (args, context) => {
     message: `Re-indexing ${store.name}...`
   });
   spawnBackgroundWorker(job.id, options.dataDir);
+  logger4.info({ storeId: store.id, storeName: store.name, jobId: job.id }, "Index store completed");
   return {
     content: [
       {
@@ -1153,24 +1183,35 @@ var handleIndexStore = async (args, context) => {
 };
 var handleDeleteStore = async (args, context) => {
   const validated = DeleteStoreArgsSchema.parse(args);
+  logger4.info({ store: validated.store }, "Delete store started");
   const { services, options } = context;
   const store = await services.store.getByIdOrName(createStoreId(validated.store));
   if (store === void 0) {
+    logger4.warn({ store: validated.store }, "Store not found for deletion");
     throw new Error(`Store not found: ${validated.store}`);
   }
+  logger4.debug({ storeId: store.id, storeName: store.name }, "Deleting LanceDB table");
   await services.lance.deleteStore(store.id);
+  logger4.debug({ storeId: store.id }, "Deleting code graph");
   await services.codeGraph.deleteGraph(store.id);
   if (store.type === "repo" && "url" in store && store.url !== void 0) {
     if (options.dataDir === void 0) {
       throw new Error("dataDir is required to delete cloned repository files");
     }
     const repoPath = join(options.dataDir, "repos", store.id);
+    logger4.debug({ storeId: store.id, repoPath }, "Removing cloned repository");
     await rm(repoPath, { recursive: true, force: true });
   }
+  logger4.debug({ storeId: store.id }, "Removing from registry");
   const result = await services.store.delete(store.id);
   if (!result.success) {
+    logger4.error({ storeId: store.id, error: result.error.message }, "Delete store failed");
     throw new Error(result.error.message);
   }
+  logger4.info(
+    { storeId: store.id, storeName: store.name, storeType: store.type },
+    "Delete store completed"
+  );
   return {
     content: [
       {
@@ -1243,7 +1284,12 @@ var storeCommands = [
 
 // src/mcp/commands/sync.commands.ts
 import { z as z6 } from "zod";
+var logger5 = createLogger("mcp-sync");
 async function handleStoresSync(args, context) {
+  logger5.info(
+    { prune: args.prune, dryRun: args.dryRun, reindex: args.reindex },
+    "Stores sync started"
+  );
   const { services, options } = context;
   const projectRoot = options.projectRoot;
   if (projectRoot === void 0) {
@@ -1326,6 +1372,18 @@ async function handleStoresSync(args, context) {
       }
     }
   }
+  logger5.info(
+    {
+      created: result.created.length,
+      skipped: result.skipped.length,
+      failed: result.failed.length,
+      orphans: result.orphans.length,
+      pruned: result.pruned?.length ?? 0,
+      reindexJobs: result.reindexJobs?.length ?? 0,
+      dryRun: args.dryRun
+    },
+    "Stores sync completed"
+  );
   return {
     content: [
       {
@@ -1431,7 +1489,7 @@ import { existsSync } from "fs";
 import { readdir, rm as rm2 } from "fs/promises";
 import { homedir } from "os";
 import { join as join2 } from "path";
-var logger2 = createLogger("uninstall-handler");
+var logger6 = createLogger("uninstall-handler");
 var handleUninstall = async (args, context) => {
   const { global: includeGlobal = false, keepDefinitions = true } = args;
   const deleted = [];
@@ -1439,7 +1497,7 @@ var handleUninstall = async (args, context) => {
   const errors = [];
   const projectRoot = context.options.projectRoot ?? process.cwd();
   const projectDataDir = join2(projectRoot, ".bluera", "bluera-knowledge");
-  logger2.info({ projectDataDir, includeGlobal, keepDefinitions }, "Starting uninstall");
+  logger6.info({ projectDataDir, includeGlobal, keepDefinitions }, "Starting uninstall");
   if (existsSync(projectDataDir)) {
     if (keepDefinitions) {
       try {
@@ -1456,13 +1514,13 @@ var handleUninstall = async (args, context) => {
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             errors.push(`Failed to delete ${entryPath}: ${msg}`);
-            logger2.error({ error: msg, path: entryPath }, "Failed to delete");
+            logger6.error({ error: msg, path: entryPath }, "Failed to delete");
           }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`Failed to read ${projectDataDir}: ${msg}`);
-        logger2.error({ error: msg, path: projectDataDir }, "Failed to read directory");
+        logger6.error({ error: msg, path: projectDataDir }, "Failed to read directory");
       }
     } else {
       try {
@@ -1471,7 +1529,7 @@ var handleUninstall = async (args, context) => {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`Failed to delete ${projectDataDir}: ${msg}`);
-        logger2.error({ error: msg, path: projectDataDir }, "Failed to delete");
+        logger6.error({ error: msg, path: projectDataDir }, "Failed to delete");
       }
     }
   }
@@ -1484,11 +1542,11 @@ var handleUninstall = async (args, context) => {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`Failed to delete ${globalDir}: ${msg}`);
-        logger2.error({ error: msg, path: globalDir }, "Failed to delete global data");
+        logger6.error({ error: msg, path: globalDir }, "Failed to delete global data");
       }
     }
   }
-  logger2.info({ deleted, kept, errors }, "Uninstall complete");
+  logger6.info({ deleted, kept, errors }, "Uninstall complete");
   const lines = [];
   if (deleted.length > 0) {
     lines.push("## Deleted:");
@@ -1549,10 +1607,32 @@ commandRegistry.registerAll(syncCommands);
 commandRegistry.registerAll(uninstallCommands);
 
 // src/mcp/handlers/execute.handler.ts
+var logger7 = createLogger("mcp-execute");
 var handleExecute = async (args, context) => {
   const validated = ExecuteArgsSchema.parse(args);
   const commandArgs = validated.args ?? {};
-  return executeCommand(validated.command, commandArgs, context);
+  logger7.info(
+    { command: validated.command, args: JSON.stringify(commandArgs) },
+    "Execute command started"
+  );
+  const startTime = Date.now();
+  try {
+    const result = await executeCommand(validated.command, commandArgs, context);
+    const durationMs = Date.now() - startTime;
+    logger7.info({ command: validated.command, durationMs }, "Execute command completed");
+    return result;
+  } catch (error) {
+    const durationMs = Date.now() - startTime;
+    logger7.error(
+      {
+        command: validated.command,
+        durationMs,
+        error: error instanceof Error ? error.message : String(error)
+      },
+      "Execute command failed"
+    );
+    throw error;
+  }
 };
 
 // src/services/token.service.ts
@@ -1650,11 +1730,11 @@ var LRUCache = class {
 };
 
 // src/mcp/handlers/search.handler.ts
-var logger3 = createLogger("mcp-search");
+var logger8 = createLogger("mcp-search");
 var resultCache = new LRUCache(1e3);
 var handleSearch = async (args, context) => {
   const validated = SearchArgsSchema.parse(args);
-  logger3.info(
+  logger8.info(
     {
       query: validated.query,
       stores: validated.stores,
@@ -1731,7 +1811,7 @@ var handleSearch = async (args, context) => {
   const header = `Search: "${validated.query}" | Results: ${String(results.totalResults)} | ${formatTokenCount(responseTokens)} tokens | ${String(results.timeMs)}ms${confidenceInfo}
 
 `;
-  logger3.info(
+  logger8.info(
     {
       query: validated.query,
       totalResults: results.totalResults,
@@ -1752,7 +1832,7 @@ var handleSearch = async (args, context) => {
 };
 var handleGetFullContext = async (args, context) => {
   const validated = GetFullContextArgsSchema.parse(args);
-  logger3.info({ resultId: validated.resultId }, "Get full context requested");
+  logger8.info({ resultId: validated.resultId }, "Get full context requested");
   const resultId = validated.resultId;
   const cachedResult = resultCache.get(resultId);
   if (!cachedResult) {
@@ -1770,7 +1850,7 @@ var handleGetFullContext = async (args, context) => {
       null,
       2
     );
-    logger3.info(
+    logger8.info(
       {
         resultId,
         cached: true,
@@ -1836,7 +1916,7 @@ var handleGetFullContext = async (args, context) => {
     null,
     2
   );
-  logger3.info(
+  logger8.info(
     {
       resultId,
       cached: false,
@@ -1872,7 +1952,7 @@ var tools = [
 ];
 
 // src/mcp/server.ts
-var logger4 = createLogger("mcp-server");
+var logger9 = createLogger("mcp-server");
 var registry = AdapterRegistry.getInstance();
 if (!registry.hasExtension(".zil")) {
   registry.register(new ZilAdapter());
@@ -1988,7 +2068,7 @@ function createMCPServer(options, services) {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     const startTime = Date.now();
-    logger4.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
+    logger9.info({ tool: name, args: JSON.stringify(args) }, "Tool invoked");
     const context = { services, options };
     try {
       let result;
@@ -2004,11 +2084,11 @@ function createMCPServer(options, services) {
         result = await tool.handler(validated, context);
       }
       const durationMs = Date.now() - startTime;
-      logger4.info({ tool: name, durationMs }, "Tool completed");
+      logger9.info({ tool: name, durationMs }, "Tool completed");
       return result;
     } catch (error) {
       const durationMs = Date.now() - startTime;
-      logger4.error(
+      logger9.error(
         {
           tool: name,
           durationMs,
@@ -2022,7 +2102,7 @@ function createMCPServer(options, services) {
   return server;
 }
 async function runMCPServer(options) {
-  logger4.info(
+  logger9.info(
     {
       dataDir: options.dataDir,
       projectRoot: options.projectRoot
@@ -2033,12 +2113,12 @@ async function runMCPServer(options) {
   const server = createMCPServer(options, services);
   const transport = new StdioServerTransport();
   const shutdown = async (signal) => {
-    logger4.info({ signal }, "Shutdown signal received");
+    logger9.info({ signal }, "Shutdown signal received");
     try {
       await destroyServices(services);
-      logger4.info("Services destroyed, exiting");
+      logger9.info("Services destroyed, exiting");
     } catch (error) {
-      logger4.error(
+      logger9.error(
         { error: error instanceof Error ? error.message : String(error) },
         "Error during shutdown"
       );
@@ -2047,7 +2127,7 @@ async function runMCPServer(options) {
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
   await server.connect(transport);
-  logger4.info("MCP server connected to stdio transport");
+  logger9.info("MCP server connected to stdio transport");
 }
 var scriptPath = process.argv[1] ?? "";
 var isMCPServerEntry = scriptPath.endsWith("mcp/server.js") || scriptPath.endsWith("mcp/server");
@@ -2061,7 +2141,7 @@ if (isMCPServerEntry) {
     config: process.env["CONFIG_PATH"],
     projectRoot
   }).catch((error) => {
-    logger4.error(
+    logger9.error(
       { error: error instanceof Error ? error.message : String(error) },
       "Failed to start MCP server"
     );
@@ -2075,4 +2155,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-DX5I6U5X.js.map
+//# sourceMappingURL=chunk-3EQRQOXD.js.map

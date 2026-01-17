@@ -4,12 +4,9 @@ import { join } from 'path';
 
 /**
  * Tests to verify .mcp.json is correctly configured for MCP server.
- * The MCP server must work in both contexts:
- * - Plugin mode: installed via marketplace (CLAUDE_PLUGIN_ROOT is set)
- * - Project mode: running from repo root (CLAUDE_PLUGIN_ROOT is undefined)
  *
  * Key requirements:
- * - Must use ${CLAUDE_PLUGIN_ROOT:-.} with default value for dual-mode support
+ * - Must use ${CLAUDE_PLUGIN_ROOT} in args path (cwd is NOT supported)
  * - Must set PROJECT_ROOT env var (required by server fail-fast check)
  *
  * Note: We use .mcp.json at plugin root (not inline in plugin.json) due to
@@ -18,8 +15,7 @@ import { join } from 'path';
  *
  * CLAUDE_PLUGIN_ROOT behavior:
  * - Plugin mode: expands to ~/.claude/plugins/cache/bluera/bluera-knowledge/X.Y.Z/
- * - Project mode: undefined, so default "." is used
- * See: https://github.com/anthropics/claude-code/issues/9354
+ * - Project mode: MCP not available (plugin mode only)
  */
 describe('Plugin MCP Configuration (.mcp.json)', () => {
   const mcpJsonPath = join(process.cwd(), '.mcp.json');
@@ -34,20 +30,13 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
     expect(config.mcpServers).toHaveProperty('bluera-knowledge');
   });
 
-  it('uses cwd with ${CLAUDE_PLUGIN_ROOT:-.} for dual-mode support', () => {
+  it('uses ${CLAUDE_PLUGIN_ROOT} in args path (cwd not supported)', () => {
     const serverConfig = config.mcpServers['bluera-knowledge'];
 
-    // cwd uses ${CLAUDE_PLUGIN_ROOT:-.} so relative paths in args resolve correctly
-    // - Plugin mode: CLAUDE_PLUGIN_ROOT expands to plugin cache path
-    // - Project mode: Uses default "." for local development
-    expect(serverConfig.cwd).toBe('${CLAUDE_PLUGIN_ROOT:-.}');
-  });
-
-  it('uses relative path to bootstrap script in args', () => {
-    const serverConfig = config.mcpServers['bluera-knowledge'];
-
-    // Bootstrap script uses relative path (resolved via cwd)
-    expect(serverConfig.args).toContain('./dist/mcp/bootstrap.js');
+    // ${CLAUDE_PLUGIN_ROOT} expands to plugin cache path
+    // Note: cwd parameter is NOT supported by Claude Code MCP config
+    expect(serverConfig.args).toContain('${CLAUDE_PLUGIN_ROOT}/dist/mcp/bootstrap.js');
+    expect(serverConfig.cwd).toBeUndefined();
   });
 
   it('sets PROJECT_ROOT environment variable (required by fail-fast server)', () => {

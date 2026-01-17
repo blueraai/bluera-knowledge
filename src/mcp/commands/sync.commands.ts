@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createLogger } from '../../logging/index.js';
 import { JobService } from '../../services/job.service.js';
 import { StoreDefinitionService } from '../../services/store-definition.service.js';
 import {
@@ -10,6 +11,8 @@ import { spawnBackgroundWorker } from '../../workers/spawn-worker.js';
 import type { CommandDefinition } from './registry.js';
 import type { StoreDefinition } from '../../types/store-definition.js';
 import type { HandlerContext, ToolResponse } from '../types.js';
+
+const logger = createLogger('mcp-sync');
 
 /**
  * Arguments for stores:sync command
@@ -48,6 +51,11 @@ export async function handleStoresSync(
   args: SyncStoresArgs,
   context: HandlerContext
 ): Promise<ToolResponse> {
+  logger.info(
+    { prune: args.prune, dryRun: args.dryRun, reindex: args.reindex },
+    'Stores sync started'
+  );
+
   const { services, options } = context;
   const projectRoot = options.projectRoot;
 
@@ -148,6 +156,19 @@ export async function handleStoresSync(
       }
     }
   }
+
+  logger.info(
+    {
+      created: result.created.length,
+      skipped: result.skipped.length,
+      failed: result.failed.length,
+      orphans: result.orphans.length,
+      pruned: result.pruned?.length ?? 0,
+      reindexJobs: result.reindexJobs?.length ?? 0,
+      dryRun: args.dryRun,
+    },
+    'Stores sync completed'
+  );
 
   return {
     content: [

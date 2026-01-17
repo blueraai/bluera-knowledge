@@ -1,5 +1,6 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { createLogger } from '../../logging/index.js';
 import { JobService } from '../../services/job.service.js';
 import { createStoreId } from '../../types/brands.js';
 import { spawnBackgroundWorker } from '../../workers/spawn-worker.js';
@@ -19,6 +20,8 @@ import type {
 } from '../schemas/index.js';
 import type { ToolHandler, ToolResponse } from '../types.js';
 
+const logger = createLogger('mcp-store');
+
 /**
  * Handle list_stores requests
  *
@@ -30,12 +33,15 @@ export const handleListStores: ToolHandler<ListStoresArgs> = async (
 ): Promise<ToolResponse> => {
   // Validate arguments with Zod
   const validated = ListStoresArgsSchema.parse(args);
+  logger.info({ type: validated.type }, 'List stores started');
 
   const { services } = context;
 
   const stores = await services.store.list();
   const filtered =
     validated.type !== undefined ? stores.filter((s) => s.type === validated.type) : stores;
+
+  logger.info({ count: filtered.length, type: validated.type }, 'List stores completed');
 
   return {
     content: [
@@ -72,14 +78,18 @@ export const handleGetStoreInfo: ToolHandler<GetStoreInfoArgs> = async (
 ): Promise<ToolResponse> => {
   // Validate arguments with Zod
   const validated = GetStoreInfoArgsSchema.parse(args);
+  logger.info({ store: validated.store }, 'Get store info started');
 
   const { services } = context;
 
   const store = await services.store.getByIdOrName(createStoreId(validated.store));
 
   if (store === undefined) {
+    logger.warn({ store: validated.store }, 'Store not found');
     throw new Error(`Store not found: ${validated.store}`);
   }
+
+  logger.info({ storeId: store.id, storeName: store.name }, 'Get store info completed');
 
   return {
     content: [
@@ -118,6 +128,10 @@ export const handleCreateStore: ToolHandler<CreateStoreArgs> = async (
 ): Promise<ToolResponse> => {
   // Validate arguments with Zod
   const validated = CreateStoreArgsSchema.parse(args);
+  logger.info(
+    { name: validated.name, type: validated.type, source: validated.source },
+    'Create store started'
+  );
 
   const { services, options } = context;
 
@@ -136,6 +150,7 @@ export const handleCreateStore: ToolHandler<CreateStoreArgs> = async (
   });
 
   if (!result.success) {
+    logger.error({ name: validated.name, error: result.error.message }, 'Create store failed');
     throw new Error(result.error.message);
   }
 
@@ -159,6 +174,11 @@ export const handleCreateStore: ToolHandler<CreateStoreArgs> = async (
 
   // Spawn background worker
   spawnBackgroundWorker(job.id, options.dataDir);
+
+  logger.info(
+    { storeId: result.data.id, storeName: result.data.name, jobId: job.id },
+    'Create store completed'
+  );
 
   return {
     content: [
@@ -199,12 +219,14 @@ export const handleIndexStore: ToolHandler<IndexStoreArgs> = async (
 ): Promise<ToolResponse> => {
   // Validate arguments with Zod
   const validated = IndexStoreArgsSchema.parse(args);
+  logger.info({ store: validated.store }, 'Index store started');
 
   const { services, options } = context;
 
   const store = await services.store.getByIdOrName(createStoreId(validated.store));
 
   if (store === undefined) {
+    logger.warn({ store: validated.store }, 'Store not found for indexing');
     throw new Error(`Store not found: ${validated.store}`);
   }
 
@@ -225,6 +247,8 @@ export const handleIndexStore: ToolHandler<IndexStoreArgs> = async (
 
   // Spawn background worker
   spawnBackgroundWorker(job.id, options.dataDir);
+
+  logger.info({ storeId: store.id, storeName: store.name, jobId: job.id }, 'Index store completed');
 
   return {
     content: [
@@ -265,18 +289,22 @@ export const handleDeleteStore: ToolHandler<DeleteStoreArgs> = async (
 ): Promise<ToolResponse> => {
   // Validate arguments with Zod
   const validated = DeleteStoreArgsSchema.parse(args);
+  logger.info({ store: validated.store }, 'Delete store started');
 
   const { services, options } = context;
 
   const store = await services.store.getByIdOrName(createStoreId(validated.store));
 
   if (store === undefined) {
+    logger.warn({ store: validated.store }, 'Store not found for deletion');
     throw new Error(`Store not found: ${validated.store}`);
   }
 
+  logger.debug({ storeId: store.id, storeName: store.name }, 'Deleting LanceDB table');
   // Delete LanceDB table first (so searches don't return results for deleted store)
   await services.lance.deleteStore(store.id);
 
+  logger.debug({ storeId: store.id }, 'Deleting code graph');
   // Delete code graph file
   await services.codeGraph.deleteGraph(store.id);
 
@@ -286,14 +314,22 @@ export const handleDeleteStore: ToolHandler<DeleteStoreArgs> = async (
       throw new Error('dataDir is required to delete cloned repository files');
     }
     const repoPath = join(options.dataDir, 'repos', store.id);
+    logger.debug({ storeId: store.id, repoPath }, 'Removing cloned repository');
     await rm(repoPath, { recursive: true, force: true });
   }
 
+  logger.debug({ storeId: store.id }, 'Removing from registry');
   // Delete from registry last
   const result = await services.store.delete(store.id);
   if (!result.success) {
+    logger.error({ storeId: store.id, error: result.error.message }, 'Delete store failed');
     throw new Error(result.error.message);
   }
+
+  logger.info(
+    { storeId: store.id, storeName: store.name, storeType: store.type },
+    'Delete store completed'
+  );
 
   return {
     content: [

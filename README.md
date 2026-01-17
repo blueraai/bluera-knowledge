@@ -468,8 +468,9 @@ If the plugin isn't listed, install it:
 If the MCP server shows as failed after installation:
 
 1. **Restart Claude Code** - MCP servers require a restart to initialize
-2. **Check status:** Run `/mcp` to see connection status
-3. **Reinstall:** Try `/plugin uninstall bluera-knowledge` then `/plugin install bluera-knowledge@bluera`
+2. **Check logs:** Run `/logs errors` to see recent errors or `/logs module bootstrap` for startup logs
+3. **Check status:** Run `/mcp` to see connection status
+4. **Reinstall:** Try `/plugin uninstall bluera-knowledge` then `/plugin install bluera-knowledge@bluera`
 
 If the issue persists, check that Claude Code is v2.0.65 or later (earlier versions had MCP loading bugs).
 </details>
@@ -517,6 +518,7 @@ Large repositories (10,000+ files) take longer to index. If indexing fails:
 2. Ensure the source repository/folder is accessible
 3. For repo stores, verify git is installed: `git --version`
 4. Check for network connectivity (for repo stores)
+5. Check logs for errors: `/logs errors` or `/logs search "index"`
 </details>
 
 <details>
@@ -529,6 +531,38 @@ To enable intelligent crawling with `--crawl` and `--extract`:
 2. Ensure `claude` command is in PATH: `which claude`
 
 Simple mode still crawls effectively—it just doesn't use AI to select which pages to crawl or extract specific content.
+</details>
+
+<details>
+<summary><b>📋 How to view logs for debugging</b></summary>
+
+The plugin logs all MCP server operations to `~/.bluera/bluera-knowledge/logs/app.log`.
+
+**View logs using the `/logs` command:**
+
+```bash
+/logs              # Watch logs in real-time (tail -f)
+/logs view 50      # View last 50 log entries
+/logs errors       # Show only error-level logs
+/logs module mcp-store  # Filter by module (mcp-server, mcp-store, mcp-execute, mcp-job, mcp-sync, bootstrap)
+/logs search "pattern"  # Search for a pattern
+```
+
+**Log modules:**
+- `bootstrap` - MCP server startup and dependency installation
+- `mcp-server` - Core MCP server operations
+- `mcp-store` - Store create/list/delete operations
+- `mcp-search` - Search queries and results
+- `mcp-execute` - Meta-tool command execution
+- `mcp-job` - Background job status
+- `mcp-sync` - Store sync operations
+
+**Manual access:**
+```bash
+tail -f ~/.bluera/bluera-knowledge/logs/app.log
+```
+
+Logs are JSON formatted (NDJSON) and can be processed with `jq` for pretty-printing.
 </details>
 
 ---

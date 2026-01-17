@@ -1,5 +1,8 @@
 import { z } from 'zod';
+import { createLogger } from '../../logging/index.js';
 import type { HandlerContext, ToolResponse } from '../types.js';
+
+const logger = createLogger('mcp-commands');
 
 /**
  * Command definition for the execute meta-tool
@@ -114,10 +117,13 @@ export async function executeCommand(
   const command = commandRegistry.get(commandName);
 
   if (command === undefined) {
+    logger.warn({ commandName }, 'Unknown command requested');
     throw new Error(
       `Unknown command: ${commandName}. Use execute("commands") to list available commands.`
     );
   }
+
+  logger.debug({ commandName, hasArgs: Object.keys(args).length > 0 }, 'Executing command');
 
   // Validate args if schema provided (Zod parse returns unknown, safe to cast after validation)
   /* eslint-disable @typescript-eslint/consistent-type-assertions */
