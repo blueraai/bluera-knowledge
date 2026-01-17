@@ -2,9 +2,13 @@ name: Release
 
 # Publishes to npm when a tag is pushed.
 #
-# Quality assumption: Tags are only created by Auto Release workflow AFTER
-# CI passes on main. This workflow trusts that guarantee and does not re-run
-# tests. See ci.yml and auto-release.yml for the full quality chain.
+# Quality guarantee: This workflow builds platform binaries FIRST, then publishes.
+# If any platform build fails, npm publish is skipped - no broken releases.
+#
+# Flow:
+# 1. Build platform binaries (darwin-arm64, darwin-x64, linux-x64) in parallel
+# 2. Create GitHub release with all binaries attached
+# 3. Publish to npm (only if all builds succeeded)
 #
 on:
   push:
@@ -17,16 +21,177 @@ concurrency:
   group: release
   cancel-in-progress: false
 
+env:
+  NODE_VERSION: '22'
+
 jobs:
+  # Step 1: Build platform-specific binaries in parallel
+  build-platforms:
+    strategy:
+      fail-fast: true  # Stop all builds if one fails
+      matrix:
+        include:
+          # macOS Apple Silicon
+          - platform: darwin
+            arch: arm64
+            runner: macos-15
+
+          # macOS Intel
+          - platform: darwin
+            arch: x64
+            runner: macos-15-intel
+
+          # Linux x64
+          - platform: linux
+            arch: x64
+            runner: ubuntu-latest
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile
+
+          # Verify native modules installed correctly
+          node -e "require('@lancedb/lancedb')"
+          echo "✓ Native modules verified"
+
+      - name: Build TypeScript
+        run: bun run build
+
+      - name: Prune dev dependencies
+        run: |
+          # Remove devDependencies to reduce package size
+          bun install --production --frozen-lockfile
+          echo "✓ Dev dependencies pruned"
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
+      - name: Create distribution package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ARTIFACT="bluera-knowledge-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}"
+
+          # Create clean distribution directory
+          mkdir -p dist-package
+
+          # Copy plugin files (matching package.json files array + extras)
+          cp -r dist dist-package/
+          cp -r node_modules dist-package/
+          cp -r hooks dist-package/ 2>/dev/null || true
+          cp -r commands dist-package/ 2>/dev/null || true
+          cp -r skills dist-package/ 2>/dev/null || true
+          cp -r python dist-package/ 2>/dev/null || true
+          cp -r .claude-plugin dist-package/
+          cp package.json dist-package/
+          cp .mcp.json dist-package/
+          cp README.md dist-package/ 2>/dev/null || true
+          cp CHANGELOG.md dist-package/ 2>/dev/null || true
+          cp LICENSE dist-package/ 2>/dev/null || true
+
+          # Create tarball
+          tar -czvf "${ARTIFACT}.tar.gz" -C dist-package .
+
+          # Create checksum
+          if command -v shasum &> /dev/null; then
+            shasum -a 256 "${ARTIFACT}.tar.gz" > "${ARTIFACT}.tar.gz.sha256"
+          else
+            sha256sum "${ARTIFACT}.tar.gz" > "${ARTIFACT}.tar.gz.sha256"
+          fi
+
+          echo "Created: ${ARTIFACT}.tar.gz"
+          ls -lh "${ARTIFACT}.tar.gz"
+          cat "${ARTIFACT}.tar.gz.sha256"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            bluera-knowledge-*.tar.gz
+            bluera-knowledge-*.tar.gz.sha256
+
+  # Step 2: Create release and publish (only runs if ALL platform builds succeed)
   release:
+    needs: build-platforms
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write  # Required for npm trusted publishing (OIDC)
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          merge-multiple: true
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create manifest
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          REPO="blueraai/bluera-knowledge"
+          BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
+
+          # Read checksums
+          get_sha256() {
+            local file="bluera-knowledge-${VERSION}-$1.tar.gz.sha256"
+            if [ -f "$file" ]; then
+              cut -d' ' -f1 "$file"
+            else
+              echo "null"
+            fi
+          }
+
+          cat > manifest.json << EOF
+          {
+            "version": "${VERSION}",
+            "repository": "https://github.com/${REPO}",
+            "platforms": {
+              "darwin-arm64": {
+                "url": "${BASE_URL}/bluera-knowledge-${VERSION}-darwin-arm64.tar.gz",
+                "sha256": "$(get_sha256 darwin-arm64)"
+              },
+              "darwin-x64": {
+                "url": "${BASE_URL}/bluera-knowledge-${VERSION}-darwin-x64.tar.gz",
+                "sha256": "$(get_sha256 darwin-x64)"
+              },
+              "linux-x64": {
+                "url": "${BASE_URL}/bluera-knowledge-${VERSION}-linux-x64.tar.gz",
+                "sha256": "$(get_sha256 linux-x64)"
+              }
+            }
+          }
+          EOF
+
+          echo "Created manifest.json:"
+          cat manifest.json
+
+      - name: List artifacts
+        run: ls -la
 
       - name: Generate release notes
         id: notes
@@ -45,10 +210,23 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.version }}
           generate_release_notes: true
           body: |
             ## Changes
             ${{ steps.notes.outputs.notes }}
+
+            ## Platform Binaries
+            Pre-built binaries are available for instant plugin startup (no npm install required):
+            - `darwin-arm64` - Apple Silicon Macs (M1/M2/M3+)
+            - `darwin-x64` - Intel Macs
+            - `linux-x64` - Linux x64
+          files: |
+            bluera-knowledge-*.tar.gz
+            bluera-knowledge-*.tar.gz.sha256
+            manifest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -58,7 +236,7 @@ jobs:
       - name: Setup Node.js (for npm publish)
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://registry.npmjs.org'
 
       - name: Update npm for trusted publishing
