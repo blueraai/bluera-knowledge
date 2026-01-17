@@ -1,5 +1,9 @@
 {
   "name": "bluera-knowledge",
   "version": "0.15.7",
-  "description": "Clone repos, crawl docs, search locally. Fast, authoritative answers for AI coding agents."
+  "description": "Clone repos, crawl docs, search locally. Fast, authoritative answers for AI coding agents.",
+  "prebuiltBinaries": {
+    "manifestUrl": "https://github.com/blueraai/bluera-knowledge/releases/latest/download/manifest.json",
+    "platforms": ["darwin-arm64", "darwin-x64", "linux-x64"]
+  }
 }
