@@ -2,7 +2,7 @@ name: Update bluera-marketplace
 
 on:
   workflow_run:
-    workflows: ["Release (npm + GitHub)"]
+    workflows: ["release"]
     types: [completed]
   workflow_dispatch:
     inputs:
