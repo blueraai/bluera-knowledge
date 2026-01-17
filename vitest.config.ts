@@ -75,9 +75,10 @@ export default defineConfig({
         'src/types/progress.ts',
         'src/types/search.ts',
         'src/mcp/types.ts',
-        // Entry points (CLI executables)
+        // Entry points (CLI executables, bootstrap with network/fs ops)
         'src/server/index.ts',
         'src/workers/background-worker-cli.ts',
+        'src/mcp/bootstrap.ts',
       ],
       thresholds: {
         lines: coverageThreshold,

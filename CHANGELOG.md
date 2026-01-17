@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.16.0](https://github.com/blueraai/bluera-knowledge/compare/v0.15.7...v0.16.0) (2026-01-17)
+
+
+### Features
+
+* **dist:** add multi-platform prebuilt binary distribution ([32be73e](https://github.com/blueraai/bluera-knowledge/commit/32be73e7de962b8245ebe3321e792be854385243))
+
 ## [0.15.7](https://github.com/blueraai/bluera-knowledge/compare/v0.15.6...v0.15.7) (2026-01-17)
 
 
