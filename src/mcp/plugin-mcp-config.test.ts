@@ -34,16 +34,20 @@ describe('Plugin MCP Configuration (.mcp.json)', () => {
     expect(config.mcpServers).toHaveProperty('bluera-knowledge');
   });
 
-  it('uses ${CLAUDE_PLUGIN_ROOT:-.} with default value for dual-mode support', () => {
+  it('uses cwd with ${CLAUDE_PLUGIN_ROOT:-.} for dual-mode support', () => {
     const serverConfig = config.mcpServers['bluera-knowledge'];
-    const argsString = JSON.stringify(serverConfig.args);
 
-    // Uses ${CLAUDE_PLUGIN_ROOT:-.} to support both:
+    // cwd uses ${CLAUDE_PLUGIN_ROOT:-.} so relative paths in args resolve correctly
     // - Plugin mode: CLAUDE_PLUGIN_ROOT expands to plugin cache path
     // - Project mode: Uses default "." for local development
-    expect(argsString).toContain('${CLAUDE_PLUGIN_ROOT:-.}');
-    // Bootstrap script installs deps before starting MCP server
-    expect(argsString).toContain('dist/mcp/bootstrap.js');
+    expect(serverConfig.cwd).toBe('${CLAUDE_PLUGIN_ROOT:-.}');
+  });
+
+  it('uses relative path to bootstrap script in args', () => {
+    const serverConfig = config.mcpServers['bluera-knowledge'];
+
+    // Bootstrap script uses relative path (resolved via cwd)
+    expect(serverConfig.args).toContain('./dist/mcp/bootstrap.js');
   });
 
   it('sets PROJECT_ROOT environment variable (required by fail-fast server)', () => {

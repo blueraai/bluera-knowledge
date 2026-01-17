@@ -2,7 +2,8 @@
   "mcpServers": {
     "bluera-knowledge": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT:-.}/dist/mcp/bootstrap.js"],
+      "args": ["./dist/mcp/bootstrap.js"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT:-.}",
       "env": {
         "PROJECT_ROOT": "${PWD}",
         "DATA_DIR": ".bluera/bluera-knowledge/data",
