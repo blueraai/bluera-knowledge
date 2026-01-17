@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.15.7](https://github.com/blueraai/bluera-knowledge/compare/v0.15.6...v0.15.7) (2026-01-17)
+
+
+### Bug Fixes
+
+* **deps:** downgrade LanceDB to 0.22.3 for Intel Mac compatibility ([36f8c03](https://github.com/blueraai/bluera-knowledge/commit/36f8c033f3da4587f1abeb1c1fdf44f65dc67da3))
+
 ## [0.15.6](https://github.com/blueraai/bluera-knowledge/compare/v0.15.4...v0.15.6) (2026-01-17)
 
 
