@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.15.5](https://github.com/blueraai/bluera-knowledge/compare/v0.15.4...v0.15.5) (2026-01-17)
+
+
+### Bug Fixes
+
+* **mcp:** add cwd to resolve relative paths correctly ([ea8d403](https://github.com/blueraai/bluera-knowledge/commit/ea8d403eddf7713b75dcc44e261c41db11afbc9b))
+
 ## [0.15.4](https://github.com/blueraai/bluera-knowledge/compare/v0.15.3...v0.15.4) (2026-01-17)
 
 
