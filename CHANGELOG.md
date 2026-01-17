@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.15.4](https://github.com/blueraai/bluera-knowledge/compare/v0.15.3...v0.15.4) (2026-01-17)
+
+
+### Bug Fixes
+
+* **mcp:** use JavaScript bootstrap instead of bash wrapper ([960a401](https://github.com/blueraai/bluera-knowledge/commit/960a401ea8aa3d294f349e428732ae01bcad2571))
+
 ## [0.15.3](https://github.com/blueraai/bluera-knowledge/compare/v0.15.1...v0.15.3) (2026-01-16)
 
 
