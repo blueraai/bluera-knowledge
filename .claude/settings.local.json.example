@@ -6,7 +6,12 @@
       "Bash(bun run typecheck:*)",
       "Bash(npm run lint:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(bun run precommit:*)"
+      "Bash(bun run precommit:*)",
+      "Bash(bun run test:run:*)",
+      "bluera-knowledge:*",
+      "mcp__bluera-knowledge__execute",
+      "mcp__bluera-knowledge__search",
+      "mcp__bluera-knowledge__get_full_context",
     ],
     "deny": [
       "Bash(*validate-npm-release*)",
@@ -38,8 +43,5 @@
         ]
       }
     ]
-  },
-  "enabledPlugins": {
-    "bluera-knowledge@bluera": true
   }
 }
