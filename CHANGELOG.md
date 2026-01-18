@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.17.1](https://github.com/blueraai/bluera-knowledge/compare/v0.17.0...v0.17.1) (2026-01-18)
+
+
+### Bug Fixes
+
+* **config:** use per-repo paths instead of global directories ([d642fec](https://github.com/blueraai/bluera-knowledge/commit/d642fec3510ef546dd5dc94f91410a38e8aea0e4))
+
 ## [0.17.0](https://github.com/blueraai/bluera-knowledge/compare/v0.16.6...v0.17.0) (2026-01-18)
 
 
