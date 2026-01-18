@@ -2,7 +2,15 @@
 
 // src/mcp/bootstrap.ts
 import { execSync } from "child_process";
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from "fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync
+} from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -26,6 +34,7 @@ var log = (level, msg, data) => {
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = dirname(__filename);
 var pluginRoot = join(__dirname, "..", "..");
+var installLockFile = join(pluginRoot, ".node_modules_installing");
 var getVersion = () => {
   try {
     const pkg = JSON.parse(readFileSync(join(pluginRoot, "package.json"), "utf-8"));
@@ -52,11 +61,19 @@ function installWithPackageManager() {
   log("info", "Dependencies installed via package manager");
 }
 function ensureDependencies() {
-  if (existsSync(join(pluginRoot, "node_modules"))) {
+  const nodeModulesPath = join(pluginRoot, "node_modules");
+  if (existsSync(installLockFile)) {
+    log("info", "Detected interrupted install, cleaning up");
+    rmSync(nodeModulesPath, { recursive: true, force: true });
+    unlinkSync(installLockFile);
+  }
+  if (existsSync(nodeModulesPath)) {
     log("info", "Dependencies already installed");
     return;
   }
+  writeFileSync(installLockFile, (/* @__PURE__ */ new Date()).toISOString());
   installWithPackageManager();
+  unlinkSync(installLockFile);
 }
 var VERSION = getVersion();
 log("info", "Bootstrap starting", { pluginRoot, version: VERSION });

@@ -94,4 +94,23 @@ describe('Bootstrap', () => {
       expect(source).toContain('CONFIG_PATH');
     });
   });
+
+  describe('Interrupted install recovery', () => {
+    it('uses lock file to track install in progress', () => {
+      expect(source).toContain('.node_modules_installing');
+    });
+
+    it('detects and cleans up interrupted installs', () => {
+      expect(source).toContain('Detected interrupted install');
+      expect(source).toContain('rmSync');
+    });
+
+    it('creates lock file before install', () => {
+      expect(source).toContain('writeFileSync(installLockFile');
+    });
+
+    it('removes lock file after successful install', () => {
+      expect(source).toContain('unlinkSync(installLockFile)');
+    });
+  });
 });

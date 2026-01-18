@@ -13,7 +13,15 @@
  * as an error and may mark the MCP server as failed. All logging goes to file.
  */
 import { execSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,6 +57,9 @@ const log = (
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const pluginRoot = join(__dirname, '..', '..');
+
+// Lock file to detect interrupted installs
+const installLockFile = join(pluginRoot, '.node_modules_installing');
 
 // Get version from package.json for logging
 const getVersion = (): string => {
@@ -89,16 +100,31 @@ function installWithPackageManager(): void {
 
 /**
  * Ensure dependencies are available.
+ * Uses a lock file to detect and recover from interrupted installs.
  */
 function ensureDependencies(): void {
+  const nodeModulesPath = join(pluginRoot, 'node_modules');
+
+  // Check for interrupted install - lock file exists means previous install was killed
+  if (existsSync(installLockFile)) {
+    log('info', 'Detected interrupted install, cleaning up');
+    rmSync(nodeModulesPath, { recursive: true, force: true });
+    unlinkSync(installLockFile);
+  }
+
   // Fast path: already installed
-  if (existsSync(join(pluginRoot, 'node_modules'))) {
+  if (existsSync(nodeModulesPath)) {
     log('info', 'Dependencies already installed');
     return;
   }
 
-  // Install via package manager
+  // Create lock file before install (left behind if install interrupted/fails)
+  writeFileSync(installLockFile, new Date().toISOString());
+
   installWithPackageManager();
+
+  // Remove lock file on success
+  unlinkSync(installLockFile);
 }
 
 // Main entry point
