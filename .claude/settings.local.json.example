@@ -12,7 +12,9 @@
       "mcp__bluera-knowledge__get_full_context"
     ],
     "deny": [
-      "Bash(*validate-npm-release*)",
+      "Bash(./scripts/validate-npm-release*)",
+      "Bash(bash*validate-npm-release*)",
+      "Bash(sh*validate-npm-release*)",
       "Bash(bun run validate:*)"
     ]
   },
