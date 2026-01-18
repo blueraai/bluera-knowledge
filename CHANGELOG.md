@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.17.0](https://github.com/blueraai/bluera-knowledge/compare/v0.16.6...v0.17.0) (2026-01-18)
+
+
+### Features
+
+* **bootstrap:** add interrupted install recovery via lock file ([5bf4773](https://github.com/blueraai/bluera-knowledge/commit/5bf4773b59f27fe04fc6e8f7da0fe37cc4902ac7))
+
+
+### Bug Fixes
+
+* **settings:** narrow deny rules to block execution only ([daf758b](https://github.com/blueraai/bluera-knowledge/commit/daf758b211eb2e2179d198485f0a7705fb137759))
+
 ## [0.16.4](https://github.com/blueraai/bluera-knowledge/compare/v0.16.3...v0.16.4) (2026-01-17)
 
 
