@@ -67,10 +67,6 @@
   "files": [
     "dist/",
     "python/",
-    "hooks/",
-    "commands/",
-    "skills/",
-    ".claude-plugin/",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

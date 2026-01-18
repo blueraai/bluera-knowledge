@@ -354,23 +354,6 @@ else
     fail "bluera-knowledge serve (failed to start)"
 fi
 
-# Test mcp command (just verify it starts and outputs JSON-RPC)
-log_header "Testing mcp"
-
-MCP_OUTPUT=$(timeout 2 bluera-knowledge mcp -d "$DATA_DIR" 2>&1 || true)
-if echo "$MCP_OUTPUT" | grep -qE "(jsonrpc|ready|listening|MCP)" 2>/dev/null || [ $? -eq 124 ]; then
-    # Timeout (124) is expected - MCP keeps running until killed
-    pass "bluera-knowledge mcp (starts without error)"
-else
-    # Even if it times out or produces no output, as long as it didn't crash
-    if [ -z "$MCP_OUTPUT" ]; then
-        pass "bluera-knowledge mcp (starts without error)"
-    else
-        log "MCP output: $MCP_OUTPUT"
-        fail "bluera-knowledge mcp (unexpected output)"
-    fi
-fi
-
 # Summary
 log_header "Validation Summary"
 log "Tests run:    $TESTS_RUN"
