@@ -277,6 +277,7 @@ declare class ConfigService {
     load(): Promise<AppConfig>;
     save(config: AppConfig): Promise<void>;
     resolveDataDir(): string;
+    resolveConfigPath(): string;
     private expandPath;
 }
 

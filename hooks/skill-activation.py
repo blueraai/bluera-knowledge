@@ -14,8 +14,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-CONFIG_DIR = Path.home() / ".local" / "share" / "bluera-knowledge"
-CONFIG_FILE = CONFIG_DIR / "skill-activation.json"
 DEFAULT_CONFIG: dict[str, Any] = {
     "enabled": True,
     "threshold": 1,
@@ -29,12 +27,31 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 
+def get_project_root() -> Path | None:
+    """Get project root from environment variables (per-repo config)."""
+    # Check environment variables in priority order
+    for env_var in ["PROJECT_ROOT", "PWD"]:
+        value = os.environ.get(env_var, "")
+        if value:
+            return Path(value)
+    return None
+
+
+def get_config_path() -> Path | None:
+    """Get per-repo config path for skill activation."""
+    project_root = get_project_root()
+    if project_root is None:
+        return None
+    return project_root / ".bluera" / "bluera-knowledge" / "skill-activation.json"
+
+
 def load_config() -> dict[str, Any]:
-    """Load skill activation configuration."""
-    if not CONFIG_FILE.exists():
+    """Load skill activation configuration from per-repo path."""
+    config_path = get_config_path()
+    if config_path is None or not config_path.exists():
         return DEFAULT_CONFIG.copy()
     try:
-        with open(CONFIG_FILE, encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, IOError):
         return DEFAULT_CONFIG.copy()

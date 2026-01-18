@@ -42,6 +42,8 @@ node_modules/
 !.bluera/
 !.bluera/bluera-knowledge/
 !.bluera/bluera-knowledge/stores.config.json
+!.bluera/bluera-knowledge/config.json
+!.bluera/bluera-knowledge/skill-activation.json
 .bluera/bluera-knowledge/data/
 `;
       await writeFile(join(projectRoot, '.gitignore'), content);
@@ -84,6 +86,8 @@ node_modules/
       expect(content).toContain('!.bluera/');
       expect(content).toContain('!.bluera/bluera-knowledge/');
       expect(content).toContain('!.bluera/bluera-knowledge/stores.config.json');
+      expect(content).toContain('!.bluera/bluera-knowledge/config.json');
+      expect(content).toContain('!.bluera/bluera-knowledge/skill-activation.json');
       expect(content).toContain('.bluera/bluera-knowledge/data/');
     });
 
@@ -111,6 +115,8 @@ node_modules/
 !.bluera/
 !.bluera/bluera-knowledge/
 !.bluera/bluera-knowledge/stores.config.json
+!.bluera/bluera-knowledge/config.json
+!.bluera/bluera-knowledge/skill-activation.json
 .bluera/bluera-knowledge/data/
 `;
       await writeFile(join(projectRoot, '.gitignore'), existingContent);
@@ -133,6 +139,8 @@ node_modules/
       expect(content).toContain('!.bluera/');
       expect(content).toContain('!.bluera/bluera-knowledge/');
       expect(content).toContain('!.bluera/bluera-knowledge/stores.config.json');
+      expect(content).toContain('!.bluera/bluera-knowledge/config.json');
+      expect(content).toContain('!.bluera/bluera-knowledge/skill-activation.json');
       expect(content).toContain('.bluera/bluera-knowledge/data/');
     });
 

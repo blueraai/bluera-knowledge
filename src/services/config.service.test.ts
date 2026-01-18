@@ -40,6 +40,22 @@ describe('ConfigService', () => {
     expect(dataDir).toBe(tempDir);
   });
 
+  describe('default config path (per-repo)', () => {
+    it('defaults configPath to per-repo .bluera/bluera-knowledge/config.json', () => {
+      // When no configPath is provided, should use project root
+      const service = new ConfigService(undefined, undefined, tempDir);
+      const resolvedConfigPath = service.resolveConfigPath();
+      expect(resolvedConfigPath).toBe(join(tempDir, '.bluera/bluera-knowledge/config.json'));
+    });
+
+    it('does not use home directory for default config path', () => {
+      const service = new ConfigService(undefined, undefined, tempDir);
+      const resolvedConfigPath = service.resolveConfigPath();
+      expect(resolvedConfigPath).not.toContain(process.env['HOME'] ?? '/Users');
+      expect(resolvedConfigPath).not.toContain('~');
+    });
+  });
+
   describe('path expansion', () => {
     it('expands tilde to home directory', () => {
       const service = new ConfigService(configPath, '~/.bluera/data');

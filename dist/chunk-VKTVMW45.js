@@ -1902,7 +1902,7 @@ var CodeGraphService = class {
 // src/services/config.service.ts
 import { readFile as readFile2, writeFile as writeFile2, mkdir as mkdir2, access } from "fs/promises";
 import { homedir as homedir2 } from "os";
-import { dirname as dirname3, resolve } from "path";
+import { dirname as dirname3, join as join5, resolve } from "path";
 
 // src/services/project-root.service.ts
 import { existsSync as existsSync3, statSync, realpathSync } from "fs";
@@ -2015,6 +2015,7 @@ var DEFAULT_CONFIG = {
 };
 
 // src/services/config.service.ts
+var DEFAULT_CONFIG_PATH = ".bluera/bluera-knowledge/config.json";
 async function fileExists(path4) {
   try {
     await access(path4);
@@ -2027,12 +2028,16 @@ var ConfigService = class {
   configPath;
   dataDir;
   config = null;
-  constructor(configPath = `${homedir2()}/.bluera/bluera-knowledge/config.json`, dataDir, projectRoot) {
-    this.configPath = configPath;
+  constructor(configPath, dataDir, projectRoot) {
+    const root = projectRoot ?? ProjectRootService.resolve();
+    if (configPath !== void 0 && configPath !== "") {
+      this.configPath = configPath;
+    } else {
+      this.configPath = join5(root, DEFAULT_CONFIG_PATH);
+    }
     if (dataDir !== void 0 && dataDir !== "") {
       this.dataDir = dataDir;
     } else {
-      const root = projectRoot ?? ProjectRootService.resolve();
       this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, root);
     }
   }
@@ -2064,6 +2069,9 @@ var ConfigService = class {
   resolveDataDir() {
     return this.dataDir;
   }
+  resolveConfigPath() {
+    return this.configPath;
+  }
   expandPath(path4, baseDir) {
     if (path4.startsWith("~")) {
       return path4.replace("~", homedir2());
@@ -2077,17 +2085,19 @@ var ConfigService = class {
 
 // src/services/gitignore.service.ts
 import { readFile as readFile3, writeFile as writeFile3, access as access2 } from "fs/promises";
-import { join as join5 } from "path";
+import { join as join6 } from "path";
 var REQUIRED_PATTERNS = [
   ".bluera/",
   "!.bluera/",
   "!.bluera/bluera-knowledge/",
   "!.bluera/bluera-knowledge/stores.config.json",
+  "!.bluera/bluera-knowledge/config.json",
+  "!.bluera/bluera-knowledge/skill-activation.json",
   ".bluera/bluera-knowledge/data/"
 ];
 var SECTION_HEADER = `
 # Bluera Knowledge
-# Store definitions (stores.config.json) are committed for team sharing
+# Config files (stores.config.json, config.json, skill-activation.json) can be committed
 # Data directory (vector DB, cloned repos) is not committed
 `;
 async function fileExists2(path4) {
@@ -2101,7 +2111,7 @@ async function fileExists2(path4) {
 var GitignoreService = class {
   gitignorePath;
   constructor(projectRoot) {
-    this.gitignorePath = join5(projectRoot, ".gitignore");
+    this.gitignorePath = join6(projectRoot, ".gitignore");
   }
   /**
    * Check if all required patterns are present in .gitignore
@@ -2174,7 +2184,7 @@ ${REQUIRED_PATTERNS.join("\n")}
 // src/services/index.service.ts
 import { createHash as createHash2 } from "crypto";
 import { readFile as readFile4, readdir } from "fs/promises";
-import { join as join6, extname, basename } from "path";
+import { join as join7, extname, basename } from "path";
 
 // src/services/chunking.service.ts
 var CHUNK_PRESETS = {
@@ -2677,7 +2687,7 @@ var IndexService = class {
     const files = [];
     const entries = await readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = join6(dir, entry.name);
+      const fullPath = join7(dir, entry.name);
       if (entry.isDirectory()) {
         if (!["node_modules", ".git", "dist", "build"].includes(entry.name)) {
           files.push(...await this.scanDirectory(fullPath));
@@ -3878,7 +3888,7 @@ var SearchService = class {
 
 // src/services/store-definition.service.ts
 import { readFile as readFile5, writeFile as writeFile4, mkdir as mkdir3, access as access3 } from "fs/promises";
-import { dirname as dirname4, resolve as resolve2, isAbsolute, join as join7 } from "path";
+import { dirname as dirname4, resolve as resolve2, isAbsolute, join as join8 } from "path";
 
 // src/types/store-definition.ts
 import { z as z2 } from "zod";
@@ -3943,7 +3953,7 @@ var StoreDefinitionService = class {
   config = null;
   constructor(projectRoot) {
     this.projectRoot = projectRoot ?? ProjectRootService.resolve();
-    this.configPath = join7(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
+    this.configPath = join8(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
   }
   /**
    * Load store definitions from config file.
@@ -4083,7 +4093,7 @@ var StoreDefinitionService = class {
 // src/services/store.service.ts
 import { randomUUID as randomUUID2 } from "crypto";
 import { readFile as readFile6, writeFile as writeFile5, mkdir as mkdir5, stat, access as access4 } from "fs/promises";
-import { join as join8, resolve as resolve3 } from "path";
+import { join as join9, resolve as resolve3 } from "path";
 
 // src/plugin/git-clone.ts
 import { spawn } from "child_process";
@@ -4231,7 +4241,7 @@ var StoreService = class {
       case "repo": {
         let repoPath = input.path;
         if (input.url !== void 0) {
-          const cloneDir = join8(this.dataDir, "repos", id);
+          const cloneDir = join9(this.dataDir, "repos", id);
           const result = await cloneRepository({
             url: input.url,
             targetDir: cloneDir,
@@ -4358,7 +4368,7 @@ var StoreService = class {
     return ok(void 0);
   }
   async loadRegistry() {
-    const registryPath = join8(this.dataDir, "stores.json");
+    const registryPath = join9(this.dataDir, "stores.json");
     const exists = await fileExists4(registryPath);
     if (!exists) {
       this.registry = { stores: [] };
@@ -4383,7 +4393,7 @@ var StoreService = class {
     }
   }
   async saveRegistry() {
-    const registryPath = join8(this.dataDir, "stores.json");
+    const registryPath = join9(this.dataDir, "stores.json");
     await writeFile5(registryPath, JSON.stringify(this.registry, null, 2));
   }
 };
@@ -4725,9 +4735,9 @@ var PythonBridge = class {
 
 // src/db/embeddings.ts
 import { homedir as homedir3 } from "os";
-import { join as join9 } from "path";
+import { join as join10 } from "path";
 import { pipeline, env } from "@huggingface/transformers";
-env.cacheDir = join9(homedir3(), ".cache", "huggingface-transformers");
+env.cacheDir = join10(homedir3(), ".cache", "huggingface-transformers");
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
@@ -5114,4 +5124,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-WYZQUKUD.js.map
+//# sourceMappingURL=chunk-VKTVMW45.js.map

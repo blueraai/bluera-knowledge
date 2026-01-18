@@ -1,9 +1,12 @@
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { ProjectRootService } from './project-root.service.js';
 import { DEFAULT_CONFIG } from '../types/config.js';
 import type { AppConfig } from '../types/config.js';
+
+/** Default config path relative to project root */
+const DEFAULT_CONFIG_PATH = '.bluera/bluera-knowledge/config.json';
 
 /**
  * Check if a file exists
@@ -22,20 +25,21 @@ export class ConfigService {
   private readonly dataDir: string;
   private config: AppConfig | null = null;
 
-  constructor(
-    configPath = `${homedir()}/.bluera/bluera-knowledge/config.json`,
-    dataDir?: string,
-    projectRoot?: string
-  ) {
-    this.configPath = configPath;
+  constructor(configPath?: string, dataDir?: string, projectRoot?: string) {
+    // Resolve project root using hierarchical detection
+    const root = projectRoot ?? ProjectRootService.resolve();
 
+    // Resolve configPath - per-repo by default
+    if (configPath !== undefined && configPath !== '') {
+      this.configPath = configPath;
+    } else {
+      this.configPath = join(root, DEFAULT_CONFIG_PATH);
+    }
+
+    // Resolve dataDir - per-repo by default
     if (dataDir !== undefined && dataDir !== '') {
-      // Explicit dataDir provided, use it as-is
       this.dataDir = dataDir;
     } else {
-      // Resolve project root using hierarchical detection
-      const root = projectRoot ?? ProjectRootService.resolve();
-      // Expand relative default path against project root
       this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, root);
     }
   }
@@ -75,6 +79,10 @@ export class ConfigService {
 
   resolveDataDir(): string {
     return this.dataDir;
+  }
+
+  resolveConfigPath(): string {
+    return this.configPath;
   }
 
   private expandPath(path: string, baseDir: string): string {

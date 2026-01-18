@@ -6,14 +6,17 @@ import { join } from 'node:path';
  *
  * These patterns ensure:
  * - The .bluera/ data directory (vector DB, cloned repos) is ignored
- * - The stores.config.json file is NOT ignored (committed for team sharing)
+ * - Config files are NOT ignored (can be committed for team sharing):
+ *   - stores.config.json (store definitions)
+ *   - config.json (app configuration)
+ *   - skill-activation.json (skill activation preferences)
  *
  * IMPORTANT: Git ignores children of ignored directories. To un-ignore a nested
  * file, you must first un-ignore each parent directory in the path. The order is:
  * 1. Ignore .bluera/ (everything ignored by default)
  * 2. Un-ignore .bluera/ itself (allow traversing into it)
  * 3. Un-ignore .bluera/bluera-knowledge/ (allow traversing deeper)
- * 4. Un-ignore the specific file we want tracked
+ * 4. Un-ignore the specific files we want tracked
  * 5. Re-ignore .bluera/bluera-knowledge/data/ (keep vector DB untracked)
  */
 const REQUIRED_PATTERNS = [
@@ -21,6 +24,8 @@ const REQUIRED_PATTERNS = [
   '!.bluera/',
   '!.bluera/bluera-knowledge/',
   '!.bluera/bluera-knowledge/stores.config.json',
+  '!.bluera/bluera-knowledge/config.json',
+  '!.bluera/bluera-knowledge/skill-activation.json',
   '.bluera/bluera-knowledge/data/',
 ];
 
@@ -29,7 +34,7 @@ const REQUIRED_PATTERNS = [
  */
 const SECTION_HEADER = `
 # Bluera Knowledge
-# Store definitions (stores.config.json) are committed for team sharing
+# Config files (stores.config.json, config.json, skill-activation.json) can be committed
 # Data directory (vector DB, cloned repos) is not committed
 `;
 

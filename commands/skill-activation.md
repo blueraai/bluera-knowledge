@@ -10,7 +10,7 @@ Manage the bluera-knowledge skill auto-activation system.
 
 ## Configuration File
 
-Location: `~/.local/share/bluera-knowledge/skill-activation.json`
+Location: `.bluera/bluera-knowledge/skill-activation.json` (per-repo, in project root)
 
 Default configuration (created if missing):
 ```json
@@ -39,7 +39,7 @@ Extract the subcommand from $ARGUMENTS:
 
 ### 2. Read Current Configuration
 
-Read `~/.local/share/bluera-knowledge/skill-activation.json`
+Read `.bluera/bluera-knowledge/skill-activation.json`
 
 If the file doesn't exist, use the default configuration shown above.
 
@@ -71,7 +71,7 @@ Use `/bluera-knowledge:skill-activation config` to toggle individual skills.
 
 1. Read configuration (or use defaults)
 2. Set `enabled: true`
-3. Ensure directory exists: `~/.local/share/bluera-knowledge/`
+3. Ensure directory exists: `.bluera/bluera-knowledge/`
 4. Write updated configuration
 5. Confirm: "Skill activation **enabled**. Skills will be suggested based on your prompts."
 
@@ -125,6 +125,7 @@ Use `/bluera-knowledge:skill-activation config` to toggle individual skills.
 
 ## Notes
 
+- Configuration is per-repo (stored in project's `.bluera/bluera-knowledge/` directory)
 - The configuration directory is created automatically if it doesn't exist
 - Changes take effect immediately on the next prompt
 - When disabled globally, no skills are suggested regardless of individual settings
