@@ -65,11 +65,28 @@ describe('logger', () => {
   });
 
   describe('getLogDirectory', () => {
-    it('returns path under home directory', () => {
+    it('returns per-repo path under .bluera/bluera-knowledge/logs', () => {
       const logDir = getLogDirectory();
       expect(logDir).toContain('.bluera');
       expect(logDir).toContain('bluera-knowledge');
       expect(logDir).toContain('logs');
+      // Should end with per-repo pattern, not be directly under home
+      expect(logDir).toMatch(/\.bluera\/bluera-knowledge\/logs$/);
+    });
+
+    it('is NOT the old global path pattern', () => {
+      const logDir = getLogDirectory();
+      const home = process.env['HOME'] ?? '/Users/unknown';
+      const oldGlobalPath = `${home}/.bluera/bluera-knowledge/logs`;
+      // Should not be the old global path
+      expect(logDir).not.toBe(oldGlobalPath);
+    });
+
+    it('uses project root from environment', () => {
+      const logDir = getLogDirectory();
+      // Should be under project root (current working directory or PROJECT_ROOT)
+      const projectRoot = process.env['PROJECT_ROOT'] ?? process.cwd();
+      expect(logDir.startsWith(projectRoot)).toBe(true);
     });
   });
 });

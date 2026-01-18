@@ -109,18 +109,94 @@ var AdapterRegistry = class _AdapterRegistry {
 };
 
 // src/logging/logger.ts
-import { mkdirSync, existsSync } from "fs";
-import { homedir } from "os";
-import { join } from "path";
+import { mkdirSync, existsSync as existsSync2 } from "fs";
+import { join as join2 } from "path";
 import pino from "pino";
+
+// src/services/project-root.service.ts
+import { existsSync, statSync, realpathSync } from "fs";
+import { dirname, join, normalize, sep } from "path";
+var ProjectRootService = class {
+  /**
+   * Resolve project root directory using hierarchical detection.
+   */
+  static resolve(options) {
+    if (options?.projectRoot !== void 0 && options.projectRoot !== "") {
+      return this.normalize(options.projectRoot);
+    }
+    const projectRootEnv = process.env["PROJECT_ROOT"];
+    if (projectRootEnv !== void 0 && projectRootEnv !== "") {
+      return this.normalize(projectRootEnv);
+    }
+    const pwdEnv = process.env["PWD"];
+    if (pwdEnv !== void 0 && pwdEnv !== "") {
+      return this.normalize(pwdEnv);
+    }
+    const gitRoot = this.findGitRoot(process.cwd());
+    if (gitRoot !== null) {
+      return gitRoot;
+    }
+    return process.cwd();
+  }
+  /**
+   * Find git repository root by walking up the directory tree looking for .git
+   */
+  static findGitRoot(startPath) {
+    let currentPath = normalize(startPath);
+    const root = normalize(sep);
+    while (currentPath !== root) {
+      const gitPath = join(currentPath, ".git");
+      if (existsSync(gitPath)) {
+        try {
+          const stats = statSync(gitPath);
+          if (stats.isDirectory() || stats.isFile()) {
+            return currentPath;
+          }
+        } catch {
+        }
+      }
+      const parentPath = dirname(currentPath);
+      if (parentPath === currentPath) {
+        break;
+      }
+      currentPath = parentPath;
+    }
+    return null;
+  }
+  /**
+   * Normalize path by resolving symlinks and normalizing separators
+   */
+  static normalize(path4) {
+    try {
+      const realPath = realpathSync(path4);
+      return normalize(realPath);
+    } catch {
+      return normalize(path4);
+    }
+  }
+  /**
+   * Validate that a path exists and is a directory
+   */
+  static validate(path4) {
+    try {
+      const stats = statSync(path4);
+      return stats.isDirectory();
+    } catch {
+      return false;
+    }
+  }
+};
+
+// src/logging/logger.ts
 var VALID_LEVELS = ["trace", "debug", "info", "warn", "error", "fatal"];
 var VALID_LEVELS_SET = new Set(VALID_LEVELS);
 function getLogDir() {
-  return join(homedir(), ".bluera", "bluera-knowledge", "logs");
+  const projectRoot = ProjectRootService.resolve();
+  return join2(projectRoot, ".bluera", "bluera-knowledge", "logs");
 }
 function ensureLogDir() {
   const logDir = getLogDir();
-  if (!existsSync(logDir)) {
+  if (!existsSync2(logDir)) {
     mkdirSync(logDir, { recursive: true });
   }
   return logDir;
@@ -144,7 +220,7 @@ function initializeLogger() {
     return rootLogger;
   }
   const logDir = ensureLogDir();
-  const logFile = join(logDir, "app.log");
+  const logFile = join2(logDir, "app.log");
   const level = getLogLevel();
   const options = {
     level,
@@ -196,13 +272,13 @@ function shutdownLogger() {
 
 // src/logging/payload.ts
 import { createHash } from "crypto";
-import { writeFileSync, mkdirSync as mkdirSync2, existsSync as existsSync2 } from "fs";
-import { join as join2 } from "path";
+import { writeFileSync, mkdirSync as mkdirSync2, existsSync as existsSync3 } from "fs";
+import { join as join3 } from "path";
 var MAX_PREVIEW_LENGTH = 500;
 var PAYLOAD_DUMP_THRESHOLD = 1e4;
 function getPayloadDir() {
-  const dir = join2(getLogDirectory(), "payload");
-  if (!existsSync2(dir)) {
+  const dir = join3(getLogDirectory(), "payload");
+  if (!existsSync3(dir)) {
     mkdirSync2(dir, { recursive: true });
   }
   return dir;
@@ -219,7 +295,7 @@ function summarizePayload(content, type, identifier, dumpFull = isLevelEnabled("
     const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
     const safeId = safeFilename(identifier);
     const filename = `${timestamp}-${type}-${safeId}-${hash}.json`;
-    const filepath = join2(getPayloadDir(), filename);
+    const filepath = join3(getPayloadDir(), filename);
     writeFileSync(
       filepath,
       JSON.stringify(
@@ -526,7 +602,7 @@ var JobService = class {
 
 // src/services/code-graph.service.ts
 import { readFile, writeFile, mkdir, rm } from "fs/promises";
-import { join as join3, dirname } from "path";
+import { join as join4, dirname as dirname2 } from "path";
 
 // src/analysis/ast-parser.ts
 import { parse } from "@babel/parser";
@@ -1743,7 +1819,7 @@ var CodeGraphService = class {
    */
   async saveGraph(storeId, graph) {
     const graphPath = this.getGraphPath(storeId);
-    await mkdir(dirname(graphPath), { recursive: true });
+    await mkdir(dirname2(graphPath), { recursive: true });
     const serialized = graph.toJSON();
     await writeFile(graphPath, JSON.stringify(serialized, null, 2));
   }
@@ -1856,7 +1932,7 @@ var CodeGraphService = class {
     this.graphCache.clear();
   }
   getGraphPath(storeId) {
-    return join3(this.dataDir, "graphs", `${storeId}.json`);
+    return join4(this.dataDir, "graphs", `${storeId}.json`);
   }
   /**
    * Type guard for SerializedGraph structure.
@@ -1901,82 +1977,8 @@ var CodeGraphService = class {
 
 // src/services/config.service.ts
 import { readFile as readFile2, writeFile as writeFile2, mkdir as mkdir2, access } from "fs/promises";
-import { homedir as homedir2 } from "os";
+import { homedir } from "os";
 import { dirname as dirname3, join as join5, resolve } from "path";
-
-// src/services/project-root.service.ts
-import { existsSync as existsSync3, statSync, realpathSync } from "fs";
-import { dirname as dirname2, join as join4, normalize, sep } from "path";
-var ProjectRootService = class {
-  /**
-   * Resolve project root directory using hierarchical detection.
-   */
-  static resolve(options) {
-    if (options?.projectRoot !== void 0 && options.projectRoot !== "") {
-      return this.normalize(options.projectRoot);
-    }
-    const projectRootEnv = process.env["PROJECT_ROOT"];
-    if (projectRootEnv !== void 0 && projectRootEnv !== "") {
-      return this.normalize(projectRootEnv);
-    }
-    const pwdEnv = process.env["PWD"];
-    if (pwdEnv !== void 0 && pwdEnv !== "") {
-      return this.normalize(pwdEnv);
-    }
-    const gitRoot = this.findGitRoot(process.cwd());
-    if (gitRoot !== null) {
-      return gitRoot;
-    }
-    return process.cwd();
-  }
-  /**
-   * Find git repository root by walking up the directory tree looking for .git
-   */
-  static findGitRoot(startPath) {
-    let currentPath = normalize(startPath);
-    const root = normalize(sep);
-    while (currentPath !== root) {
-      const gitPath = join4(currentPath, ".git");
-      if (existsSync3(gitPath)) {
-        try {
-          const stats = statSync(gitPath);
-          if (stats.isDirectory() || stats.isFile()) {
-            return currentPath;
-          }
-        } catch {
-        }
-      }
-      const parentPath = dirname2(currentPath);
-      if (parentPath === currentPath) {
-        break;
-      }
-      currentPath = parentPath;
-    }
-    return null;
-  }
-  /**
-   * Normalize path by resolving symlinks and normalizing separators
-   */
-  static normalize(path4) {
-    try {
-      const realPath = realpathSync(path4);
-      return normalize(realPath);
-    } catch {
-      return normalize(path4);
-    }
-  }
-  /**
-   * Validate that a path exists and is a directory
-   */
-  static validate(path4) {
-    try {
-      const stats = statSync(path4);
-      return stats.isDirectory();
-    } catch {
-      return false;
-    }
-  }
-};
 
 // src/types/config.ts
 var DEFAULT_CONFIG = {
@@ -2074,7 +2076,7 @@ var ConfigService = class {
   }
   expandPath(path4, baseDir) {
     if (path4.startsWith("~")) {
-      return path4.replace("~", homedir2());
+      return path4.replace("~", homedir());
     }
     if (!path4.startsWith("/")) {
       return resolve(baseDir, path4);
@@ -4734,10 +4736,10 @@ var PythonBridge = class {
 };
 
 // src/db/embeddings.ts
-import { homedir as homedir3 } from "os";
+import { homedir as homedir2 } from "os";
 import { join as join10 } from "path";
 import { pipeline, env } from "@huggingface/transformers";
-env.cacheDir = join10(homedir3(), ".cache", "huggingface-transformers");
+env.cacheDir = join10(homedir2(), ".cache", "huggingface-transformers");
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
@@ -5124,4 +5126,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-VKTVMW45.js.map
+//# sourceMappingURL=chunk-WMALVLFW.js.map

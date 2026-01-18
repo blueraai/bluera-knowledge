@@ -9,9 +9,9 @@
  */
 
 import { mkdirSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import pino, { type Logger, type LoggerOptions } from 'pino';
+import { ProjectRootService } from '../services/project-root.service.js';
 
 /** Valid log levels */
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
@@ -19,9 +19,10 @@ export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 const VALID_LEVELS: readonly LogLevel[] = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
 const VALID_LEVELS_SET: ReadonlySet<string> = new Set(VALID_LEVELS);
 
-/** Default log directory under user home */
+/** Default log directory under project root (per-repo) */
 function getLogDir(): string {
-  return join(homedir(), '.bluera', 'bluera-knowledge', 'logs');
+  const projectRoot = ProjectRootService.resolve();
+  return join(projectRoot, '.bluera', 'bluera-knowledge', 'logs');
 }
 
 /** Resolve and create log directory - fails fast if cannot create */
