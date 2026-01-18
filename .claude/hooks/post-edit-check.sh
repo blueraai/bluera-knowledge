@@ -13,17 +13,17 @@ if [ -z "$MODIFIED_TS_FILES" ]; then
 fi
 
 # Auto-fix lint issues on modified files only (fast)
-echo "$MODIFIED_TS_FILES" | xargs npx eslint --fix --quiet 2>/dev/null || true
+echo "$MODIFIED_TS_FILES" | xargs bunx eslint --fix --quiet 2>/dev/null || true
 
 # Check for remaining lint errors (exit 2 to block and show to Claude)
-LINT_OUTPUT=$(echo "$MODIFIED_TS_FILES" | xargs npx eslint --quiet 2>&1)
+LINT_OUTPUT=$(echo "$MODIFIED_TS_FILES" | xargs bunx eslint --quiet 2>&1)
 if [ -n "$LINT_OUTPUT" ]; then
   echo "$LINT_OUTPUT" >&2
   exit 2
 fi
 
 # Run typecheck (exit 2 to block and show to Claude)
-TYPE_OUTPUT=$(npx tsc --noEmit --pretty false 2>&1)
+TYPE_OUTPUT=$(bunx tsc --noEmit --pretty false 2>&1)
 if [ -n "$TYPE_OUTPUT" ]; then
   echo "$TYPE_OUTPUT" | head -20 >&2
   exit 2
