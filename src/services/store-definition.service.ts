@@ -1,10 +1,11 @@
-import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
-import { dirname, resolve, isAbsolute, join } from 'node:path';
+import { readFile, access } from 'node:fs/promises';
+import { resolve, isAbsolute, join } from 'node:path';
 import { ProjectRootService } from './project-root.service.js';
 import {
   StoreDefinitionsConfigSchema,
   DEFAULT_STORE_DEFINITIONS_CONFIG,
 } from '../types/store-definition.js';
+import { atomicWriteFile } from '../utils/atomic-write.js';
 import type { StoreDefinitionsConfig, StoreDefinition } from '../types/store-definition.js';
 
 /**
@@ -84,8 +85,7 @@ export class StoreDefinitionService {
    * Save store definitions to config file.
    */
   async save(config: StoreDefinitionsConfig): Promise<void> {
-    await mkdir(dirname(this.configPath), { recursive: true });
-    await writeFile(this.configPath, JSON.stringify(config, null, 2));
+    await atomicWriteFile(this.configPath, JSON.stringify(config, null, 2));
     this.config = config;
   }
 

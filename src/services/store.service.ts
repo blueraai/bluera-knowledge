@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { readFile, writeFile, mkdir, stat, access } from 'node:fs/promises';
+import { readFile, mkdir, stat, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { cloneRepository } from '../plugin/git-clone.js';
 import { createStoreId } from '../types/brands.js';
 import { ok, err } from '../types/result.js';
+import { atomicWriteFile } from '../utils/atomic-write.js';
 import type { GitignoreService } from './gitignore.service.js';
 import type { StoreDefinitionService } from './store-definition.service.js';
 import type { StoreId } from '../types/brands.js';
@@ -368,6 +369,6 @@ export class StoreService {
 
   private async saveRegistry(): Promise<void> {
     const registryPath = join(this.dataDir, 'stores.json');
-    await writeFile(registryPath, JSON.stringify(this.registry, null, 2));
+    await atomicWriteFile(registryPath, JSON.stringify(this.registry, null, 2));
   }
 }

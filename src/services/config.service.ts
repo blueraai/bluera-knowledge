@@ -1,8 +1,9 @@
-import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { ProjectRootService } from './project-root.service.js';
 import { DEFAULT_CONFIG } from '../types/config.js';
+import { atomicWriteFile } from '../utils/atomic-write.js';
 import type { AppConfig } from '../types/config.js';
 
 /** Default config path relative to project root */
@@ -72,8 +73,7 @@ export class ConfigService {
   }
 
   async save(config: AppConfig): Promise<void> {
-    await mkdir(dirname(this.configPath), { recursive: true });
-    await writeFile(this.configPath, JSON.stringify(config, null, 2));
+    await atomicWriteFile(this.configPath, JSON.stringify(config, null, 2));
     this.config = config;
   }
 

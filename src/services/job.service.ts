@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { JobSchema } from '../types/job.js';
 import { Result, ok, err } from '../types/result.js';
+import { atomicWriteFileSync } from '../utils/atomic-write.js';
 import type { Job, CreateJobParams, UpdateJobParams, JobStatus } from '../types/job.js';
 
 export class JobService {
@@ -293,6 +294,6 @@ export class JobService {
    */
   private writeJob(job: Job): void {
     const jobFile = path.join(this.jobsDir, `${job.id}.json`);
-    fs.writeFileSync(jobFile, JSON.stringify(job, null, 2), 'utf-8');
+    atomicWriteFileSync(jobFile, JSON.stringify(job, null, 2));
   }
 }

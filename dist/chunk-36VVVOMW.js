@@ -26,7 +26,16 @@ var WatchService = class {
         void (async () => {
           try {
             await this.lanceStore.initialize(store.id);
-            await this.indexService.indexStore(store);
+            let useFullReindex = true;
+            if (typeof this.indexService.indexStoreIncremental === "function") {
+              const incrementalResult = await this.indexService.indexStoreIncremental(store);
+              if (incrementalResult.success) {
+                useFullReindex = false;
+              }
+            }
+            if (useFullReindex) {
+              await this.indexService.indexStore(store);
+            }
             onReindex?.();
           } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
@@ -66,4 +75,4 @@ var WatchService = class {
 export {
   WatchService
 };
-//# sourceMappingURL=chunk-HRQD3MPH.js.map
+//# sourceMappingURL=chunk-36VVVOMW.js.map

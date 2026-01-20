@@ -1,3 +1,8 @@
+import {
+  createDocumentId,
+  createStoreId
+} from "./chunk-CLIMKLTW.js";
+
 // src/analysis/adapter-registry.ts
 var AdapterRegistry = class _AdapterRegistry {
   static instance;
@@ -368,6 +373,23 @@ function err(error) {
   return { success: false, error };
 }
 
+// src/utils/atomic-write.ts
+import { writeFileSync as writeFileSync2, renameSync, mkdirSync as mkdirSync3 } from "fs";
+import { writeFile, rename, mkdir } from "fs/promises";
+import { dirname as dirname2 } from "path";
+async function atomicWriteFile(filePath, content) {
+  await mkdir(dirname2(filePath), { recursive: true });
+  const tempPath = `${filePath}.tmp.${String(Date.now())}.${String(process.pid)}`;
+  await writeFile(tempPath, content, "utf-8");
+  await rename(tempPath, filePath);
+}
+function atomicWriteFileSync(filePath, content) {
+  mkdirSync3(dirname2(filePath), { recursive: true });
+  const tempPath = `${filePath}.tmp.${String(Date.now())}.${String(process.pid)}`;
+  writeFileSync2(tempPath, content, "utf-8");
+  renameSync(tempPath, filePath);
+}
+
 // src/services/job.service.ts
 var JobService = class {
   jobsDir;
@@ -596,13 +618,13 @@ var JobService = class {
    */
   writeJob(job) {
     const jobFile = path.join(this.jobsDir, `${job.id}.json`);
-    fs.writeFileSync(jobFile, JSON.stringify(job, null, 2), "utf-8");
+    atomicWriteFileSync(jobFile, JSON.stringify(job, null, 2));
   }
 };
 
 // src/services/code-graph.service.ts
-import { readFile, writeFile, mkdir, rm } from "fs/promises";
-import { join as join4, dirname as dirname2 } from "path";
+import { readFile, writeFile as writeFile2, mkdir as mkdir2, rm } from "fs/promises";
+import { join as join4, dirname as dirname3 } from "path";
 
 // src/analysis/ast-parser.ts
 import { parse } from "@babel/parser";
@@ -1819,9 +1841,9 @@ var CodeGraphService = class {
    */
   async saveGraph(storeId, graph) {
     const graphPath = this.getGraphPath(storeId);
-    await mkdir(dirname2(graphPath), { recursive: true });
+    await mkdir2(dirname3(graphPath), { recursive: true });
     const serialized = graph.toJSON();
-    await writeFile(graphPath, JSON.stringify(serialized, null, 2));
+    await writeFile2(graphPath, JSON.stringify(serialized, null, 2));
   }
   /**
    * Delete the code graph file for a store.
@@ -1976,9 +1998,9 @@ var CodeGraphService = class {
 };
 
 // src/services/config.service.ts
-import { readFile as readFile2, writeFile as writeFile2, mkdir as mkdir2, access } from "fs/promises";
+import { readFile as readFile2, access } from "fs/promises";
 import { homedir } from "os";
-import { dirname as dirname3, join as join5, resolve } from "path";
+import { join as join5, resolve } from "path";
 
 // src/types/config.ts
 var DEFAULT_CONFIG = {
@@ -2064,8 +2086,7 @@ var ConfigService = class {
     return this.config;
   }
   async save(config) {
-    await mkdir2(dirname3(this.configPath), { recursive: true });
-    await writeFile2(this.configPath, JSON.stringify(config, null, 2));
+    await atomicWriteFile(this.configPath, JSON.stringify(config, null, 2));
     this.config = config;
   }
   resolveDataDir() {
@@ -2184,8 +2205,8 @@ ${REQUIRED_PATTERNS.join("\n")}
 };
 
 // src/services/index.service.ts
-import { createHash as createHash2 } from "crypto";
-import { readFile as readFile4, readdir } from "fs/promises";
+import { createHash as createHash3 } from "crypto";
+import { readFile as readFile5, readdir } from "fs/promises";
 import { join as join7, extname, basename } from "path";
 
 // src/services/chunking.service.ts
@@ -2467,26 +2488,100 @@ var ChunkingService = class _ChunkingService {
   }
 };
 
-// src/types/brands.ts
-var ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
-function isStoreId(value) {
-  return value.length > 0 && ID_PATTERN.test(value);
-}
-function isDocumentId(value) {
-  return value.length > 0 && ID_PATTERN.test(value);
-}
-function createStoreId(value) {
-  if (!isStoreId(value)) {
-    throw new Error(`Invalid store ID: ${value}`);
+// src/services/drift.service.ts
+import { createHash as createHash2 } from "crypto";
+import { readFile as readFile4, stat } from "fs/promises";
+var DriftService = class {
+  /**
+   * Detect changes between current files and manifest.
+   *
+   * @param manifest - The stored manifest from last index
+   * @param currentFiles - Current files on disk with mtime/size
+   * @returns Classification of files into added, modified, deleted, unchanged
+   */
+  async detectChanges(manifest, currentFiles) {
+    const result = {
+      added: [],
+      modified: [],
+      deleted: [],
+      unchanged: []
+    };
+    const currentPathSet = new Set(currentFiles.map((f) => f.path));
+    const manifestPaths = new Set(Object.keys(manifest.files));
+    for (const path4 of manifestPaths) {
+      if (!currentPathSet.has(path4)) {
+        result.deleted.push(path4);
+      }
+    }
+    const potentiallyModified = [];
+    for (const file of currentFiles) {
+      const manifestState = manifest.files[file.path];
+      if (manifestState === void 0) {
+        result.added.push(file.path);
+      } else {
+        if (file.mtime === manifestState.mtime && file.size === manifestState.size) {
+          result.unchanged.push(file.path);
+        } else {
+          potentiallyModified.push(file);
+        }
+      }
+    }
+    for (const file of potentiallyModified) {
+      const manifestState = manifest.files[file.path];
+      if (manifestState === void 0) {
+        result.added.push(file.path);
+        continue;
+      }
+      const currentHash = await this.computeFileHash(file.path);
+      if (currentHash === manifestState.hash) {
+        result.unchanged.push(file.path);
+      } else {
+        result.modified.push(file.path);
+      }
+    }
+    return result;
   }
-  return value;
-}
-function createDocumentId(value) {
-  if (!isDocumentId(value)) {
-    throw new Error(`Invalid document ID: ${value}`);
+  /**
+   * Get the current state of a file on disk.
+   */
+  async getFileState(path4) {
+    const stats = await stat(path4);
+    return {
+      path: path4,
+      mtime: stats.mtimeMs,
+      size: stats.size
+    };
   }
-  return value;
-}
+  /**
+   * Compute MD5 hash of a file.
+   */
+  async computeFileHash(path4) {
+    const content = await readFile4(path4);
+    return createHash2("md5").update(content).digest("hex");
+  }
+  /**
+   * Create a file state entry for the manifest after indexing.
+   *
+   * @param path - File path
+   * @param documentIds - Document IDs created from this file
+   * @returns File state for manifest
+   */
+  async createFileState(path4, documentIds) {
+    const stats = await stat(path4);
+    const content = await readFile4(path4);
+    const hash = createHash2("md5").update(content).digest("hex");
+    const { createDocumentId: createDocumentId2 } = await import("./brands-3EYIYV6T.js");
+    return {
+      state: {
+        mtime: stats.mtimeMs,
+        size: stats.size,
+        hash,
+        documentIds: documentIds.map((id) => createDocumentId2(id))
+      },
+      hash
+    };
+  }
+};
 
 // src/services/index.service.ts
 var logger = createLogger("index-service");
@@ -2524,6 +2619,8 @@ var IndexService = class {
   embeddingEngine;
   chunker;
   codeGraphService;
+  manifestService;
+  driftService;
   concurrency;
   constructor(lanceStore, embeddingEngine, options = {}) {
     this.lanceStore = lanceStore;
@@ -2533,6 +2630,8 @@ var IndexService = class {
       chunkOverlap: options.chunkOverlap ?? 100
     });
     this.codeGraphService = options.codeGraphService;
+    this.manifestService = options.manifestService;
+    this.driftService = new DriftService();
     this.concurrency = options.concurrency ?? 4;
   }
   async indexStore(store, onProgress) {
@@ -2560,6 +2659,155 @@ var IndexService = class {
           error: error instanceof Error ? error.message : String(error)
         },
         "Store indexing failed"
+      );
+      return err(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+  /**
+   * Incrementally index a store, only processing changed files.
+   * Requires manifestService to be configured.
+   *
+   * @param store - The store to index
+   * @param onProgress - Optional progress callback
+   * @returns Result with incremental index statistics
+   */
+  async indexStoreIncremental(store, onProgress) {
+    if (this.manifestService === void 0) {
+      return err(new Error("ManifestService required for incremental indexing"));
+    }
+    if (store.type !== "file" && store.type !== "repo") {
+      return err(new Error(`Incremental indexing not supported for store type: ${store.type}`));
+    }
+    logger.info(
+      {
+        storeId: store.id,
+        storeName: store.name,
+        storeType: store.type
+      },
+      "Starting incremental store indexing"
+    );
+    const startTime = Date.now();
+    try {
+      const manifest = await this.manifestService.load(store.id);
+      const filePaths = await this.scanDirectory(store.path);
+      const currentFiles = await Promise.all(
+        filePaths.map((path4) => this.driftService.getFileState(path4))
+      );
+      const drift = await this.driftService.detectChanges(manifest, currentFiles);
+      logger.debug(
+        {
+          storeId: store.id,
+          added: drift.added.length,
+          modified: drift.modified.length,
+          deleted: drift.deleted.length,
+          unchanged: drift.unchanged.length
+        },
+        "Drift detection complete"
+      );
+      const documentIdsToDelete = [];
+      for (const path4 of [...drift.modified, ...drift.deleted]) {
+        const fileState = manifest.files[path4];
+        if (fileState !== void 0) {
+          documentIdsToDelete.push(...fileState.documentIds);
+        }
+      }
+      if (documentIdsToDelete.length > 0) {
+        await this.lanceStore.deleteDocuments(store.id, documentIdsToDelete);
+        logger.debug(
+          { storeId: store.id, count: documentIdsToDelete.length },
+          "Deleted old documents"
+        );
+      }
+      const filesToProcess = [...drift.added, ...drift.modified];
+      const totalFiles = filesToProcess.length;
+      onProgress?.({
+        type: "start",
+        current: 0,
+        total: totalFiles,
+        message: `Processing ${String(totalFiles)} changed files`
+      });
+      const documents = [];
+      const newManifestFiles = {};
+      let filesProcessed = 0;
+      for (const path4 of drift.unchanged) {
+        const existingState = manifest.files[path4];
+        if (existingState !== void 0) {
+          newManifestFiles[path4] = existingState;
+        }
+      }
+      for (let i = 0; i < filesToProcess.length; i += this.concurrency) {
+        const batch = filesToProcess.slice(i, i + this.concurrency);
+        const batchResults = await Promise.all(
+          batch.map(async (filePath) => {
+            const result = await this.processFile(filePath, store);
+            const documentIds = result.documents.map((d) => d.id);
+            const { state } = await this.driftService.createFileState(filePath, documentIds);
+            return {
+              filePath,
+              documents: result.documents,
+              fileState: state
+            };
+          })
+        );
+        for (const result of batchResults) {
+          documents.push(...result.documents);
+          newManifestFiles[result.filePath] = result.fileState;
+        }
+        filesProcessed += batch.length;
+        onProgress?.({
+          type: "progress",
+          current: filesProcessed,
+          total: totalFiles,
+          message: `Processed ${String(filesProcessed)}/${String(totalFiles)} files`
+        });
+      }
+      if (documents.length > 0) {
+        await this.lanceStore.addDocuments(store.id, documents);
+        await this.lanceStore.createFtsIndex(store.id);
+      }
+      const updatedManifest = {
+        version: 1,
+        storeId: store.id,
+        indexedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        files: newManifestFiles
+      };
+      await this.manifestService.save(updatedManifest);
+      onProgress?.({
+        type: "complete",
+        current: totalFiles,
+        total: totalFiles,
+        message: "Incremental indexing complete"
+      });
+      const timeMs = Date.now() - startTime;
+      logger.info(
+        {
+          storeId: store.id,
+          storeName: store.name,
+          filesAdded: drift.added.length,
+          filesModified: drift.modified.length,
+          filesDeleted: drift.deleted.length,
+          filesUnchanged: drift.unchanged.length,
+          chunksCreated: documents.length,
+          timeMs
+        },
+        "Incremental indexing complete"
+      );
+      return ok({
+        documentsIndexed: filesToProcess.length,
+        chunksCreated: documents.length,
+        timeMs,
+        filesAdded: drift.added.length,
+        filesModified: drift.modified.length,
+        filesDeleted: drift.deleted.length,
+        filesUnchanged: drift.unchanged.length
+      });
+    } catch (error) {
+      logger.error(
+        {
+          storeId: store.id,
+          error: error instanceof Error ? error.message : String(error)
+        },
+        "Incremental indexing failed"
       );
       return err(error instanceof Error ? error : new Error(String(error)));
     }
@@ -2641,8 +2889,8 @@ var IndexService = class {
    * Extracted for parallel processing.
    */
   async processFile(filePath, store) {
-    const content = await readFile4(filePath, "utf-8");
-    const fileHash = createHash2("md5").update(content).digest("hex");
+    const content = await readFile5(filePath, "utf-8");
+    const fileHash = createHash3("md5").update(content).digest("hex");
     const chunks = this.chunker.chunk(content, filePath);
     const ext = extname(filePath).toLowerCase();
     const fileName = basename(filePath).toLowerCase();
@@ -3889,8 +4137,8 @@ var SearchService = class {
 };
 
 // src/services/store-definition.service.ts
-import { readFile as readFile5, writeFile as writeFile4, mkdir as mkdir3, access as access3 } from "fs/promises";
-import { dirname as dirname4, resolve as resolve2, isAbsolute, join as join8 } from "path";
+import { readFile as readFile6, access as access3 } from "fs/promises";
+import { resolve as resolve2, isAbsolute, join as join8 } from "path";
 
 // src/types/store-definition.ts
 import { z as z2 } from "zod";
@@ -3974,7 +4222,7 @@ var StoreDefinitionService = class {
       };
       return this.config;
     }
-    const content = await readFile5(this.configPath, "utf-8");
+    const content = await readFile6(this.configPath, "utf-8");
     let parsed;
     try {
       parsed = JSON.parse(content);
@@ -3994,8 +4242,7 @@ var StoreDefinitionService = class {
    * Save store definitions to config file.
    */
   async save(config) {
-    await mkdir3(dirname4(this.configPath), { recursive: true });
-    await writeFile4(this.configPath, JSON.stringify(config, null, 2));
+    await atomicWriteFile(this.configPath, JSON.stringify(config, null, 2));
     this.config = config;
   }
   /**
@@ -4094,15 +4341,15 @@ var StoreDefinitionService = class {
 
 // src/services/store.service.ts
 import { randomUUID as randomUUID2 } from "crypto";
-import { readFile as readFile6, writeFile as writeFile5, mkdir as mkdir5, stat, access as access4 } from "fs/promises";
+import { readFile as readFile7, mkdir as mkdir4, stat as stat2, access as access4 } from "fs/promises";
 import { join as join9, resolve as resolve3 } from "path";
 
 // src/plugin/git-clone.ts
 import { spawn } from "child_process";
-import { mkdir as mkdir4 } from "fs/promises";
+import { mkdir as mkdir3 } from "fs/promises";
 async function cloneRepository(options) {
   const { url, targetDir, branch, depth = 1 } = options;
-  await mkdir4(targetDir, { recursive: true });
+  await mkdir3(targetDir, { recursive: true });
   const args = ["clone", "--depth", String(depth)];
   if (branch !== void 0) {
     args.push("--branch", branch);
@@ -4155,7 +4402,7 @@ var StoreService = class {
     this.gitignoreService = options?.gitignoreService ?? void 0;
   }
   async initialize() {
-    await mkdir5(this.dataDir, { recursive: true });
+    await mkdir4(this.dataDir, { recursive: true });
     await this.loadRegistry();
   }
   /**
@@ -4220,7 +4467,7 @@ var StoreService = class {
         }
         const normalizedPath = resolve3(input.path);
         try {
-          const stats = await stat(normalizedPath);
+          const stats = await stat2(normalizedPath);
           if (!stats.isDirectory()) {
             return err(new Error(`Path is not a directory: ${normalizedPath}`));
           }
@@ -4377,7 +4624,7 @@ var StoreService = class {
       await this.saveRegistry();
       return;
     }
-    const content = await readFile6(registryPath, "utf-8");
+    const content = await readFile7(registryPath, "utf-8");
     try {
       const data = JSON.parse(content);
       this.registry = {
@@ -4396,7 +4643,7 @@ var StoreService = class {
   }
   async saveRegistry() {
     const registryPath = join9(this.dataDir, "stores.json");
-    await writeFile5(registryPath, JSON.stringify(this.registry, null, 2));
+    await atomicWriteFile(registryPath, JSON.stringify(this.registry, null, 2));
   }
 };
 
@@ -5111,8 +5358,6 @@ export {
   PythonBridge,
   ChunkingService,
   ASTParser,
-  createStoreId,
-  createDocumentId,
   ok,
   err,
   classifyWebContentType,
@@ -5126,4 +5371,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-WMALVLFW.js.map
+//# sourceMappingURL=chunk-HSLQIKIA.js.map

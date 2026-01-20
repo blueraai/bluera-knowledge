@@ -281,6 +281,68 @@ declare class ConfigService {
     private expandPath;
 }
 
+/**
+ * Type-safe manifest with branded StoreId.
+ * Use this in service code for proper type safety.
+ */
+interface TypedStoreManifest {
+    version: 1;
+    storeId: StoreId;
+    indexedAt: string;
+    files: Record<string, TypedFileState>;
+}
+/**
+ * Type-safe file state with branded DocumentIds.
+ */
+interface TypedFileState {
+    mtime: number;
+    size: number;
+    hash: string;
+    documentIds: DocumentId[];
+}
+
+/**
+ * Service for managing store manifests.
+ *
+ * Manifests track the state of indexed files to enable incremental re-indexing.
+ * They are stored in the data directory under manifests/{storeId}.manifest.json.
+ */
+declare class ManifestService {
+    private readonly manifestsDir;
+    constructor(dataDir: string);
+    /**
+     * Initialize the manifests directory.
+     */
+    initialize(): Promise<void>;
+    /**
+     * Get the file path for a store's manifest.
+     */
+    getManifestPath(storeId: StoreId): string;
+    /**
+     * Load a store's manifest.
+     * Returns an empty manifest if one doesn't exist.
+     * Throws on parse/validation errors (fail fast).
+     */
+    load(storeId: StoreId): Promise<TypedStoreManifest>;
+    /**
+     * Save a store's manifest atomically.
+     */
+    save(manifest: TypedStoreManifest): Promise<void>;
+    /**
+     * Delete a store's manifest.
+     * Called when a store is deleted or during full re-index.
+     */
+    delete(storeId: StoreId): Promise<void>;
+    /**
+     * Check if a file exists.
+     */
+    private fileExists;
+    /**
+     * Convert a parsed manifest to a typed manifest with branded types.
+     */
+    private toTypedManifest;
+}
+
 declare class EmbeddingEngine {
     private extractor;
     private readonly modelName;
@@ -410,15 +472,33 @@ interface IndexOptions {
     chunkOverlap?: number;
     codeGraphService?: CodeGraphService;
     concurrency?: number;
+    manifestService?: ManifestService;
+}
+interface IncrementalIndexResult extends IndexResult {
+    filesAdded: number;
+    filesModified: number;
+    filesDeleted: number;
+    filesUnchanged: number;
 }
 declare class IndexService {
     private readonly lanceStore;
     private readonly embeddingEngine;
     private readonly chunker;
     private readonly codeGraphService;
+    private readonly manifestService;
+    private readonly driftService;
     private readonly concurrency;
     constructor(lanceStore: LanceStore, embeddingEngine: EmbeddingEngine, options?: IndexOptions);
     indexStore(store: Store, onProgress?: ProgressCallback): Promise<Result<IndexResult>>;
+    /**
+     * Incrementally index a store, only processing changed files.
+     * Requires manifestService to be configured.
+     *
+     * @param store - The store to index
+     * @param onProgress - Optional progress callback
+     * @returns Result with incremental index statistics
+     */
+    indexStoreIncremental(store: Store, onProgress?: ProgressCallback): Promise<Result<IncrementalIndexResult>>;
     private indexFileStore;
     /**
      * Process a single file: read, chunk, embed, and return documents.
