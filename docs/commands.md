@@ -14,11 +14,11 @@ Complete reference for all Bluera Knowledge slash commands.
 | `/bluera-knowledge:index` | Re-index a store | `<store-name-or-id>` |
 | `/bluera-knowledge:remove-store` | Delete a store and all data | `<store-name-or-id>` |
 | `/bluera-knowledge:crawl` | Crawl web pages | `<url> <store-name> [--crawl "<instruction>"]` |
-| `/bluera-knowledge:sync` | Sync stores from definitions config | `[--dry-run] [--prune]` |
-| `/bluera-knowledge:check-status` | Check status of background operations | None |
+| `/bluera-knowledge:sync` | Sync stores from definitions config | `[--dry-run] [--prune] [--reindex]` |
+| `/bluera-knowledge:check-status` | Check status of background operations | `[job-id]` |
 | `/bluera-knowledge:cancel` | Cancel a background job | `<job-id>` |
-| `/bluera-knowledge:uninstall` | Remove Bluera Knowledge data | None |
-| `/bluera-knowledge:skill-activation` | Toggle skill auto-activation | `[--enable] [--disable]` |
+| `/bluera-knowledge:uninstall` | Remove Bluera Knowledge data | `[global] [keepDefinitions]` |
+| `/bluera-knowledge:skill-activation` | Toggle skill auto-activation | `[on\|off\|status\|config]` |
 | `/bluera-knowledge:test-plugin` | Run plugin validation tests | None |
 
 ---
@@ -491,8 +491,12 @@ The job has been stopped and will not continue.
 **Remove Bluera Knowledge data from this project**
 
 ```bash
-/bluera-knowledge:uninstall
+/bluera-knowledge:uninstall [global] [keepDefinitions]
 ```
+
+**Options:**
+- `global` - Also delete global data (~/.local/share/bluera-knowledge/)
+- `keepDefinitions` - Keep stores.config.json for team sharing (default: true)
 
 Removes all Bluera Knowledge data from the current project.
 

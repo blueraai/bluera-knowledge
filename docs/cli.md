@@ -171,6 +171,23 @@ Both interfaces use the same underlying services, so you can switch between them
 
 ---
 
+## Sync Stores
+
+```bash
+# Sync stores from definitions config (bootstrap on fresh clone)
+bluera-knowledge sync [options]
+```
+
+**Sync Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--dry-run` | Show what would happen without making changes |
+| `--prune` | Remove stores not in definitions |
+| `--reindex` | Re-index existing stores after sync |
+
+---
+
 ## Additional Commands
 
 ### Crawl Web Pages
@@ -211,7 +228,7 @@ bluera-knowledge mcp --project-root /path/to/project
 
 Starts the Model Context Protocol server for integration with AI agents and external tools.
 
-> **Note:** When used as a Claude Code plugin, `projectRoot` is passed via the `PROJECT_ROOT` environment variable, not via CLI flag.
+> **Note:** When used as a Claude Code plugin, `projectRoot` is typically passed via the `PROJECT_ROOT` environment variable. The CLI flag also works.
 
 ### Serve HTTP API
 

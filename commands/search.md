@@ -59,16 +59,10 @@ Search indexed library sources for: **$ARGUMENTS**
    **Formatting rules:**
    - Header: `## Search Results: "query" (mode search)` - Extract mode from response (vector/fts/hybrid)
    - Each result on its own block with blank line between
-   - Result header: `**N. [Score: X.XX] {{method}}**` where method is:
-     - `[Vector+FTS]` if result.rankingMetadata has both vectorRank AND ftsRank (found by both methods)
-     - `[Vector]` if result.rankingMetadata has only vectorRank (semantic match only)
-     - `[Keyword]` if result.rankingMetadata has only ftsRank (keyword match only)
-   - Store: `Store: storeName` (on new line after header)
-   - File: `File: 📄 filename` (strip repoRoot prefix from location)
-   - Purpose: `Purpose: → purpose text` (keep concise)
-   - Top Terms: `Top Terms: 🔑 (in this chunk): ...` (top 5 most frequent words from this chunk, comma-separated)
-   - Imports: `Imports: 📦 (in this chunk): ...` (import statements from this chunk, first 3-4, comma-separated)
-   - Skip Top Terms/Imports lines if arrays are empty
+   - Result header: `**N. [Score: X.XX]**`
+   - Store: `Store: storeName`
+   - File: `File: 📄 filename` (from summary.location, strip repoRoot prefix)
+   - Purpose: `Purpose: → purpose text` (from summary.purpose)
    - Footer: `**Found {{totalResults}} results in {{timeMs}}ms**` with separator line above
 
 4. For the footer next steps, include:
