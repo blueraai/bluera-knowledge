@@ -124,6 +124,8 @@ Meta-tool for store and job management. Consolidates 8 operations into one tool 
 | `help` | `command?` | Show help for commands |
 | `commands` | - | List all available commands |
 
+> **Note:** The `store:create` command supports `file` and `repo` types only. To create web stores, use the CLI (`bluera-knowledge store create --type web`) or HTTP API, then populate with the `crawl` command.
+
 ---
 
 ## Known Issues

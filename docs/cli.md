@@ -253,6 +253,18 @@ bluera-knowledge serve --host 0.0.0.0  # Listen on all interfaces
 
 Starts an HTTP server exposing the search and store management APIs.
 
+**Available Endpoints:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/api/stores` | List all stores |
+| POST | `/api/stores` | Create a store |
+| GET | `/api/stores/:id` | Get store info |
+| DELETE | `/api/stores/:id` | Delete a store |
+| POST | `/api/search` | Search across stores |
+| POST | `/api/stores/:id/index` | Trigger indexing for a store |
+
 ### Setup
 
 ```bash

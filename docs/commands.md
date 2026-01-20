@@ -164,7 +164,7 @@ Store is ready for searching!
 - `--min-relevance=<0-1>` - Minimum raw cosine similarity; returns empty if no results meet threshold
 - `--threshold=<0-1>` - Minimum normalized score to include results
 - `--mode=<mode>` - Search mode: `hybrid` (default), `vector`, or `fts`
-- `--detail=<level>` - Context detail: `contextual` (default), `minimal`, or `full`
+- `--detail=<level>` - Context detail: `minimal` (default), `contextual`, or `full`
 
 **Examples:**
 ```bash
