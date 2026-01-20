@@ -8,13 +8,18 @@ Complete reference for all Bluera Knowledge slash commands.
 |---------|---------|-----------|
 | `/bluera-knowledge:suggest` | Analyze project dependencies | None |
 | `/bluera-knowledge:add-repo` | Clone and index Git repository | `<url> [--name=<name>] [--branch=<branch>]` |
-| `/bluera-knowledge:add-folder` | Index local folder | `<path> --name=<name>` |
+| `/bluera-knowledge:add-folder` | Index local folder | `<path> [--name=<name>]` |
 | `/bluera-knowledge:search` | Search knowledge stores | `"<query>" [--stores=<names>] [--limit=<N>]` |
 | `/bluera-knowledge:stores` | List all stores | None |
 | `/bluera-knowledge:index` | Re-index a store | `<store-name-or-id>` |
 | `/bluera-knowledge:remove-store` | Delete a store and all data | `<store-name-or-id>` |
 | `/bluera-knowledge:crawl` | Crawl web pages | `<url> <store-name> [--crawl "<instruction>"]` |
 | `/bluera-knowledge:sync` | Sync stores from definitions config | `[--dry-run] [--prune]` |
+| `/bluera-knowledge:check-status` | Check status of background operations | None |
+| `/bluera-knowledge:cancel` | Cancel a background job | `<job-id>` |
+| `/bluera-knowledge:uninstall` | Remove Bluera Knowledge data | None |
+| `/bluera-knowledge:skill-activation` | Toggle skill auto-activation | `[--enable] [--disable]` |
+| `/bluera-knowledge:test-plugin` | Run plugin validation tests | None |
 
 ---
 
@@ -93,7 +98,7 @@ Already indexed: typescript, express
 ```
 ✓ Cloning https://github.com/facebook/react...
 ✓ Created store: react (a1b2c3d4...)
-  Location: ~/.local/share/bluera-knowledge/stores/a1b2c3d4.../
+  Location: .bluera/bluera-knowledge/data/stores/a1b2c3d4.../
 
 ✓ Indexing...
 ✓ Indexed 1,247 files
@@ -109,7 +114,7 @@ Store is ready for searching!
 **Index a local folder**
 
 ```bash
-/bluera-knowledge:add-folder <path> --name=<name>
+/bluera-knowledge:add-folder <path> [--name=<name>]
 ```
 
 **Use cases:**
@@ -132,7 +137,7 @@ Store is ready for searching!
 ```
 ✓ Adding folder: ~/my-project/docs...
 ✓ Created store: project-docs (e5f6g7h8...)
-  Location: ~/.local/share/bluera-knowledge/stores/e5f6g7h8.../
+  Location: .bluera/bluera-knowledge/data/stores/e5f6g7h8.../
 
 ✓ Indexing...
 ✓ Indexed 342 files
@@ -157,7 +162,7 @@ Store is ready for searching!
 - `--min-relevance=<0-1>` - Minimum raw cosine similarity; returns empty if no results meet threshold
 - `--threshold=<0-1>` - Minimum normalized score to include results
 - `--mode=<mode>` - Search mode: `hybrid` (default), `vector`, or `fts`
-- `--detail=<level>` - Context detail: `minimal` (default), `contextual`, or `full`
+- `--detail=<level>` - Context detail: `contextual` (default), `minimal`, or `full`
 
 **Examples:**
 ```bash

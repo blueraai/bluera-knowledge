@@ -12,8 +12,8 @@ The MCP server is configured in `.mcp.json` at the plugin root:
 {
   "mcpServers": {
     "bluera-knowledge": {
-      "command": "bash",
-      "args": ["${CLAUDE_PLUGIN_ROOT:-.}/scripts/mcp-server.sh"],
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp/bootstrap.js"],
       "env": {
         "PROJECT_ROOT": "${PWD}",
         "DATA_DIR": ".bluera/bluera-knowledge/data",
@@ -26,34 +26,15 @@ The MCP server is configured in `.mcp.json` at the plugin root:
 
 > **Note:** We use a separate `.mcp.json` file rather than inline `mcpServers` in `plugin.json` due to [Claude Code Bug #16143](https://github.com/anthropics/claude-code/issues/16143). This is the recommended pattern for Claude Code plugins.
 
-### Dependency Installation Wrapper
+### Bootstrap Script
 
-Claude Code installs plugins via `git clone` without running `npm install`. MCP servers start before `SessionStart` hooks fire, causing module-not-found errors for plugins with npm dependencies.
+The MCP server uses a bootstrap script (`dist/mcp/bootstrap.js`) that handles dependency installation automatically:
 
-**Solution:** Use a wrapper script (`scripts/mcp-server.sh`) that:
 1. Checks if `node_modules` exists
 2. Runs `bun install` or `npm ci` if missing
 3. Then starts the MCP server
 
-```bash
-#!/bin/bash
-# Use BASH_SOURCE with cd+pwd for reliable absolute path resolution
-# This works even when ${CLAUDE_PLUGIN_ROOT:-.} isn't expanded correctly
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$SCRIPT_DIR")}"
-
-if [ ! -d "$PLUGIN_ROOT/node_modules" ]; then
-    if command -v bun &> /dev/null; then
-        (cd "$PLUGIN_ROOT" && bun install --frozen-lockfile) >&2
-    elif command -v npm &> /dev/null; then
-        (cd "$PLUGIN_ROOT" && npm ci --silent) >&2
-    fi
-fi
-
-exec node "$PLUGIN_ROOT/dist/mcp/server.js"
-```
-
-**Why BASH_SOURCE + cd + pwd?** The `.mcp.json` uses `${CLAUDE_PLUGIN_ROOT:-.}` but environment variable expansion in plugin `.mcp.json` files can be unreliable (see [#9427](https://github.com/anthropics/claude-code/issues/9427)). When the variable isn't expanded and falls back to `.`, the script must resolve its own absolute path. Using `dirname "$0"` alone fails with relative paths because it returns another relative path. The `cd + pwd` pattern ensures we always get an absolute path.
+This is necessary because Claude Code installs plugins via `git clone` without running `npm install`, and MCP servers start before `SessionStart` hooks fire.
 
 This pattern is necessary until Claude Code adds a `PostInstall` hook (see [#11240](https://github.com/anthropics/claude-code/issues/11240)).
 
@@ -136,6 +117,7 @@ Meta-tool for store and job management. Consolidates 8 operations into one tool 
 | `store:index` | `store` | Re-index an existing store |
 | `store:delete` | `store` | Delete a store and all data |
 | `stores:sync` | `dryRun?`, `prune?`, `reindex?` | Sync stores from definitions config |
+| `uninstall` | - | Remove all Bluera Knowledge data from the project |
 | `jobs` | `activeOnly?`, `status?` | List background jobs |
 | `job:status` | `jobId` | Check specific job status |
 | `job:cancel` | `jobId` | Cancel a running job |

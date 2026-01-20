@@ -68,7 +68,7 @@ sequenceDiagram
 | **Default to headless** | Maximum compatibility with modern JavaScript-rendered sites (React, Vue, Next.js) |
 | **Fast mode available** | Use `--fast` for static HTML sites when speed is critical |
 | **Intelligent crawling preserved** | Claude Code CLI analyzes pages and selects URLs in both modes |
-| **Automatic fallback** | If headless fetch fails, automatically falls back to axios |
+| **Fail-fast behavior** | No silent fallback - errors throw immediately for visibility |
 
 ---
 
@@ -81,9 +81,8 @@ The crawler operates in two modes depending on Claude Code CLI availability:
 | **Intelligent** | Yes | Claude analyzes pages and selects URLs based on natural language instructions |
 | **Simple (BFS)** | No | Breadth-first crawl up to max depth (2 levels) |
 
-**Automatic detection:**
-- When Claude Code CLI is available: Full intelligent mode with `--crawl` and `--extract` instructions
-- When Claude Code CLI is unavailable: Automatically uses simple BFS mode
-- Clear messaging: "Claude CLI not found, using simple crawl mode"
+**Requirements:**
+- Claude Code CLI is required for `--crawl` and `--extract` instructions
+- If Claude Code CLI is unavailable, throws an error with installation instructions
 
-> **Note:** Install Claude Code to unlock `--crawl` (AI-guided URL selection) and `--extract` (AI content extraction). Without it, web crawling still works but uses simple BFS mode.
+> **Note:** Install Claude Code to use intelligent crawling with `--crawl` (AI-guided URL selection) and `--extract` (AI content extraction). The `--simple` flag can be used for basic BFS crawling without Claude Code.

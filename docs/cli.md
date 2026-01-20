@@ -42,7 +42,7 @@ bluera-knowledge store create fastapi-docs --type web --source https://fastapi.t
 | `-s, --source <path>` | Local path or URL (required) |
 | `-b, --branch <branch>` | Git branch to clone (repo stores only) |
 | `-d, --description <desc>` | Optional store description |
-| `--tags <tags>` | Comma-separated tags for filtering |
+| `--tags <tags>` | Comma-separated tags to assign |
 
 ### List Stores
 
@@ -145,7 +145,7 @@ bluera-knowledge search "express middleware" --format json
 ```bash
 --config <path>        # Custom config file
 --data-dir <path>      # Custom data directory
---project-root <path>  # Project root for store definitions (required for sync)
+--project-root <path>  # Project root for store definitions (defaults to current directory)
 --format <format>      # Output format: json | table | plain
 --quiet                # Suppress non-essential output
 --verbose              # Enable verbose logging
@@ -168,3 +168,69 @@ bluera-knowledge search "express middleware" --format json
 - Want Skills to guide optimal usage
 
 Both interfaces use the same underlying services, so you can switch between them seamlessly.
+
+---
+
+## Additional Commands
+
+### Crawl Web Pages
+
+```bash
+# Crawl a website
+bluera-knowledge crawl <url> <store-name> [options]
+
+# Examples
+bluera-knowledge crawl https://docs.example.com my-docs
+bluera-knowledge crawl https://react.dev react-docs --crawl "API reference pages"
+bluera-knowledge crawl https://example.com pricing --extract "pricing tiers"
+bluera-knowledge crawl https://example.com docs --simple --max-pages 100
+```
+
+**Crawl Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--crawl <instruction>` | Natural language instruction for which pages to crawl |
+| `--extract <instruction>` | Natural language instruction for what content to extract |
+| `--simple` | Use simple BFS mode instead of intelligent crawling |
+| `--max-pages <n>` | Maximum pages to crawl (default: 50) |
+| `--fast` | Use fast axios-only mode (may fail on JS-heavy sites) |
+
+### Start MCP Server
+
+```bash
+# Start the MCP server for external integrations
+bluera-knowledge mcp [options]
+
+# Examples
+bluera-knowledge mcp
+bluera-knowledge mcp --project-root /path/to/project
+```
+
+Starts the Model Context Protocol server for integration with AI agents and external tools.
+
+### Serve HTTP API
+
+```bash
+# Start HTTP server for REST API access
+bluera-knowledge serve [options]
+
+# Examples
+bluera-knowledge serve
+bluera-knowledge serve --port 3000
+```
+
+Starts an HTTP server exposing the search and store management APIs.
+
+### Setup
+
+```bash
+# Initialize Bluera Knowledge for a project
+bluera-knowledge setup [options]
+
+# Examples
+bluera-knowledge setup
+bluera-knowledge setup --data-dir ./custom-data
+```
+
+Initializes the data directory and configuration for a new project.
