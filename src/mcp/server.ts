@@ -124,7 +124,7 @@ export function createMCPServer(options: MCPServerOptions, services: ServiceCont
         {
           name: 'execute',
           description:
-            'Execute store/job management commands. Commands: stores, store:info, store:create, store:index, store:delete, jobs, job:status, job:cancel, sync, uninstall, help, commands',
+            'Execute store/job management commands. Commands: stores, store:info, store:create, store:index, store:delete, jobs, job:status, job:cancel, stores:sync, uninstall, help, commands',
           inputSchema: {
             type: 'object',
             properties: {
