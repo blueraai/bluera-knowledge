@@ -39,7 +39,20 @@ export class WatchService {
         void (async (): Promise<void> => {
           try {
             await this.lanceStore.initialize(store.id);
-            await this.indexService.indexStore(store);
+
+            // Try incremental indexing first if available, fall back to full indexing
+            let useFullReindex = true;
+            if (typeof this.indexService.indexStoreIncremental === 'function') {
+              const incrementalResult = await this.indexService.indexStoreIncremental(store);
+              if (incrementalResult.success) {
+                useFullReindex = false;
+              }
+            }
+
+            if (useFullReindex) {
+              await this.indexService.indexStore(store);
+            }
+
             onReindex?.();
           } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));

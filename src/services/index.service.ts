@@ -2,13 +2,17 @@ import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { join, extname, basename } from 'node:path';
 import { ChunkingService } from './chunking.service.js';
+import { DriftService } from './drift.service.js';
 import { createLogger } from '../logging/index.js';
 import { createDocumentId } from '../types/brands.js';
 import { ok, err } from '../types/result.js';
 import type { CodeGraphService } from './code-graph.service.js';
+import type { ManifestService } from './manifest.service.js';
 import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
+import type { DocumentId } from '../types/brands.js';
 import type { Document } from '../types/document.js';
+import type { TypedStoreManifest, TypedFileState } from '../types/manifest.js';
 import type { ProgressCallback } from '../types/progress.js';
 import type { Result } from '../types/result.js';
 import type { Store, FileStore, RepoStore } from '../types/store.js';
@@ -26,6 +30,14 @@ interface IndexOptions {
   chunkOverlap?: number;
   codeGraphService?: CodeGraphService;
   concurrency?: number;
+  manifestService?: ManifestService;
+}
+
+interface IncrementalIndexResult extends IndexResult {
+  filesAdded: number;
+  filesModified: number;
+  filesDeleted: number;
+  filesUnchanged: number;
 }
 
 const TEXT_EXTENSIONS = new Set([
@@ -63,6 +75,8 @@ export class IndexService {
   private readonly embeddingEngine: EmbeddingEngine;
   private readonly chunker: ChunkingService;
   private readonly codeGraphService: CodeGraphService | undefined;
+  private readonly manifestService: ManifestService | undefined;
+  private readonly driftService: DriftService;
   private readonly concurrency: number;
 
   constructor(
@@ -77,6 +91,8 @@ export class IndexService {
       chunkOverlap: options.chunkOverlap ?? 100,
     });
     this.codeGraphService = options.codeGraphService;
+    this.manifestService = options.manifestService;
+    this.driftService = new DriftService();
     this.concurrency = options.concurrency ?? 4;
   }
 
@@ -107,6 +123,198 @@ export class IndexService {
           error: error instanceof Error ? error.message : String(error),
         },
         'Store indexing failed'
+      );
+      return err(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  /**
+   * Incrementally index a store, only processing changed files.
+   * Requires manifestService to be configured.
+   *
+   * @param store - The store to index
+   * @param onProgress - Optional progress callback
+   * @returns Result with incremental index statistics
+   */
+  async indexStoreIncremental(
+    store: Store,
+    onProgress?: ProgressCallback
+  ): Promise<Result<IncrementalIndexResult>> {
+    if (this.manifestService === undefined) {
+      return err(new Error('ManifestService required for incremental indexing'));
+    }
+
+    if (store.type !== 'file' && store.type !== 'repo') {
+      return err(new Error(`Incremental indexing not supported for store type: ${store.type}`));
+    }
+
+    logger.info(
+      {
+        storeId: store.id,
+        storeName: store.name,
+        storeType: store.type,
+      },
+      'Starting incremental store indexing'
+    );
+
+    const startTime = Date.now();
+
+    try {
+      // Load manifest
+      const manifest = await this.manifestService.load(store.id);
+
+      // Scan current files
+      const filePaths = await this.scanDirectory(store.path);
+      const currentFiles = await Promise.all(
+        filePaths.map((path) => this.driftService.getFileState(path))
+      );
+
+      // Detect changes
+      const drift = await this.driftService.detectChanges(manifest, currentFiles);
+
+      logger.debug(
+        {
+          storeId: store.id,
+          added: drift.added.length,
+          modified: drift.modified.length,
+          deleted: drift.deleted.length,
+          unchanged: drift.unchanged.length,
+        },
+        'Drift detection complete'
+      );
+
+      // Collect document IDs to delete (from modified and deleted files)
+      const documentIdsToDelete: DocumentId[] = [];
+      for (const path of [...drift.modified, ...drift.deleted]) {
+        const fileState = manifest.files[path];
+        if (fileState !== undefined) {
+          documentIdsToDelete.push(...fileState.documentIds);
+        }
+      }
+
+      // Delete old documents
+      if (documentIdsToDelete.length > 0) {
+        await this.lanceStore.deleteDocuments(store.id, documentIdsToDelete);
+        logger.debug(
+          { storeId: store.id, count: documentIdsToDelete.length },
+          'Deleted old documents'
+        );
+      }
+
+      // Process new and modified files
+      const filesToProcess = [...drift.added, ...drift.modified];
+      const totalFiles = filesToProcess.length;
+
+      onProgress?.({
+        type: 'start',
+        current: 0,
+        total: totalFiles,
+        message: `Processing ${String(totalFiles)} changed files`,
+      });
+
+      const documents: Document[] = [];
+      const newManifestFiles: Record<string, TypedFileState> = {};
+      let filesProcessed = 0;
+
+      // Keep unchanged files in manifest
+      for (const path of drift.unchanged) {
+        const existingState = manifest.files[path];
+        if (existingState !== undefined) {
+          newManifestFiles[path] = existingState;
+        }
+      }
+
+      // Process changed files in parallel batches
+      for (let i = 0; i < filesToProcess.length; i += this.concurrency) {
+        const batch = filesToProcess.slice(i, i + this.concurrency);
+
+        const batchResults = await Promise.all(
+          batch.map(async (filePath) => {
+            const result = await this.processFile(filePath, store);
+            const documentIds = result.documents.map((d) => d.id);
+
+            // Create file state for manifest
+            const { state } = await this.driftService.createFileState(filePath, documentIds);
+
+            return {
+              filePath,
+              documents: result.documents,
+              fileState: state,
+            };
+          })
+        );
+
+        // Collect results
+        for (const result of batchResults) {
+          documents.push(...result.documents);
+          newManifestFiles[result.filePath] = result.fileState;
+        }
+
+        filesProcessed += batch.length;
+
+        onProgress?.({
+          type: 'progress',
+          current: filesProcessed,
+          total: totalFiles,
+          message: `Processed ${String(filesProcessed)}/${String(totalFiles)} files`,
+        });
+      }
+
+      // Add new documents
+      if (documents.length > 0) {
+        await this.lanceStore.addDocuments(store.id, documents);
+        // Recreate FTS index
+        await this.lanceStore.createFtsIndex(store.id);
+      }
+
+      // Save updated manifest
+      const updatedManifest: TypedStoreManifest = {
+        version: 1,
+        storeId: store.id,
+        indexedAt: new Date().toISOString(),
+        files: newManifestFiles,
+      };
+      await this.manifestService.save(updatedManifest);
+
+      onProgress?.({
+        type: 'complete',
+        current: totalFiles,
+        total: totalFiles,
+        message: 'Incremental indexing complete',
+      });
+
+      const timeMs = Date.now() - startTime;
+
+      logger.info(
+        {
+          storeId: store.id,
+          storeName: store.name,
+          filesAdded: drift.added.length,
+          filesModified: drift.modified.length,
+          filesDeleted: drift.deleted.length,
+          filesUnchanged: drift.unchanged.length,
+          chunksCreated: documents.length,
+          timeMs,
+        },
+        'Incremental indexing complete'
+      );
+
+      return ok({
+        documentsIndexed: filesToProcess.length,
+        chunksCreated: documents.length,
+        timeMs,
+        filesAdded: drift.added.length,
+        filesModified: drift.modified.length,
+        filesDeleted: drift.deleted.length,
+        filesUnchanged: drift.unchanged.length,
+      });
+    } catch (error) {
+      logger.error(
+        {
+          storeId: store.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        'Incremental indexing failed'
       );
       return err(error instanceof Error ? error : new Error(String(error)));
     }
