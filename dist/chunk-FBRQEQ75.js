@@ -2048,7 +2048,7 @@ function createMCPServer(options, services) {
         // Meta-tool for store and job management (consolidates 8 tools into 1)
         {
           name: "execute",
-          description: "Execute store/job management commands. Commands: stores, store:info, store:create, store:index, store:delete, jobs, job:status, job:cancel, help, commands",
+          description: "Execute store/job management commands. Commands: stores, store:info, store:create, store:index, store:delete, jobs, job:status, job:cancel, sync, uninstall, help, commands",
           inputSchema: {
             type: "object",
             properties: {
@@ -2157,4 +2157,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-SUVLF3B7.js.map
+//# sourceMappingURL=chunk-FBRQEQ75.js.map
