@@ -78,7 +78,7 @@ Semantic vector search across all indexed stores or a specific subset. Returns s
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `query` | string | Search query (natural language, patterns, or type signatures) |
-| `intent` | string | Search intent: find-pattern, find-implementation, find-usage, find-definition, find-documentation |
+| `intent` | string | Search intent (accepted but not currently used for ranking - logged only): find-pattern, find-implementation, find-usage, find-definition, find-documentation |
 | `mode` | string | Search mode: hybrid (default), vector, or fts |
 | `detail` | string | Context level: minimal, contextual, or full |
 | `limit` | number | Maximum results (default: 10) |

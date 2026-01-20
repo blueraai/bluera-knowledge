@@ -175,6 +175,8 @@ Both interfaces use the same underlying services, so you can switch between them
 
 ### Crawl Web Pages
 
+> **Prerequisites:** Crawling requires Python 3 with `crawl4ai` package. Headless mode also requires Playwright browsers (`playwright install chromium`).
+
 ```bash
 # Crawl a website
 bluera-knowledge crawl <url> <store-name> [options]
@@ -209,6 +211,8 @@ bluera-knowledge mcp --project-root /path/to/project
 
 Starts the Model Context Protocol server for integration with AI agents and external tools.
 
+> **Note:** When used as a Claude Code plugin, `projectRoot` is passed via the `PROJECT_ROOT` environment variable, not via CLI flag.
+
 ### Serve HTTP API
 
 ```bash
@@ -218,19 +222,69 @@ bluera-knowledge serve [options]
 # Examples
 bluera-knowledge serve
 bluera-knowledge serve --port 3000
+bluera-knowledge serve --host 0.0.0.0  # Listen on all interfaces
 ```
+
+**Serve Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-p, --port <port>` | Port to listen on (default: 3847) |
+| `--host <host>` | Bind address (default: 127.0.0.1, use 0.0.0.0 for all interfaces) |
 
 Starts an HTTP server exposing the search and store management APIs.
 
 ### Setup
 
 ```bash
-# Initialize Bluera Knowledge for a project
-bluera-knowledge setup [options]
+# Clone and index pre-configured Claude/Anthropic documentation repos
+bluera-knowledge setup repos [options]
 
 # Examples
-bluera-knowledge setup
-bluera-knowledge setup --data-dir ./custom-data
+bluera-knowledge setup repos
+bluera-knowledge setup repos --only claude,anthropic
+bluera-knowledge setup repos --list
 ```
 
-Initializes the data directory and configuration for a new project.
+**Setup Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--repos-dir <path>` | Clone destination (default: ~/.bluera/bluera-knowledge/repos/) |
+| `--skip-clone` | Don't clone; assume repos already exist locally |
+| `--skip-index` | Clone and create stores but don't index yet |
+| `--only <names>` | Only process matching repos (comma-separated, partial match) |
+| `--list` | Print available repos without cloning/indexing |
+
+### Plugin API Commands
+
+These CLI commands mirror the Claude Code slash commands:
+
+| Command | Description |
+|---------|-------------|
+| `add-repo <url>` | Clone and index a library source repository |
+| `add-folder <path>` | Index a local folder of reference material |
+| `stores` | List all indexed library stores |
+| `suggest` | Suggest important dependencies to add to knowledge stores |
+
+**Options for `add-repo`:**
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Custom store name (defaults to repo name) |
+| `--branch <branch>` | Git branch to clone |
+
+**Options for `add-folder`:**
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Custom store name (defaults to folder name) |
+
+**Examples:**
+```bash
+bluera-knowledge add-repo https://github.com/lodash/lodash
+bluera-knowledge add-repo https://github.com/facebook/react --branch=main --name=react
+bluera-knowledge add-folder ./docs --name=project-docs
+bluera-knowledge stores
+bluera-knowledge suggest
+```

@@ -98,7 +98,7 @@ Already indexed: typescript, express
 ```
 ✓ Cloning https://github.com/facebook/react...
 ✓ Created store: react (a1b2c3d4...)
-  Location: .bluera/bluera-knowledge/data/stores/a1b2c3d4.../
+  Location: .bluera/bluera-knowledge/data/repos/a1b2c3d4.../
 
 ✓ Indexing...
 ✓ Indexed 1,247 files
@@ -137,7 +137,7 @@ Store is ready for searching!
 ```
 ✓ Adding folder: ~/my-project/docs...
 ✓ Created store: project-docs (e5f6g7h8...)
-  Location: .bluera/bluera-knowledge/data/stores/e5f6g7h8.../
+  Location: ~/my-project/docs
 
 ✓ Indexing...
 ✓ Indexed 342 files
@@ -395,3 +395,237 @@ The crawler converts pages to markdown and indexes them for semantic search.
 2. Creates any stores that don't exist locally
 3. Reports orphan stores (local stores not in definitions)
 4. Optionally prunes orphans with `--prune`
+
+---
+
+## `/bluera-knowledge:check-status`
+
+**Check status of background operations**
+
+```bash
+/bluera-knowledge:check-status [job-id]
+```
+
+Shows the status of active background jobs or details about a specific job.
+
+**Examples:**
+```bash
+# List all active jobs
+/bluera-knowledge:check-status
+
+# Check specific job
+/bluera-knowledge:check-status job_abc123def456
+```
+
+<details>
+<summary><b>Expected Output</b></summary>
+
+For all active jobs:
+```
+Active Background Jobs
+───────────────────────────────────────────────────────────────
+| Job ID            | Type  | Status  | Progress | Started  |
+|-------------------|-------|---------|----------|----------|
+| job_abc123def456  | clone | running | 45%      | 2m ago   |
+| job_xyz789ghi012  | index | pending | 0%       | Just now |
+
+Use /bluera-knowledge:check-status <job-id> for details
+```
+
+For a specific job:
+```
+Job Status: job_abc123def456
+───────────────────────────────────────
+Type:     clone
+Status:   running
+Progress: 45%
+Message:  Indexed 562/1,247 files
+Started:  2 minutes ago
+```
+</details>
+
+---
+
+## `/bluera-knowledge:cancel`
+
+**Cancel a background job**
+
+```bash
+/bluera-knowledge:cancel <job-id>
+```
+
+Cancels a running or pending background job.
+
+**When to cancel:**
+- Accidentally started indexing the wrong repository
+- Operation is taking too long
+- Need to free up system resources
+- Want to stop before completion
+
+**Example:**
+```bash
+/bluera-knowledge:cancel job_abc123def456
+```
+
+<details>
+<summary><b>Expected Output</b></summary>
+
+```
+✓ Job job_abc123def456 cancelled
+  Type: clone
+  Progress: 45% (was indexing)
+
+The job has been stopped and will not continue.
+```
+</details>
+
+**Notes:**
+- Only jobs in 'pending' or 'running' status can be cancelled
+- Completed or failed jobs cannot be cancelled
+- Partial work may be saved (e.g., partially indexed files remain in the database)
+
+---
+
+## `/bluera-knowledge:uninstall`
+
+**Remove Bluera Knowledge data from this project**
+
+```bash
+/bluera-knowledge:uninstall
+```
+
+Removes all Bluera Knowledge data from the current project.
+
+**What gets deleted:**
+- `data/` - Vector indices, cloned repos, stores.json
+- `config.json` - Plugin configuration
+- Optionally `stores.config.json` - Store definitions
+
+**What is NOT deleted:**
+- Plugin cache (managed by Claude Code)
+- Python venv (inside plugin cache)
+
+<details>
+<summary><b>Expected Output</b></summary>
+
+```
+Uninstalling Bluera Knowledge...
+
+Deleted:
+- .bluera/bluera-knowledge/data/ (vector indices, cloned repos)
+- .bluera/bluera-knowledge/config.json
+
+Preserved:
+- .bluera/bluera-knowledge/stores.config.json (team sharing)
+
+To test a completely fresh plugin install:
+1. Exit Claude Code
+2. Clear plugin cache: rm -rf ~/.claude/plugins/cache/bluera-knowledge-*
+3. Restart Claude Code and reinstall the plugin
+```
+</details>
+
+---
+
+## `/bluera-knowledge:skill-activation`
+
+**Toggle skill auto-activation on/off or configure individual skills**
+
+```bash
+/bluera-knowledge:skill-activation [on|off|status|config]
+```
+
+Manages the skill auto-activation system that suggests relevant skills based on your prompts.
+
+**Subcommands:**
+- `status` (default) - Show current configuration
+- `on` - Enable skill activation
+- `off` - Disable skill activation
+- `config` - Interactive skill configuration
+
+**Examples:**
+```bash
+# Show current status
+/bluera-knowledge:skill-activation
+
+# Enable skill suggestions
+/bluera-knowledge:skill-activation on
+
+# Disable skill suggestions
+/bluera-knowledge:skill-activation off
+
+# Configure individual skills
+/bluera-knowledge:skill-activation config
+```
+
+<details>
+<summary><b>Expected Output</b></summary>
+
+```
+## Skill Activation Status
+
+**Status**: Enabled
+**Threshold**: 1
+
+### Individual Skills
+| Skill | Status |
+|-------|--------|
+| knowledge-search | enabled |
+| when-to-query | enabled |
+| search-optimization | enabled |
+| advanced-workflows | enabled |
+| store-lifecycle | enabled |
+
+Use `/bluera-knowledge:skill-activation config` to toggle individual skills.
+```
+</details>
+
+**Configuration file:** `.bluera/bluera-knowledge/skill-activation.json` (per-project)
+
+---
+
+## `/bluera-knowledge:test-plugin`
+
+**Run comprehensive plugin validation test suite**
+
+```bash
+/bluera-knowledge:test-plugin [--dev]
+```
+
+Tests all Bluera Knowledge plugin functionality including MCP tools, slash commands, web crawling, and hooks.
+
+**Options:**
+- `--dev` - Development mode: spawns MCP server directly, skips slash command tests
+
+**Test coverage:**
+
+| Category | Tests |
+|----------|-------|
+| MCP execute commands | help, commands, stores, store:create, store:info, store:index, store:delete, jobs, job:status, job:cancel |
+| MCP tools | search, get_full_context |
+| Slash commands | stores, search, suggest, check-status, skill-activation, index, add-folder |
+| Web crawling | crawl (start job, verify status, cancel) |
+| Hooks | PostToolUse, UserPromptSubmit, SessionStart |
+
+**When to use each mode:**
+
+| Scenario | Command | Tests |
+|----------|---------|-------|
+| Plugin installed normally | `/test-plugin` | 30/30 (full suite) |
+| Development without plugin loaded | `/test-plugin --dev` | 24/30 (no slash cmds) |
+
+<details>
+<summary><b>Expected Output</b></summary>
+
+```
+| # | Test | Status |
+|---|------|--------|
+| 1 | MCP help | PASS |
+| 2 | MCP commands | PASS |
+| 3 | MCP stores | PASS |
+| ... | ... | ... |
+| 30 | Verify no artifacts | PASS |
+
+**Result: 30/30 tests passed**
+```
+</details>
