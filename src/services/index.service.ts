@@ -325,6 +325,10 @@ export class IndexService {
     onProgress?: ProgressCallback
   ): Promise<Result<IndexResult>> {
     const startTime = Date.now();
+
+    // Clear existing documents before full re-index to prevent duplicates
+    await this.lanceStore.clearAllDocuments(store.id);
+
     const files = await this.scanDirectory(store.path);
     const documents: Document[] = [];
     let filesProcessed = 0;

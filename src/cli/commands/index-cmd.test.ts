@@ -56,6 +56,7 @@ describe('createIndexCommand - Execution Tests', () => {
       },
       index: {
         indexStore: vi.fn(),
+        indexStoreIncremental: vi.fn(),
       },
       embeddings: {
         embed: vi.fn(),
@@ -102,12 +103,16 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 10,
           chunksCreated: 25,
           timeMs: 1500,
+          filesAdded: 5,
+          filesModified: 3,
+          filesDeleted: 0,
+          filesUnchanged: 2,
         },
       });
 
@@ -117,7 +122,7 @@ describe('createIndexCommand - Execution Tests', () => {
 
       expect(mockServices.store.getByIdOrName).toHaveBeenCalledWith('test-store');
       expect(mockServices.lance.initialize).toHaveBeenCalledWith('store-123');
-      expect(mockServices.index.indexStore).toHaveBeenCalled();
+      expect(mockServices.index.indexStoreIncremental).toHaveBeenCalled();
     });
 
     it('outputs success message in normal mode', async () => {
@@ -131,12 +136,16 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 5,
           chunksCreated: 12,
           timeMs: 800,
+          filesAdded: 2,
+          filesModified: 2,
+          filesDeleted: 0,
+          filesUnchanged: 1,
         },
       });
 
@@ -165,12 +174,16 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 3,
           chunksCreated: 7,
           timeMs: 500,
+          filesAdded: 1,
+          filesModified: 1,
+          filesDeleted: 0,
+          filesUnchanged: 1,
         },
       });
 
@@ -204,12 +217,16 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 1,
           chunksCreated: 2,
           timeMs: 100,
+          filesAdded: 1,
+          filesModified: 0,
+          filesDeleted: 0,
+          filesUnchanged: 0,
         },
       });
 
@@ -234,12 +251,16 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 1,
           chunksCreated: 2,
           timeMs: 100,
+          filesAdded: 1,
+          filesModified: 0,
+          filesDeleted: 0,
+          filesUnchanged: 0,
         },
       });
 
@@ -262,19 +283,25 @@ describe('createIndexCommand - Execution Tests', () => {
 
       let progressCallback: ((event: IndexEvent) => void) | undefined;
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockImplementation(async (store, callback) => {
-        progressCallback = callback;
-        callback?.({ type: 'progress', current: 1, total: 5, message: 'Processing file1.txt' });
-        callback?.({ type: 'progress', current: 2, total: 5, message: 'Processing file2.txt' });
-        return {
-          success: true,
-          data: {
-            documentsIndexed: 5,
-            chunksCreated: 10,
-            timeMs: 1000,
-          },
-        };
-      });
+      vi.mocked(mockServices.index.indexStoreIncremental).mockImplementation(
+        async (_store, callback) => {
+          progressCallback = callback;
+          callback?.({ type: 'progress', current: 1, total: 5, message: 'Processing file1.txt' });
+          callback?.({ type: 'progress', current: 2, total: 5, message: 'Processing file2.txt' });
+          return {
+            success: true,
+            data: {
+              documentsIndexed: 5,
+              chunksCreated: 10,
+              timeMs: 1000,
+              filesAdded: 3,
+              filesModified: 2,
+              filesDeleted: 0,
+              filesUnchanged: 0,
+            },
+          };
+        }
+      );
 
       const command = createIndexCommand(getOptions);
       const action = command._actionHandler;
@@ -294,12 +321,16 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 1,
           chunksCreated: 1,
           timeMs: 100,
+          filesAdded: 1,
+          filesModified: 0,
+          filesDeleted: 0,
+          filesUnchanged: 0,
         },
       });
 
@@ -341,7 +372,7 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: false,
         error: new Error('Failed to read files'),
       });
@@ -677,7 +708,7 @@ describe('createIndexCommand - Execution Tests', () => {
       };
 
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
-      vi.mocked(mockServices.index.indexStore).mockResolvedValue({
+      vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
           documentsIndexed: 1,
@@ -690,7 +721,7 @@ describe('createIndexCommand - Execution Tests', () => {
       const action = command._actionHandler;
       await action(['test']);
 
-      expect(createServices).toHaveBeenCalledWith('/custom/config.json', '/custom/data');
+      expect(createServices).toHaveBeenCalledWith('/custom/config.json', '/custom/data', undefined);
     });
 
     it('calls services in correct order for indexing', async () => {
@@ -711,14 +742,18 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.lance.initialize).mockImplementation(async () => {
         callOrder.push('initialize');
       });
-      vi.mocked(mockServices.index.indexStore).mockImplementation(async () => {
-        callOrder.push('indexStore');
+      vi.mocked(mockServices.index.indexStoreIncremental).mockImplementation(async () => {
+        callOrder.push('indexStoreIncremental');
         return {
           success: true,
           data: {
             documentsIndexed: 1,
             chunksCreated: 1,
             timeMs: 100,
+            filesAdded: 1,
+            filesModified: 0,
+            filesDeleted: 0,
+            filesUnchanged: 0,
           },
         };
       });
@@ -727,7 +762,7 @@ describe('createIndexCommand - Execution Tests', () => {
       const action = command._actionHandler;
       await action(['test']);
 
-      expect(callOrder).toEqual(['getByIdOrName', 'initialize', 'indexStore']);
+      expect(callOrder).toEqual(['getByIdOrName', 'initialize', 'indexStoreIncremental']);
     });
   });
 });

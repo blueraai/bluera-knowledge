@@ -2,6 +2,7 @@ import { CodeGraphService } from './code-graph.service.js';
 import { ConfigService } from './config.service.js';
 import { GitignoreService } from './gitignore.service.js';
 import { IndexService } from './index.service.js';
+import { ManifestService } from './manifest.service.js';
 import { SearchService } from './search.service.js';
 import { StoreDefinitionService } from './store-definition.service.js';
 import { StoreService } from './store.service.js';
@@ -32,6 +33,7 @@ export interface ServiceContainer {
   embeddings: EmbeddingEngine;
   codeGraph: CodeGraphService;
   pythonBridge: PythonBridge;
+  manifest: ManifestService;
 }
 
 /**
@@ -57,6 +59,8 @@ export class LazyServiceContainer implements ServiceContainer {
   private readonly dataDir: string;
 
   // Lazily initialized (heavy)
+  // eslint-disable-next-line @typescript-eslint/prefer-readonly -- mutated in lazy getter
+  private _manifest: ManifestService | null = null;
   private _embeddings: EmbeddingEngine | null = null;
   private _codeGraph: CodeGraphService | null = null;
   private _search: SearchService | null = null;
@@ -123,9 +127,24 @@ export class LazyServiceContainer implements ServiceContainer {
       logger.debug('Lazy-initializing IndexService');
       this._index = new IndexService(this.lance, this.embeddings, {
         codeGraphService: this.codeGraph,
+        manifestService: this.manifest,
+        chunkSize: this.appConfig.indexing.chunkSize,
+        chunkOverlap: this.appConfig.indexing.chunkOverlap,
+        concurrency: this.appConfig.indexing.concurrency,
       });
     }
     return this._index;
+  }
+
+  /**
+   * ManifestService is lazily created on first access.
+   */
+  get manifest(): ManifestService {
+    if (this._manifest === null) {
+      logger.debug('Lazy-initializing ManifestService');
+      this._manifest = new ManifestService(this.dataDir);
+    }
+    return this._manifest;
   }
 
   /**
@@ -223,8 +242,15 @@ export async function createServices(
   await store.initialize();
 
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
+  const manifest = new ManifestService(resolvedDataDir);
   const search = new SearchService(lance, embeddings, codeGraph);
-  const index = new IndexService(lance, embeddings, { codeGraphService: codeGraph });
+  const index = new IndexService(lance, embeddings, {
+    codeGraphService: codeGraph,
+    manifestService: manifest,
+    chunkSize: appConfig.indexing.chunkSize,
+    chunkOverlap: appConfig.indexing.chunkOverlap,
+    concurrency: appConfig.indexing.concurrency,
+  });
 
   logger.info({ dataDir: resolvedDataDir }, 'Services initialized successfully');
 
@@ -237,6 +263,7 @@ export async function createServices(
     embeddings,
     codeGraph,
     pythonBridge,
+    manifest,
   };
 }
 

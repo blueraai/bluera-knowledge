@@ -194,7 +194,10 @@ describe('createServices', () => {
 
     vi.mocked(ConfigService).mockImplementation(function () {
       return {
-        load: vi.fn().mockResolvedValue({ embedding: { model: 'test', dimensions: 384 } }),
+        load: vi.fn().mockResolvedValue({
+          embedding: { model: 'test', dimensions: 384 },
+          indexing: { concurrency: 4, chunkSize: 1000, chunkOverlap: 150, ignorePatterns: [] },
+        }),
         resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),
       };
     });
@@ -332,7 +335,10 @@ describe('createLazyServices', () => {
 
     vi.mocked(ConfigService).mockImplementation(function () {
       return {
-        load: vi.fn().mockResolvedValue({ embedding: { model: 'test', dimensions: 384 } }),
+        load: vi.fn().mockResolvedValue({
+          embedding: { model: 'test', dimensions: 384 },
+          indexing: { concurrency: 4, chunkSize: 1000, chunkOverlap: 150, ignorePatterns: [] },
+        }),
         resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),
       };
     });

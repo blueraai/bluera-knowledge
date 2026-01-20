@@ -8,9 +8,13 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
     .description('Scan store files, chunk text, generate embeddings, save to LanceDB')
     .argument('<store>', 'Store ID or name')
     .option('--force', 'Re-index all files even if unchanged')
-    .action(async (storeIdOrName: string, _options: { force?: boolean }) => {
+    .action(async (storeIdOrName: string, options: { force?: boolean }) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       let exitCode = 0;
       try {
         indexLogic: {
@@ -36,13 +40,24 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
 
           await services.lance.initialize(store.id);
 
-          const result = await services.index.indexStore(store, (event) => {
+          // Use full re-index with --force, otherwise incremental (default)
+          const progressCallback = (event: {
+            type: string;
+            current: number;
+            total: number;
+            message: string;
+          }): void => {
             if (event.type === 'progress') {
               if (spinner) {
                 spinner.text = `Indexing: ${String(event.current)}/${String(event.total)} files - ${event.message}`;
               }
             }
-          });
+          };
+
+          const result =
+            options.force === true
+              ? await services.index.indexStore(store, progressCallback)
+              : await services.index.indexStoreIncremental(store, progressCallback);
 
           if (result.success) {
             if (globalOpts.format === 'json') {
@@ -86,7 +101,11 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
     )
     .action(async (storeIdOrName: string, options: { debounce?: string }) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
 
       const store = await services.store.getByIdOrName(storeIdOrName);
       if (store === undefined || (store.type !== 'file' && store.type !== 'repo')) {

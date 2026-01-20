@@ -71,6 +71,11 @@ export class LanceStore {
     await table.delete(`id IN (${idList})`);
   }
 
+  async clearAllDocuments(storeId: StoreId): Promise<void> {
+    const table = await this.getTable(storeId);
+    await table.delete('id IS NOT NULL');
+  }
+
   async search(
     storeId: StoreId,
     vector: number[],
