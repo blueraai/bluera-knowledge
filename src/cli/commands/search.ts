@@ -33,12 +33,12 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
         query: string,
         options: {
           stores?: string;
-          mode?: SearchMode;
-          limit?: string;
+          mode: SearchMode;
+          limit: string;
           threshold?: string;
           minRelevance?: string;
           includeContent?: boolean;
-          detail?: DetailLevel;
+          detail: DetailLevel;
         }
       ) => {
         const globalOpts = getOptions();
@@ -87,14 +87,14 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
             const results = await services.search.search({
               query,
               stores: storeIds,
-              mode: options.mode ?? 'hybrid',
-              limit: parseInt(options.limit ?? '10', 10),
+              mode: options.mode,
+              limit: parseInt(options.limit, 10),
               threshold:
                 options.threshold !== undefined ? parseFloat(options.threshold) : undefined,
               minRelevance:
                 options.minRelevance !== undefined ? parseFloat(options.minRelevance) : undefined,
               includeContent: options.includeContent,
-              detail: options.detail ?? 'minimal',
+              detail: options.detail,
             });
 
             if (globalOpts.format === 'json') {
@@ -109,7 +109,7 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
               console.log(`\nSearch: "${query}"`);
 
               // Build status line with optional confidence info
-              let statusLine = `Mode: ${results.mode} | Detail: ${String(options.detail)} | Stores: ${String(results.stores.length)} | Results: ${String(results.totalResults)} | Time: ${String(results.timeMs)}ms`;
+              let statusLine = `Mode: ${results.mode} | Detail: ${options.detail} | Stores: ${String(results.stores.length)} | Results: ${String(results.totalResults)} | Time: ${String(results.timeMs)}ms`;
               if (results.confidence !== undefined) {
                 statusLine += ` | Confidence: ${results.confidence}`;
               }

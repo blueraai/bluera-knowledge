@@ -13,7 +13,7 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
       'Bind address (default: 127.0.0.1, use 0.0.0.0 for all interfaces)',
       '127.0.0.1'
     )
-    .action(async (options: { port?: string; host?: string }) => {
+    .action(async (options: { port: string; host: string }) => {
       const globalOpts = getOptions();
       const services = await createServices(
         globalOpts.config,
@@ -22,8 +22,8 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
       );
       const app = createApp(services);
 
-      const port = parseInt(options.port ?? '3847', 10);
-      const host = options.host ?? '127.0.0.1';
+      const port = parseInt(options.port, 10);
+      const host = options.host;
 
       console.log(`Starting server on http://${host}:${String(port)}`);
 

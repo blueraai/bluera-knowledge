@@ -98,7 +98,7 @@ function createCrawlCommand(getOptions) {
       } else {
         store = existingStore;
       }
-      const maxPages = cmdOptions.maxPages !== void 0 ? parseInt(cmdOptions.maxPages, 10) : 50;
+      const maxPages = parseInt(cmdOptions.maxPages, 10);
       const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true && globalOpts.format !== "json";
       let spinner;
       if (isInteractive) {
@@ -303,7 +303,7 @@ function createIndexCommand(getOptions) {
     }
     await watchService.watch(
       store,
-      parseInt(options.debounce ?? "1000", 10),
+      parseInt(options.debounce, 10),
       () => {
         if (globalOpts.quiet !== true) {
           console.log(`Re-indexed ${store.name}`);
@@ -1088,12 +1088,12 @@ function createSearchCommand(getOptions) {
           const results = await services.search.search({
             query,
             stores: storeIds,
-            mode: options.mode ?? "hybrid",
-            limit: parseInt(options.limit ?? "10", 10),
+            mode: options.mode,
+            limit: parseInt(options.limit, 10),
             threshold: options.threshold !== void 0 ? parseFloat(options.threshold) : void 0,
             minRelevance: options.minRelevance !== void 0 ? parseFloat(options.minRelevance) : void 0,
             includeContent: options.includeContent,
-            detail: options.detail ?? "minimal"
+            detail: options.detail
           });
           if (globalOpts.format === "json") {
             console.log(JSON.stringify(results, null, 2));
@@ -1105,7 +1105,7 @@ function createSearchCommand(getOptions) {
           } else {
             console.log(`
 Search: "${query}"`);
-            let statusLine = `Mode: ${results.mode} | Detail: ${String(options.detail)} | Stores: ${String(results.stores.length)} | Results: ${String(results.totalResults)} | Time: ${String(results.timeMs)}ms`;
+            let statusLine = `Mode: ${results.mode} | Detail: ${options.detail} | Stores: ${String(results.stores.length)} | Results: ${String(results.totalResults)} | Time: ${String(results.timeMs)}ms`;
             if (results.confidence !== void 0) {
               statusLine += ` | Confidence: ${results.confidence}`;
             }
@@ -1297,8 +1297,8 @@ function createServeCommand(getOptions) {
       globalOpts.projectRoot
     );
     const app = createApp(services);
-    const port = parseInt(options.port ?? "3847", 10);
-    const host = options.host ?? "127.0.0.1";
+    const port = parseInt(options.port, 10);
+    const host = options.host;
     console.log(`Starting server on http://${host}:${String(port)}`);
     const server = serve({
       fetch: app.fetch,

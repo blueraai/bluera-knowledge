@@ -39,7 +39,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
           crawl?: string;
           extract?: string;
           simple?: boolean;
-          maxPages?: string;
+          maxPages: string;
           fast?: boolean;
         }
       ) => {
@@ -109,7 +109,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
           store = existingStore;
         }
 
-        const maxPages = cmdOptions.maxPages !== undefined ? parseInt(cmdOptions.maxPages, 10) : 50;
+        const maxPages = parseInt(cmdOptions.maxPages, 10);
 
         // Use spinner in interactive mode
         const isInteractive =

@@ -99,7 +99,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       'Wait N ms after last change before re-indexing (default: 1000)',
       '1000'
     )
-    .action(async (storeIdOrName: string, options: { debounce?: string }) => {
+    .action(async (storeIdOrName: string, options: { debounce: string }) => {
       const globalOpts = getOptions();
       const services = await createServices(
         globalOpts.config,
@@ -121,7 +121,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       }
       await watchService.watch(
         store,
-        parseInt(options.debounce ?? '1000', 10),
+        parseInt(options.debounce, 10),
         () => {
           if (globalOpts.quiet !== true) {
             console.log(`Re-indexed ${store.name}`);

@@ -336,6 +336,64 @@ describe('WatchService', () => {
       expect(mockIndexService.indexStore).toHaveBeenCalledWith(mockFileStore);
       expect(mockIndexService.indexStore).toHaveBeenCalledWith(mockRepoStore);
     });
+
+    it('uses incremental indexing when available and successful', async () => {
+      const indexStoreIncremental = vi.fn().mockResolvedValue({ success: true });
+      const indexServiceWithIncremental = {
+        indexStore: vi.fn().mockResolvedValue({ ok: true }),
+        indexStoreIncremental,
+      } as unknown as IndexService;
+
+      const watchServiceWithIncremental = new WatchService(
+        indexServiceWithIncremental,
+        mockLanceStore
+      );
+
+      await watchServiceWithIncremental.watch(mockFileStore, 1000, undefined, noopErrorHandler);
+
+      const watcher = mockWatchers[0];
+      const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'all'
+      )?.[1] as (() => void) | undefined;
+
+      allHandler?.();
+      vi.advanceTimersByTime(1100);
+      await vi.runAllTimersAsync();
+
+      // Incremental indexing should be called
+      expect(indexStoreIncremental).toHaveBeenCalledWith(mockFileStore);
+      // Full indexing should NOT be called since incremental succeeded
+      expect(indexServiceWithIncremental.indexStore).not.toHaveBeenCalled();
+    });
+
+    it('falls back to full indexing when incremental fails', async () => {
+      const indexStoreIncremental = vi.fn().mockResolvedValue({ success: false });
+      const indexServiceWithIncremental = {
+        indexStore: vi.fn().mockResolvedValue({ ok: true }),
+        indexStoreIncremental,
+      } as unknown as IndexService;
+
+      const watchServiceWithIncremental = new WatchService(
+        indexServiceWithIncremental,
+        mockLanceStore
+      );
+
+      await watchServiceWithIncremental.watch(mockFileStore, 1000, undefined, noopErrorHandler);
+
+      const watcher = mockWatchers[0];
+      const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'all'
+      )?.[1] as (() => void) | undefined;
+
+      allHandler?.();
+      vi.advanceTimersByTime(1100);
+      await vi.runAllTimersAsync();
+
+      // Incremental indexing should be attempted
+      expect(indexStoreIncremental).toHaveBeenCalledWith(mockFileStore);
+      // Full indexing should be called since incremental failed
+      expect(indexServiceWithIncremental.indexStore).toHaveBeenCalledWith(mockFileStore);
+    });
   });
 
   describe('watch - Error Handling', () => {
@@ -357,6 +415,26 @@ describe('WatchService', () => {
       await vi.runAllTimersAsync();
 
       expect(onError).toHaveBeenCalledWith(indexError);
+    });
+
+    it('wraps non-Error throws in Error object', async () => {
+      const onError = vi.fn();
+
+      mockIndexService.indexStore = vi.fn().mockRejectedValue('string error');
+
+      await watchService.watch(mockFileStore, 1000, undefined, onError);
+
+      const watcher = mockWatchers[0];
+      const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'all'
+      )?.[1] as (() => void) | undefined;
+
+      allHandler?.();
+      vi.advanceTimersByTime(1100);
+      await vi.runAllTimersAsync();
+
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+      expect(onError.mock.calls[0][0].message).toBe('string error');
     });
 
     it('calls onError when lance initialization fails', async () => {
@@ -393,6 +471,23 @@ describe('WatchService', () => {
       errorHandler?.(testError);
 
       expect(onError).toHaveBeenCalledWith(testError);
+    });
+
+    it('wraps non-Error watcher errors in Error object', async () => {
+      const onError = vi.fn();
+
+      await watchService.watch(mockFileStore, 1000, undefined, onError);
+
+      const watcher = mockWatchers[0];
+      const errorHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'error'
+      )?.[1] as ((error: unknown) => void) | undefined;
+
+      // Pass a non-Error value to trigger the else branch
+      errorHandler?.('string watcher error');
+
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
+      expect(onError.mock.calls[0][0].message).toBe('string watcher error');
     });
 
     it('requires onError callback to be provided', async () => {
