@@ -35,12 +35,14 @@ Scans source files, counts import statements, and suggests the top 5 most-used d
 
 **Supported languages:**
 
-| Language | Manifest File | Registry |
-|----------|---------------|----------|
-| JavaScript/TypeScript | `package.json` | NPM |
-| Python | `requirements.txt`, `pyproject.toml` | PyPI |
-| Rust | `Cargo.toml` | crates.io |
-| Go | `go.mod` | Go modules |
+| Language | Manifest File | Registry | Import Counting |
+|----------|---------------|----------|-----------------|
+| JavaScript/TypeScript | `package.json` | NPM | Full support |
+| Python | `requirements.txt`, `pyproject.toml` | PyPI | Full support |
+| Rust | `Cargo.toml` | crates.io | Manifest only* |
+| Go | `go.mod` | Go modules | Manifest only* |
+
+> **\*Note:** For Rust and Go, dependencies are read from manifest files but import counting across source files is not yet implemented. These languages will show dependencies but usage counts may be incomplete.
 
 <details>
 <summary><b>Expected Output</b></summary>

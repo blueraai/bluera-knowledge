@@ -30,9 +30,12 @@ bluera-knowledge store create react-canary --type repo --source https://github.c
 # Add a local folder
 bluera-knowledge store create my-docs --type file --source ./docs
 
-# Add a web crawl
+# Create a web store (requires crawl command to populate)
 bluera-knowledge store create fastapi-docs --type web --source https://fastapi.tiangolo.com
+# Then populate with: bluera-knowledge crawl https://fastapi.tiangolo.com fastapi-docs
 ```
+
+> **Note:** Web stores created with `store create --type web` are empty shells. Use the `crawl` command to populate them with content. The `index` command does not work for web stores.
 
 **Create Options:**
 
@@ -97,7 +100,7 @@ bluera-knowledge index watch react --debounce 2000  # Custom debounce (default: 
 
 | Option | Description |
 |--------|-------------|
-| `-f, --force` | Re-index all files (ignore incremental cache) |
+| `--force` | Re-index all files (ignore incremental cache) |
 
 **Watch Options:**
 
@@ -116,8 +119,8 @@ bluera-knowledge search "how does useEffect work"
 # Search specific stores
 bluera-knowledge search "routing" --stores react,vue
 
-# Get more results with full content
-bluera-knowledge search "middleware" --limit 20 --include-content
+# Get more results with full content (equivalent to --detail full)
+bluera-knowledge search "middleware" --limit 20 --detail full
 
 # Filter irrelevant results (returns empty if nothing is truly relevant)
 bluera-knowledge search "kubernetes deployment" --min-relevance 0.4
@@ -135,8 +138,7 @@ bluera-knowledge search "express middleware" --format json
 | `-n, --limit <count>` | Max results (default: 10) |
 | `-t, --threshold <score>` | Min normalized score (0-1) |
 | `--min-relevance <score>` | Min raw cosine similarity (0-1) |
-| `--include-content` | Show full content in results |
-| `--detail <level>` | `minimal`, `contextual`, or `full` |
+| `--detail <level>` | `minimal` (default), `contextual`, or `full` |
 
 ---
 
