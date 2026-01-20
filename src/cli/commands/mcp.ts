@@ -11,6 +11,7 @@ export function createMCPCommand(getOptions: () => GlobalOptions): Command {
       await runMCPServer({
         dataDir: opts.dataDir,
         config: opts.config,
+        projectRoot: opts.projectRoot,
       });
     });
 

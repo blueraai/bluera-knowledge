@@ -331,7 +331,8 @@ function createMCPCommand(getOptions) {
     const opts = getOptions();
     await runMCPServer({
       dataDir: opts.dataDir,
-      config: opts.config
+      config: opts.config,
+      projectRoot: opts.projectRoot
     });
   });
   return mcp;
