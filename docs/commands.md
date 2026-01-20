@@ -71,10 +71,6 @@ Scanned 342 source files and found 24 dependencies.
 
    Add with:
    /bluera-knowledge:add-repo https://github.com/lodash/lodash --name=lodash
-
----
-
-Already indexed: typescript, express
 ```
 </details>
 
@@ -194,21 +190,16 @@ Store is ready for searching!
 Store: react
 File: src/components/Button.tsx
 Purpose: → Reusable button component with variants
-Top Terms: (in this chunk): button, variant, size, color, onClick
-Imports: (in this chunk): React, clsx
 
 **2. [Score: 0.87] [Vector]**
 Store: react
 File: src/hooks/useButton.ts
 Purpose: → Custom hook for button state management
-Top Terms: (in this chunk): hook, state, pressed, disabled
-Imports: (in this chunk): useState, useCallback
 
 **3. [Score: 0.81] [Vector+FTS]**
 Store: react
 File: src/components/IconButton.tsx
 Purpose: → Button component with icon support
-Top Terms: (in this chunk): icon, button, aria-label, accessible
 
 ---
 **Found 3 results in 45ms**
