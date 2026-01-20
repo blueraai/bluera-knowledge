@@ -53,7 +53,11 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
           return;
         }
 
-        const services = await createServices(globalOpts.config, globalOpts.dataDir);
+        const services = await createServices(
+          globalOpts.config,
+          globalOpts.dataDir,
+          globalOpts.projectRoot
+        );
         try {
           // Filter repos if --only specified
           let repos: readonly DefaultRepo[] = DEFAULT_REPOS;

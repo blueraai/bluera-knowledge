@@ -2814,6 +2814,7 @@ var IndexService = class {
   }
   async indexFileStore(store, onProgress) {
     const startTime = Date.now();
+    await this.lanceStore.clearAllDocuments(store.id);
     const files = await this.scanDirectory(store.path);
     const documents = [];
     let filesProcessed = 0;
@@ -3031,6 +3032,141 @@ function classifyWebContentType(url, title) {
   }
   return "documentation";
 }
+
+// src/services/manifest.service.ts
+import { readFile as readFile6, access as access3, mkdir as mkdir3 } from "fs/promises";
+import { join as join8 } from "path";
+
+// src/types/manifest.ts
+import { z as z2 } from "zod";
+var FileStateSchema = z2.object({
+  /** File modification time in milliseconds since epoch */
+  mtime: z2.number(),
+  /** File size in bytes */
+  size: z2.number(),
+  /** MD5 hash of file content */
+  hash: z2.string(),
+  /** Document IDs created from this file (for cleanup) */
+  documentIds: z2.array(z2.string())
+});
+var StoreManifestSchema = z2.object({
+  /** Schema version for future migrations */
+  version: z2.literal(1),
+  /** Store ID this manifest belongs to */
+  storeId: z2.string(),
+  /** When the manifest was last updated */
+  indexedAt: z2.string(),
+  /** Map of file paths to their state */
+  files: z2.record(z2.string(), FileStateSchema)
+});
+function createEmptyManifest(storeId) {
+  return {
+    version: 1,
+    storeId,
+    indexedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    files: {}
+  };
+}
+
+// src/services/manifest.service.ts
+var ManifestService = class {
+  manifestsDir;
+  constructor(dataDir) {
+    this.manifestsDir = join8(dataDir, "manifests");
+  }
+  /**
+   * Initialize the manifests directory.
+   */
+  async initialize() {
+    await mkdir3(this.manifestsDir, { recursive: true });
+  }
+  /**
+   * Get the file path for a store's manifest.
+   */
+  getManifestPath(storeId) {
+    return join8(this.manifestsDir, `${storeId}.manifest.json`);
+  }
+  /**
+   * Load a store's manifest.
+   * Returns an empty manifest if one doesn't exist.
+   * Throws on parse/validation errors (fail fast).
+   */
+  async load(storeId) {
+    const manifestPath = this.getManifestPath(storeId);
+    const exists = await this.fileExists(manifestPath);
+    if (!exists) {
+      return createEmptyManifest(storeId);
+    }
+    const content = await readFile6(manifestPath, "utf-8");
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (error) {
+      throw new Error(
+        `Failed to parse manifest at ${manifestPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+    const result = StoreManifestSchema.safeParse(parsed);
+    if (!result.success) {
+      throw new Error(`Invalid manifest at ${manifestPath}: ${result.error.message}`);
+    }
+    return this.toTypedManifest(result.data, storeId);
+  }
+  /**
+   * Save a store's manifest atomically.
+   */
+  async save(manifest) {
+    const manifestPath = this.getManifestPath(manifest.storeId);
+    const toSave = {
+      ...manifest,
+      indexedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    await atomicWriteFile(manifestPath, JSON.stringify(toSave, null, 2));
+  }
+  /**
+   * Delete a store's manifest.
+   * Called when a store is deleted or during full re-index.
+   */
+  async delete(storeId) {
+    const manifestPath = this.getManifestPath(storeId);
+    const { unlink } = await import("fs/promises");
+    const exists = await this.fileExists(manifestPath);
+    if (exists) {
+      await unlink(manifestPath);
+    }
+  }
+  /**
+   * Check if a file exists.
+   */
+  async fileExists(path4) {
+    try {
+      await access3(path4);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  /**
+   * Convert a parsed manifest to a typed manifest with branded types.
+   */
+  toTypedManifest(data, storeId) {
+    const files = {};
+    for (const [path4, state] of Object.entries(data.files)) {
+      files[path4] = {
+        mtime: state.mtime,
+        size: state.size,
+        hash: state.hash,
+        documentIds: state.documentIds.map((id) => createDocumentId(id))
+      };
+    }
+    return {
+      version: 1,
+      storeId,
+      indexedAt: data.indexedAt,
+      files
+    };
+  }
+};
 
 // src/services/code-unit.service.ts
 var CodeUnitService = class {
@@ -4137,42 +4273,42 @@ var SearchService = class {
 };
 
 // src/services/store-definition.service.ts
-import { readFile as readFile6, access as access3 } from "fs/promises";
-import { resolve as resolve2, isAbsolute, join as join8 } from "path";
+import { readFile as readFile7, access as access4 } from "fs/promises";
+import { resolve as resolve2, isAbsolute, join as join9 } from "path";
 
 // src/types/store-definition.ts
-import { z as z2 } from "zod";
-var BaseStoreDefinitionSchema = z2.object({
-  name: z2.string().min(1, "Store name is required"),
-  description: z2.string().optional(),
-  tags: z2.array(z2.string()).optional()
+import { z as z3 } from "zod";
+var BaseStoreDefinitionSchema = z3.object({
+  name: z3.string().min(1, "Store name is required"),
+  description: z3.string().optional(),
+  tags: z3.array(z3.string()).optional()
 });
 var FileStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
-  type: z2.literal("file"),
-  path: z2.string().min(1, "Path is required for file stores")
+  type: z3.literal("file"),
+  path: z3.string().min(1, "Path is required for file stores")
 });
 var RepoStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
-  type: z2.literal("repo"),
-  url: z2.url("Valid URL is required for repo stores"),
-  branch: z2.string().optional(),
-  depth: z2.number().int().positive("Depth must be a positive integer").optional()
+  type: z3.literal("repo"),
+  url: z3.url("Valid URL is required for repo stores"),
+  branch: z3.string().optional(),
+  depth: z3.number().int().positive("Depth must be a positive integer").optional()
 });
 var WebStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
-  type: z2.literal("web"),
-  url: z2.url("Valid URL is required for web stores"),
-  depth: z2.number().int().min(0, "Depth must be non-negative").default(1),
-  maxPages: z2.number().int().positive("maxPages must be a positive integer").optional(),
-  crawlInstructions: z2.string().optional(),
-  extractInstructions: z2.string().optional()
+  type: z3.literal("web"),
+  url: z3.url("Valid URL is required for web stores"),
+  depth: z3.number().int().min(0, "Depth must be non-negative").default(1),
+  maxPages: z3.number().int().positive("maxPages must be a positive integer").optional(),
+  crawlInstructions: z3.string().optional(),
+  extractInstructions: z3.string().optional()
 });
-var StoreDefinitionSchema = z2.discriminatedUnion("type", [
+var StoreDefinitionSchema = z3.discriminatedUnion("type", [
   FileStoreDefinitionSchema,
   RepoStoreDefinitionSchema,
   WebStoreDefinitionSchema
 ]);
-var StoreDefinitionsConfigSchema = z2.object({
-  version: z2.literal(1),
-  stores: z2.array(StoreDefinitionSchema)
+var StoreDefinitionsConfigSchema = z3.object({
+  version: z3.literal(1),
+  stores: z3.array(StoreDefinitionSchema)
 });
 function isFileStoreDefinition(def) {
   return def.type === "file";
@@ -4191,7 +4327,7 @@ var DEFAULT_STORE_DEFINITIONS_CONFIG = {
 // src/services/store-definition.service.ts
 async function fileExists3(path4) {
   try {
-    await access3(path4);
+    await access4(path4);
     return true;
   } catch {
     return false;
@@ -4203,7 +4339,7 @@ var StoreDefinitionService = class {
   config = null;
   constructor(projectRoot) {
     this.projectRoot = projectRoot ?? ProjectRootService.resolve();
-    this.configPath = join8(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
+    this.configPath = join9(this.projectRoot, ".bluera/bluera-knowledge/stores.config.json");
   }
   /**
    * Load store definitions from config file.
@@ -4222,7 +4358,7 @@ var StoreDefinitionService = class {
       };
       return this.config;
     }
-    const content = await readFile6(this.configPath, "utf-8");
+    const content = await readFile7(this.configPath, "utf-8");
     let parsed;
     try {
       parsed = JSON.parse(content);
@@ -4341,15 +4477,15 @@ var StoreDefinitionService = class {
 
 // src/services/store.service.ts
 import { randomUUID as randomUUID2 } from "crypto";
-import { readFile as readFile7, mkdir as mkdir4, stat as stat2, access as access4 } from "fs/promises";
-import { join as join9, resolve as resolve3 } from "path";
+import { readFile as readFile8, mkdir as mkdir5, stat as stat2, access as access5 } from "fs/promises";
+import { join as join10, resolve as resolve3 } from "path";
 
 // src/plugin/git-clone.ts
 import { spawn } from "child_process";
-import { mkdir as mkdir3 } from "fs/promises";
+import { mkdir as mkdir4 } from "fs/promises";
 async function cloneRepository(options) {
   const { url, targetDir, branch, depth = 1 } = options;
-  await mkdir3(targetDir, { recursive: true });
+  await mkdir4(targetDir, { recursive: true });
   const args = ["clone", "--depth", String(depth)];
   if (branch !== void 0) {
     args.push("--branch", branch);
@@ -4385,7 +4521,7 @@ function extractRepoName(url) {
 // src/services/store.service.ts
 async function fileExists4(path4) {
   try {
-    await access4(path4);
+    await access5(path4);
     return true;
   } catch {
     return false;
@@ -4402,7 +4538,7 @@ var StoreService = class {
     this.gitignoreService = options?.gitignoreService ?? void 0;
   }
   async initialize() {
-    await mkdir4(this.dataDir, { recursive: true });
+    await mkdir5(this.dataDir, { recursive: true });
     await this.loadRegistry();
   }
   /**
@@ -4490,7 +4626,7 @@ var StoreService = class {
       case "repo": {
         let repoPath = input.path;
         if (input.url !== void 0) {
-          const cloneDir = join9(this.dataDir, "repos", id);
+          const cloneDir = join10(this.dataDir, "repos", id);
           const result = await cloneRepository({
             url: input.url,
             targetDir: cloneDir,
@@ -4617,14 +4753,14 @@ var StoreService = class {
     return ok(void 0);
   }
   async loadRegistry() {
-    const registryPath = join9(this.dataDir, "stores.json");
+    const registryPath = join10(this.dataDir, "stores.json");
     const exists = await fileExists4(registryPath);
     if (!exists) {
       this.registry = { stores: [] };
       await this.saveRegistry();
       return;
     }
-    const content = await readFile7(registryPath, "utf-8");
+    const content = await readFile8(registryPath, "utf-8");
     try {
       const data = JSON.parse(content);
       this.registry = {
@@ -4642,7 +4778,7 @@ var StoreService = class {
     }
   }
   async saveRegistry() {
-    const registryPath = join9(this.dataDir, "stores.json");
+    const registryPath = join10(this.dataDir, "stores.json");
     await atomicWriteFile(registryPath, JSON.stringify(this.registry, null, 2));
   }
 };
@@ -4657,33 +4793,33 @@ import { fileURLToPath } from "url";
 import { ZodError } from "zod";
 
 // src/crawl/schemas.ts
-import { z as z3 } from "zod";
-var CrawledLinkSchema = z3.object({
-  href: z3.string(),
-  text: z3.string(),
-  title: z3.string().optional(),
-  base_domain: z3.string().optional(),
-  head_data: z3.unknown().optional(),
-  head_extraction_status: z3.unknown().optional(),
-  head_extraction_error: z3.unknown().optional(),
-  intrinsic_score: z3.number().optional(),
-  contextual_score: z3.unknown().optional(),
-  total_score: z3.unknown().optional()
+import { z as z4 } from "zod";
+var CrawledLinkSchema = z4.object({
+  href: z4.string(),
+  text: z4.string(),
+  title: z4.string().optional(),
+  base_domain: z4.string().optional(),
+  head_data: z4.unknown().optional(),
+  head_extraction_status: z4.unknown().optional(),
+  head_extraction_error: z4.unknown().optional(),
+  intrinsic_score: z4.number().optional(),
+  contextual_score: z4.unknown().optional(),
+  total_score: z4.unknown().optional()
 });
-var CrawlPageSchema = z3.object({
-  url: z3.string(),
-  title: z3.string(),
-  content: z3.string(),
-  links: z3.array(z3.string()),
-  crawledAt: z3.string()
+var CrawlPageSchema = z4.object({
+  url: z4.string(),
+  title: z4.string(),
+  content: z4.string(),
+  links: z4.array(z4.string()),
+  crawledAt: z4.string()
 });
-var CrawlResultSchema = z3.object({
-  pages: z3.array(CrawlPageSchema)
+var CrawlResultSchema = z4.object({
+  pages: z4.array(CrawlPageSchema)
 });
-var HeadlessResultSchema = z3.object({
-  html: z3.string(),
-  markdown: z3.string(),
-  links: z3.array(z3.union([CrawledLinkSchema, z3.string()]))
+var HeadlessResultSchema = z4.object({
+  html: z4.string(),
+  markdown: z4.string(),
+  links: z4.array(z4.union([CrawledLinkSchema, z4.string()]))
 });
 function validateHeadlessResult(data) {
   return HeadlessResultSchema.parse(data);
@@ -4691,33 +4827,33 @@ function validateHeadlessResult(data) {
 function validateCrawlResult(data) {
   return CrawlResultSchema.parse(data);
 }
-var MethodInfoSchema = z3.object({
-  name: z3.string(),
-  async: z3.boolean(),
-  signature: z3.string(),
-  startLine: z3.number(),
-  endLine: z3.number(),
-  calls: z3.array(z3.string())
+var MethodInfoSchema = z4.object({
+  name: z4.string(),
+  async: z4.boolean(),
+  signature: z4.string(),
+  startLine: z4.number(),
+  endLine: z4.number(),
+  calls: z4.array(z4.string())
 });
-var CodeNodeSchema = z3.object({
-  type: z3.enum(["function", "class"]),
-  name: z3.string(),
-  exported: z3.boolean(),
-  startLine: z3.number(),
-  endLine: z3.number(),
-  async: z3.boolean().optional(),
-  signature: z3.string().optional(),
-  calls: z3.array(z3.string()).optional(),
-  methods: z3.array(MethodInfoSchema).optional()
+var CodeNodeSchema = z4.object({
+  type: z4.enum(["function", "class"]),
+  name: z4.string(),
+  exported: z4.boolean(),
+  startLine: z4.number(),
+  endLine: z4.number(),
+  async: z4.boolean().optional(),
+  signature: z4.string().optional(),
+  calls: z4.array(z4.string()).optional(),
+  methods: z4.array(MethodInfoSchema).optional()
 });
-var ImportInfoSchema = z3.object({
-  source: z3.string(),
-  imported: z3.string(),
-  alias: z3.string().optional().nullable()
+var ImportInfoSchema = z4.object({
+  source: z4.string(),
+  imported: z4.string(),
+  alias: z4.string().optional().nullable()
 });
-var ParsePythonResultSchema = z3.object({
-  nodes: z3.array(CodeNodeSchema),
-  imports: z3.array(ImportInfoSchema)
+var ParsePythonResultSchema = z4.object({
+  nodes: z4.array(CodeNodeSchema),
+  imports: z4.array(ImportInfoSchema)
 });
 function validateParsePythonResult(data) {
   return ParsePythonResultSchema.parse(data);
@@ -4984,9 +5120,9 @@ var PythonBridge = class {
 
 // src/db/embeddings.ts
 import { homedir as homedir2 } from "os";
-import { join as join10 } from "path";
+import { join as join11 } from "path";
 import { pipeline, env } from "@huggingface/transformers";
-env.cacheDir = join10(homedir2(), ".cache", "huggingface-transformers");
+env.cacheDir = join11(homedir2(), ".cache", "huggingface-transformers");
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
@@ -5047,17 +5183,17 @@ var EmbeddingEngine = class {
 import * as lancedb from "@lancedb/lancedb";
 
 // src/types/document.ts
-import { z as z4 } from "zod";
-var DocumentTypeSchema = z4.enum(["file", "chunk", "web"]);
-var DocumentMetadataSchema = z4.object({
-  path: z4.string().optional(),
-  url: z4.string().optional(),
+import { z as z5 } from "zod";
+var DocumentTypeSchema = z5.enum(["file", "chunk", "web"]);
+var DocumentMetadataSchema = z5.object({
+  path: z5.string().optional(),
+  url: z5.string().optional(),
   type: DocumentTypeSchema,
-  storeId: z4.string(),
-  indexedAt: z4.union([z4.string(), z4.date()]),
-  fileHash: z4.string().optional(),
-  chunkIndex: z4.number().optional(),
-  totalChunks: z4.number().optional()
+  storeId: z5.string(),
+  indexedAt: z5.union([z5.string(), z5.date()]),
+  fileHash: z5.string().optional(),
+  chunkIndex: z5.number().optional(),
+  totalChunks: z5.number().optional()
 }).loose();
 
 // src/db/lance.ts
@@ -5102,6 +5238,10 @@ var LanceStore = class {
     const table = await this.getTable(storeId);
     const idList = documentIds.map((id) => `"${id}"`).join(", ");
     await table.delete(`id IN (${idList})`);
+  }
+  async clearAllDocuments(storeId) {
+    const table = await this.getTable(storeId);
+    await table.delete("id IS NOT NULL");
   }
   async search(storeId, vector, limit, _threshold) {
     const table = await this.getTable(storeId);
@@ -5192,6 +5332,8 @@ var LazyServiceContainer = class {
   appConfig;
   dataDir;
   // Lazily initialized (heavy)
+  // eslint-disable-next-line @typescript-eslint/prefer-readonly -- mutated in lazy getter
+  _manifest = null;
   _embeddings = null;
   _codeGraph = null;
   _search = null;
@@ -5245,10 +5387,24 @@ var LazyServiceContainer = class {
     if (this._index === null) {
       logger4.debug("Lazy-initializing IndexService");
       this._index = new IndexService(this.lance, this.embeddings, {
-        codeGraphService: this.codeGraph
+        codeGraphService: this.codeGraph,
+        manifestService: this.manifest,
+        chunkSize: this.appConfig.indexing.chunkSize,
+        chunkOverlap: this.appConfig.indexing.chunkOverlap,
+        concurrency: this.appConfig.indexing.concurrency
       });
     }
     return this._index;
+  }
+  /**
+   * ManifestService is lazily created on first access.
+   */
+  get manifest() {
+    if (this._manifest === null) {
+      logger4.debug("Lazy-initializing ManifestService");
+      this._manifest = new ManifestService(this.dataDir);
+    }
+    return this._manifest;
   }
   /**
    * Check if embeddings have been initialized (for cleanup purposes).
@@ -5297,8 +5453,15 @@ async function createServices(configPath, dataDir, projectRoot) {
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
+  const manifest = new ManifestService(resolvedDataDir);
   const search = new SearchService(lance, embeddings, codeGraph);
-  const index = new IndexService(lance, embeddings, { codeGraphService: codeGraph });
+  const index = new IndexService(lance, embeddings, {
+    codeGraphService: codeGraph,
+    manifestService: manifest,
+    chunkSize: appConfig.indexing.chunkSize,
+    chunkOverlap: appConfig.indexing.chunkOverlap,
+    concurrency: appConfig.indexing.concurrency
+  });
   logger4.info({ dataDir: resolvedDataDir }, "Services initialized successfully");
   return {
     config,
@@ -5308,7 +5471,8 @@ async function createServices(configPath, dataDir, projectRoot) {
     lance,
     embeddings,
     codeGraph,
-    pythonBridge
+    pythonBridge,
+    manifest
   };
 }
 async function destroyServices(services) {
@@ -5371,4 +5535,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-HSLQIKIA.js.map
+//# sourceMappingURL=chunk-B27TWHZH.js.map

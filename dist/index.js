@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-I6RMSIEK.js";
+} from "./chunk-SUVLF3B7.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-GQK3QA7D.js";
+} from "./chunk-P52RAEMU.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -23,7 +23,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-HSLQIKIA.js";
+} from "./chunk-B27TWHZH.js";
 import {
   createDocumentId,
   createStoreId
@@ -63,7 +63,11 @@ function createCrawlCommand(getOptions) {
           );
         }
       }
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       let store;
       let storeCreated = false;
       const existingStore = await services.store.getByIdOrName(storeIdOrName);
@@ -215,9 +219,13 @@ function createCrawlCommand(getOptions) {
 import { Command as Command2 } from "commander";
 import ora2 from "ora";
 function createIndexCommand(getOptions) {
-  const index = new Command2("index").description("Scan store files, chunk text, generate embeddings, save to LanceDB").argument("<store>", "Store ID or name").option("--force", "Re-index all files even if unchanged").action(async (storeIdOrName, _options) => {
+  const index = new Command2("index").description("Scan store files, chunk text, generate embeddings, save to LanceDB").argument("<store>", "Store ID or name").option("--force", "Re-index all files even if unchanged").action(async (storeIdOrName, options) => {
     const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
+    const services = await createServices(
+      globalOpts.config,
+      globalOpts.dataDir,
+      globalOpts.projectRoot
+    );
     let exitCode = 0;
     try {
       indexLogic: {
@@ -235,13 +243,14 @@ function createIndexCommand(getOptions) {
           console.log(`Indexing store: ${store.name}`);
         }
         await services.lance.initialize(store.id);
-        const result = await services.index.indexStore(store, (event) => {
+        const progressCallback = (event) => {
           if (event.type === "progress") {
             if (spinner) {
               spinner.text = `Indexing: ${String(event.current)}/${String(event.total)} files - ${event.message}`;
             }
           }
-        });
+        };
+        const result = options.force === true ? await services.index.indexStore(store, progressCallback) : await services.index.indexStoreIncremental(store, progressCallback);
         if (result.success) {
           if (globalOpts.format === "json") {
             console.log(JSON.stringify(result.data, null, 2));
@@ -277,7 +286,11 @@ function createIndexCommand(getOptions) {
     "1000"
   ).action(async (storeIdOrName, options) => {
     const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
+    const services = await createServices(
+      globalOpts.config,
+      globalOpts.dataDir,
+      globalOpts.projectRoot
+    );
     const store = await services.store.getByIdOrName(storeIdOrName);
     if (store === void 0 || store.type !== "file" && store.type !== "repo") {
       console.error(`Error: File/repo store not found: ${storeIdOrName}`);
@@ -1040,7 +1053,11 @@ function createSearchCommand(getOptions) {
   ).action(
     async (query, options) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       let exitCode = 0;
       try {
         let storeIds = (await services.store.list()).map((s) => s.id);
@@ -1274,7 +1291,11 @@ function createServeCommand(getOptions) {
     "127.0.0.1"
   ).action(async (options) => {
     const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
+    const services = await createServices(
+      globalOpts.config,
+      globalOpts.dataDir,
+      globalOpts.projectRoot
+    );
     const app = createApp(services);
     const port = parseInt(options.port ?? "3847", 10);
     const host = options.host ?? "127.0.0.1";
@@ -1384,7 +1405,11 @@ function createSetupCommand(getOptions) {
         }
         return;
       }
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       try {
         let repos = DEFAULT_REPOS;
         if (options.only !== void 0 && options.only !== "") {
@@ -1496,7 +1521,11 @@ function createStoreCommand(getOptions) {
   );
   store.command("list").description("Show all stores with their type (file/repo/web) and ID").option("-t, --type <type>", "Filter by type: file, repo, or web").action(async (options) => {
     const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
+    const services = await createServices(
+      globalOpts.config,
+      globalOpts.dataDir,
+      globalOpts.projectRoot
+    );
     try {
       const stores = await services.store.list(options.type);
       if (globalOpts.format === "json") {
@@ -1526,7 +1555,11 @@ function createStoreCommand(getOptions) {
   ).requiredOption("-s, --source <path>", "Local path for file/repo stores, URL for web stores").option("-b, --branch <branch>", "Git branch to clone (repo stores only)").option("-d, --description <desc>", "Optional description for the store").option("--tags <tags>", "Comma-separated tags for filtering").action(
     async (name, options) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       let exitCode = 0;
       try {
         const isUrl = options.source.startsWith("http://") || options.source.startsWith("https://");
@@ -1561,7 +1594,11 @@ Created store: ${result.data.name} (${result.data.id})
   );
   store.command("info <store>").description("Show store details: ID, type, path/URL, timestamps").action(async (storeIdOrName) => {
     const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
+    const services = await createServices(
+      globalOpts.config,
+      globalOpts.dataDir,
+      globalOpts.projectRoot
+    );
     let exitCode = 0;
     storeInfo: try {
       const s = await services.store.getByIdOrName(storeIdOrName);
@@ -1593,7 +1630,11 @@ Store: ${s.name}`);
   });
   store.command("delete <store>").description("Remove store and its indexed documents from LanceDB").option("-f, --force", "Delete without confirmation prompt").option("-y, --yes", "Alias for --force").action(async (storeIdOrName, options) => {
     const globalOpts = getOptions();
-    const services = await createServices(globalOpts.config, globalOpts.dataDir);
+    const services = await createServices(
+      globalOpts.config,
+      globalOpts.dataDir,
+      globalOpts.projectRoot
+    );
     let exitCode = 0;
     storeDelete: try {
       const s = await services.store.getByIdOrName(storeIdOrName);

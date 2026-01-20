@@ -391,6 +391,7 @@ declare class LanceStore {
     initialize(storeId: StoreId): Promise<void>;
     addDocuments(storeId: StoreId, documents: Document[]): Promise<void>;
     deleteDocuments(storeId: StoreId, documentIds: DocumentId[]): Promise<void>;
+    clearAllDocuments(storeId: StoreId): Promise<void>;
     search(storeId: StoreId, vector: number[], limit: number, _threshold?: number): Promise<Array<{
         id: DocumentId;
         content: string;
@@ -922,6 +923,7 @@ interface ServiceContainer {
     embeddings: EmbeddingEngine;
     codeGraph: CodeGraphService;
     pythonBridge: PythonBridge;
+    manifest: ManifestService;
 }
 
 /**

@@ -67,7 +67,11 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
         }
 
         // Now safe to initialize lancedb services
-        const services = await createServices(globalOpts.config, globalOpts.dataDir);
+        const services = await createServices(
+          globalOpts.config,
+          globalOpts.dataDir,
+          globalOpts.projectRoot
+        );
 
         // Look up or auto-create web store
         let store: WebStore;

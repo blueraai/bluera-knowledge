@@ -42,7 +42,11 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
         }
       ) => {
         const globalOpts = getOptions();
-        const services = await createServices(globalOpts.config, globalOpts.dataDir);
+        const services = await createServices(
+          globalOpts.config,
+          globalOpts.dataDir,
+          globalOpts.projectRoot
+        );
         let exitCode = 0;
         try {
           // Get store IDs

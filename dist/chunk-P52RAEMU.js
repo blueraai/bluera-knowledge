@@ -3,7 +3,7 @@ import {
   createLogger,
   summarizePayload,
   truncateForLog
-} from "./chunk-HSLQIKIA.js";
+} from "./chunk-B27TWHZH.js";
 
 // src/crawl/intelligent-crawler.ts
 import { EventEmitter } from "events";
@@ -475,7 +475,7 @@ async function getCrawlStrategy(seedUrl, crawlInstruction, useHeadless = false) 
       const response = await axios.get(seedUrl, {
         timeout: 3e4,
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; BluenaKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)"
+          "User-Agent": "Mozilla/5.0 (compatible; BlueraKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)"
         }
       });
       seedHtml = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
@@ -833,4 +833,4 @@ export {
   getCrawlStrategy,
   IntelligentCrawler
 };
-//# sourceMappingURL=chunk-GQK3QA7D.js.map
+//# sourceMappingURL=chunk-P52RAEMU.js.map

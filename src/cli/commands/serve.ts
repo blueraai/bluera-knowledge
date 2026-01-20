@@ -15,7 +15,11 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
     )
     .action(async (options: { port?: string; host?: string }) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       const app = createApp(services);
 
       const port = parseInt(options.port ?? '3847', 10);

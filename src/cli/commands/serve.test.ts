@@ -78,7 +78,7 @@ describe('Serve Command - Execution Tests', () => {
       const actionHandler = (command as any)._actionHandler;
       await actionHandler([]);
 
-      expect(createServices).toHaveBeenCalledWith(undefined, '/tmp/test-data');
+      expect(createServices).toHaveBeenCalledWith(undefined, '/tmp/test-data', undefined);
       expect(createApp).toHaveBeenCalledWith(mockServices);
       expect(serve).toHaveBeenCalledWith({
         fetch: expect.any(Function),
@@ -166,7 +166,7 @@ describe('Serve Command - Execution Tests', () => {
       const actionHandler = (command as any)._actionHandler;
       await actionHandler([]);
 
-      expect(createServices).toHaveBeenCalledWith('/custom/config.json', '/custom/data');
+      expect(createServices).toHaveBeenCalledWith('/custom/config.json', '/custom/data', undefined);
     });
 
     it('creates app with service container', async () => {

@@ -16,7 +16,11 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
     .option('-t, --type <type>', 'Filter by type: file, repo, or web')
     .action(async (options: { type?: StoreType }) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       try {
         const stores = await services.store.list(options.type);
 
@@ -66,7 +70,11 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
         }
       ) => {
         const globalOpts = getOptions();
-        const services = await createServices(globalOpts.config, globalOpts.dataDir);
+        const services = await createServices(
+          globalOpts.config,
+          globalOpts.dataDir,
+          globalOpts.projectRoot
+        );
         let exitCode = 0;
         try {
           // Detect if source is a URL (for repo stores that should clone from remote)
@@ -114,7 +122,11 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
     .description('Show store details: ID, type, path/URL, timestamps')
     .action(async (storeIdOrName: string) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       let exitCode = 0;
       storeInfo: try {
         const s = await services.store.getByIdOrName(storeIdOrName);
@@ -155,7 +167,11 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
     .option('-y, --yes', 'Alias for --force')
     .action(async (storeIdOrName: string, options: { force?: boolean; yes?: boolean }) => {
       const globalOpts = getOptions();
-      const services = await createServices(globalOpts.config, globalOpts.dataDir);
+      const services = await createServices(
+        globalOpts.config,
+        globalOpts.dataDir,
+        globalOpts.projectRoot
+      );
       let exitCode = 0;
       storeDelete: try {
         const s = await services.store.getByIdOrName(storeIdOrName);
