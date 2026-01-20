@@ -42,7 +42,7 @@ export async function getCrawlStrategy(
         timeout: 30000,
         headers: {
           'User-Agent':
-            'Mozilla/5.0 (compatible; BluenaKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)',
+            'Mozilla/5.0 (compatible; BlueraKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)',
         },
       });
       seedHtml = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
