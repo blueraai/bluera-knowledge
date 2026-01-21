@@ -20,7 +20,7 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
         globalOpts.dataDir,
         globalOpts.projectRoot
       );
-      const app = createApp(services);
+      const app = createApp(services, globalOpts.dataDir);
 
       const port = parseInt(options.port, 10);
       const host = options.host;

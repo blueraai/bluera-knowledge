@@ -32,7 +32,7 @@ import "./chunk-36VVVOMW.js";
 
 // src/index.ts
 import { homedir as homedir2 } from "os";
-import { join as join5 } from "path";
+import { join as join6 } from "path";
 
 // src/cli/commands/crawl.ts
 import { createHash } from "crypto";
@@ -1188,6 +1188,8 @@ import { serve } from "@hono/node-server";
 import { Command as Command6 } from "commander";
 
 // src/server/app.ts
+import { rm } from "fs/promises";
+import { join as join2 } from "path";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
@@ -1221,7 +1223,7 @@ var SearchBodySchema = z.object({
   limit: z.number().int().positive().optional(),
   stores: z.array(z.string()).optional()
 });
-function createApp(services) {
+function createApp(services, dataDir) {
   const app = new Hono();
   app.use("*", cors());
   app.get("/health", (c) => c.json({ status: "ok" }));
@@ -1249,6 +1251,12 @@ function createApp(services) {
   app.delete("/api/stores/:id", async (c) => {
     const store = await services.store.getByIdOrName(c.req.param("id"));
     if (!store) return c.json({ error: "Not found" }, 404);
+    await services.lance.deleteStore(store.id);
+    await services.codeGraph.deleteGraph(store.id);
+    if (store.type === "repo" && "url" in store && store.url !== void 0 && dataDir !== void 0) {
+      const repoPath = join2(dataDir, "repos", store.id);
+      await rm(repoPath, { recursive: true, force: true });
+    }
     const result = await services.store.delete(store.id);
     if (result.success) return c.json({ deleted: true });
     return c.json({ error: result.error.message }, 400);
@@ -1297,7 +1305,7 @@ function createServeCommand(getOptions) {
       globalOpts.dataDir,
       globalOpts.projectRoot
     );
-    const app = createApp(services);
+    const app = createApp(services, globalOpts.dataDir);
     const port = parseInt(options.port, 10);
     const host = options.host;
     console.log(`Starting server on http://${host}:${String(port)}`);
@@ -1324,7 +1332,7 @@ import { spawnSync } from "child_process";
 import { existsSync as existsSync2 } from "fs";
 import { mkdir } from "fs/promises";
 import { homedir } from "os";
-import { join as join2 } from "path";
+import { join as join3 } from "path";
 import { Command as Command7 } from "commander";
 import ora4 from "ora";
 
@@ -1381,7 +1389,7 @@ var DEFAULT_REPOS = [
 ];
 
 // src/cli/commands/setup.ts
-var DEFAULT_REPOS_DIR = join2(homedir(), ".bluera", "bluera-knowledge", "repos");
+var DEFAULT_REPOS_DIR = join3(homedir(), ".bluera", "bluera-knowledge", "repos");
 function createSetupCommand(getOptions) {
   const setup = new Command7("setup").description(
     "Quick-start with pre-configured Claude/Anthropic documentation repos"
@@ -1429,7 +1437,7 @@ Setting up ${String(repos.length)} repositories...
 `);
         await mkdir(options.reposDir, { recursive: true });
         for (const repo of repos) {
-          const repoPath = join2(options.reposDir, repo.name);
+          const repoPath = join3(options.reposDir, repo.name);
           const spinner = ora4(`Processing ${repo.name}`).start();
           try {
             if (options.skipClone !== true) {
@@ -1513,8 +1521,8 @@ Setting up ${String(repos.length)} repositories...
 }
 
 // src/cli/commands/store.ts
-import { rm } from "fs/promises";
-import { join as join3 } from "path";
+import { rm as rm2 } from "fs/promises";
+import { join as join4 } from "path";
 import { Command as Command8 } from "commander";
 function createStoreCommand(getOptions) {
   const store = new Command8("store").description(
@@ -1671,8 +1679,8 @@ Store: ${s.name}`);
       await services.codeGraph.deleteGraph(s.id);
       if (s.type === "repo" && "url" in s && s.url !== void 0) {
         const dataDir = services.config.resolveDataDir();
-        const repoPath = join3(dataDir, "repos", s.id);
-        await rm(repoPath, { recursive: true, force: true });
+        const repoPath = join4(dataDir, "repos", s.id);
+        await rm2(repoPath, { recursive: true, force: true });
       }
       const result = await services.store.delete(s.id);
       if (result.success) {
@@ -1936,13 +1944,13 @@ function printHumanReadable(result, quiet) {
 
 // src/cli/program.ts
 import { readFileSync } from "fs";
-import { dirname, join as join4 } from "path";
+import { dirname, join as join5 } from "path";
 import { fileURLToPath } from "url";
 import { Command as Command10 } from "commander";
 function getVersion() {
   const __filename2 = fileURLToPath(import.meta.url);
   const __dirname2 = dirname(__filename2);
-  const content = readFileSync(join4(__dirname2, "../package.json"), "utf-8");
+  const content = readFileSync(join5(__dirname2, "../package.json"), "utf-8");
   const pkg = JSON.parse(content);
   return pkg.version;
 }
@@ -1968,9 +1976,9 @@ function getGlobalOptions(program2) {
 // src/index.ts
 var registry = AdapterRegistry.getInstance();
 registry.register(new ZilAdapter());
-var DEFAULT_DATA_DIR = join5(homedir2(), ".bluera", "bluera-knowledge", "data");
-var DEFAULT_CONFIG = join5(homedir2(), ".bluera", "bluera-knowledge", "config.json");
-var DEFAULT_REPOS_DIR2 = join5(homedir2(), ".bluera", "bluera-knowledge", "repos");
+var DEFAULT_DATA_DIR = join6(homedir2(), ".bluera", "bluera-knowledge", "data");
+var DEFAULT_CONFIG = join6(homedir2(), ".bluera", "bluera-knowledge", "config.json");
+var DEFAULT_REPOS_DIR2 = join6(homedir2(), ".bluera", "bluera-knowledge", "repos");
 function formatCommandHelp(cmd, indent = "") {
   const lines = [];
   const name = cmd.name();

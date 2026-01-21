@@ -66,6 +66,10 @@ describe('Server Integration - Store CRUD Flow', () => {
       },
       lance: {
         initialize: vi.fn(),
+        deleteStore: vi.fn().mockResolvedValue(undefined),
+      },
+      codeGraph: {
+        deleteGraph: vi.fn().mockResolvedValue(undefined),
       },
       search: {
         search: vi.fn(),
@@ -408,6 +412,10 @@ describe('Server Integration - HTTP Methods', () => {
       },
       lance: {
         initialize: vi.fn(),
+        deleteStore: vi.fn().mockResolvedValue(undefined),
+      },
+      codeGraph: {
+        deleteGraph: vi.fn().mockResolvedValue(undefined),
       },
       search: {
         search: vi.fn(),

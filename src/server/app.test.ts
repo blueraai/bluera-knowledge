@@ -399,6 +399,12 @@ describe('Server App - DELETE /api/stores/:id', () => {
         getByIdOrName: vi.fn(),
         delete: vi.fn(),
       },
+      lance: {
+        deleteStore: vi.fn().mockResolvedValue(undefined),
+      },
+      codeGraph: {
+        deleteGraph: vi.fn().mockResolvedValue(undefined),
+      },
     } as unknown as ServiceContainer;
   });
 

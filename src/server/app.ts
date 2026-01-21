@@ -1,3 +1,5 @@
+import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { z } from 'zod';
@@ -41,7 +43,7 @@ const SearchBodySchema = z.object({
   stores: z.array(z.string()).optional(),
 });
 
-export function createApp(services: ServiceContainer): Hono {
+export function createApp(services: ServiceContainer, dataDir?: string): Hono {
   const app = new Hono();
 
   app.use('*', cors());
@@ -77,6 +79,25 @@ export function createApp(services: ServiceContainer): Hono {
   app.delete('/api/stores/:id', async (c) => {
     const store = await services.store.getByIdOrName(c.req.param('id'));
     if (!store) return c.json({ error: 'Not found' }, 404);
+
+    // Delete LanceDB table first (so searches don't return results for deleted store)
+    await services.lance.deleteStore(store.id);
+
+    // Delete code graph
+    await services.codeGraph.deleteGraph(store.id);
+
+    // For repo stores cloned from URL, remove the cloned directory
+    if (
+      store.type === 'repo' &&
+      'url' in store &&
+      store.url !== undefined &&
+      dataDir !== undefined
+    ) {
+      const repoPath = join(dataDir, 'repos', store.id);
+      await rm(repoPath, { recursive: true, force: true });
+    }
+
+    // Delete from registry last
     const result = await services.store.delete(store.id);
     if (result.success) return c.json({ deleted: true });
     return c.json({ error: result.error.message }, 400);

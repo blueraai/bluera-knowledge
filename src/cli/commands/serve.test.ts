@@ -79,7 +79,7 @@ describe('Serve Command - Execution Tests', () => {
       await actionHandler([]);
 
       expect(createServices).toHaveBeenCalledWith(undefined, '/tmp/test-data', undefined);
-      expect(createApp).toHaveBeenCalledWith(mockServices);
+      expect(createApp).toHaveBeenCalledWith(mockServices, '/tmp/test-data');
       expect(serve).toHaveBeenCalledWith({
         fetch: expect.any(Function),
         port: 3847,
@@ -169,14 +169,14 @@ describe('Serve Command - Execution Tests', () => {
       expect(createServices).toHaveBeenCalledWith('/custom/config.json', '/custom/data', undefined);
     });
 
-    it('creates app with service container', async () => {
+    it('creates app with service container and dataDir', async () => {
       const { createApp } = await import('../../server/app.js');
 
       const command = createServeCommand(getOptions);
       const actionHandler = (command as any)._actionHandler;
       await actionHandler([]);
 
-      expect(createApp).toHaveBeenCalledWith(mockServices);
+      expect(createApp).toHaveBeenCalledWith(mockServices, '/tmp/test-data');
     });
 
     it('passes app fetch to serve', async () => {
