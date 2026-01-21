@@ -39,6 +39,11 @@ describe('createIndexCommand - Execution Tests', () => {
     const { createServices } = await import('../../services/index.js');
 
     mockServices = {
+      config: {
+        load: vi.fn().mockResolvedValue({
+          indexing: { ignorePatterns: [] },
+        }),
+      },
       store: {
         getByIdOrName: vi.fn(),
         list: vi.fn(),
@@ -437,7 +442,11 @@ describe('createIndexCommand - Execution Tests', () => {
       await action(['test-store']);
 
       expect(mockServices.store.getByIdOrName).toHaveBeenCalledWith('test-store');
-      expect(WatchService).toHaveBeenCalledWith(mockServices.index, mockServices.lance);
+      expect(WatchService).toHaveBeenCalledWith(
+        mockServices.index,
+        mockServices.lance,
+        expect.objectContaining({ ignorePatterns: [] })
+      );
       expect(mockWatchService.watch).toHaveBeenCalledWith(
         mockStore,
         1000,

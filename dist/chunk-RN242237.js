@@ -2613,6 +2613,22 @@ var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([
   ".sql",
   ".xml"
 ]);
+var DEFAULT_IGNORE_DIRS = ["node_modules", ".git", ".bluera", "dist", "build"];
+function parseIgnorePatterns(patterns) {
+  const dirs = new Set(DEFAULT_IGNORE_DIRS);
+  const filePatterns = [];
+  for (const pattern of patterns) {
+    if (pattern.endsWith("/**")) {
+      dirs.add(pattern.slice(0, -3));
+    } else if (pattern.startsWith("*.")) {
+      const ext = pattern.slice(1);
+      filePatterns.push((filename) => filename.endsWith(ext));
+    } else if (!pattern.includes("/") && !pattern.includes("*")) {
+      dirs.add(pattern);
+    }
+  }
+  return { dirs, filePatterns };
+}
 var IndexService = class {
   lanceStore;
   embeddingEngine;
@@ -2621,6 +2637,8 @@ var IndexService = class {
   manifestService;
   driftService;
   concurrency;
+  ignoreDirs;
+  ignoreFilePatterns;
   constructor(lanceStore, embeddingEngine, options = {}) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
@@ -2632,6 +2650,9 @@ var IndexService = class {
     this.manifestService = options.manifestService;
     this.driftService = new DriftService();
     this.concurrency = options.concurrency ?? 4;
+    const parsed = parseIgnorePatterns(options.ignorePatterns ?? []);
+    this.ignoreDirs = parsed.dirs;
+    this.ignoreFilePatterns = parsed.filePatterns;
   }
   async indexStore(store, onProgress) {
     logger.info(
@@ -2942,10 +2963,14 @@ var IndexService = class {
     for (const entry of entries) {
       const fullPath = join7(dir, entry.name);
       if (entry.isDirectory()) {
-        if (!["node_modules", ".git", ".bluera", "dist", "build"].includes(entry.name)) {
+        if (!this.ignoreDirs.has(entry.name)) {
           files.push(...await this.scanDirectory(fullPath));
         }
       } else if (entry.isFile()) {
+        const shouldIgnore = this.ignoreFilePatterns.some((matcher) => matcher(entry.name));
+        if (shouldIgnore) {
+          continue;
+        }
         const ext = extname(entry.name).toLowerCase();
         if (TEXT_EXTENSIONS.has(ext)) {
           files.push(fullPath);
@@ -5398,7 +5423,8 @@ var LazyServiceContainer = class {
         manifestService: this.manifest,
         chunkSize: this.appConfig.indexing.chunkSize,
         chunkOverlap: this.appConfig.indexing.chunkOverlap,
-        concurrency: this.appConfig.indexing.concurrency
+        concurrency: this.appConfig.indexing.concurrency,
+        ignorePatterns: this.appConfig.indexing.ignorePatterns
       });
     }
     return this._index;
@@ -5467,7 +5493,8 @@ async function createServices(configPath, dataDir, projectRoot) {
     manifestService: manifest,
     chunkSize: appConfig.indexing.chunkSize,
     chunkOverlap: appConfig.indexing.chunkOverlap,
-    concurrency: appConfig.indexing.concurrency
+    concurrency: appConfig.indexing.concurrency,
+    ignorePatterns: appConfig.indexing.ignorePatterns
   });
   logger4.info({ dataDir: resolvedDataDir }, "Services initialized successfully");
   return {
@@ -5542,4 +5569,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-CRVKM6TY.js.map
+//# sourceMappingURL=chunk-RN242237.js.map

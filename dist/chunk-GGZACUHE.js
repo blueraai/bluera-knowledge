@@ -1,13 +1,25 @@
 // src/services/watch.service.ts
 import { watch } from "chokidar";
+var DEFAULT_IGNORE_PATTERNS = [
+  "**/node_modules/**",
+  "**/.git/**",
+  "**/.bluera/**",
+  "**/dist/**",
+  "**/build/**"
+];
 var WatchService = class {
   watchers = /* @__PURE__ */ new Map();
   pendingTimeouts = /* @__PURE__ */ new Map();
   indexService;
   lanceStore;
-  constructor(indexService, lanceStore) {
+  ignorePatterns;
+  constructor(indexService, lanceStore, options = {}) {
     this.indexService = indexService;
     this.lanceStore = lanceStore;
+    this.ignorePatterns = [
+      ...DEFAULT_IGNORE_PATTERNS,
+      ...(options.ignorePatterns ?? []).map((p) => p.startsWith("**/") ? p : `**/${p}`)
+    ];
   }
   async watch(store, debounceMs, onReindex, onError) {
     if (this.watchers.has(store.id)) {
@@ -15,7 +27,7 @@ var WatchService = class {
     }
     let timeout = null;
     const watcher = watch(store.path, {
-      ignored: /(^|[/\\])\.(git|bluera)|(^|[/\\])(node_modules|dist|build)/,
+      ignored: [...this.ignorePatterns],
       persistent: true,
       ignoreInitial: true
     });
@@ -75,4 +87,4 @@ var WatchService = class {
 export {
   WatchService
 };
-//# sourceMappingURL=chunk-DTZ26E6D.js.map
+//# sourceMappingURL=chunk-GGZACUHE.js.map

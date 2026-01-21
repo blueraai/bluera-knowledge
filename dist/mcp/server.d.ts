@@ -472,6 +472,7 @@ interface IndexOptions {
     codeGraphService?: CodeGraphService;
     concurrency?: number;
     manifestService?: ManifestService;
+    ignorePatterns?: readonly string[];
 }
 interface IncrementalIndexResult extends IndexResult {
     filesAdded: number;
@@ -487,6 +488,8 @@ declare class IndexService {
     private readonly manifestService;
     private readonly driftService;
     private readonly concurrency;
+    private readonly ignoreDirs;
+    private readonly ignoreFilePatterns;
     constructor(lanceStore: LanceStore, embeddingEngine: EmbeddingEngine, options?: IndexOptions);
     indexStore(store: Store, onProgress?: ProgressCallback): Promise<Result<IndexResult>>;
     /**

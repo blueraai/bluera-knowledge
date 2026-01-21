@@ -88,7 +88,7 @@ describe('WatchService', () => {
       expect(watch).toHaveBeenCalledWith(
         mockFileStore.path,
         expect.objectContaining({
-          ignored: expect.any(RegExp),
+          ignored: expect.any(Array),
           persistent: true,
           ignoreInitial: true,
         })
@@ -649,9 +649,8 @@ describe('WatchService', () => {
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
       const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
-      expect(config.ignored).toBeInstanceOf(RegExp);
-      expect(config.ignored.test('.git')).toBe(true);
-      expect(config.ignored.test('some/path/.git/file')).toBe(true);
+      expect(config.ignored).toBeInstanceOf(Array);
+      expect(config.ignored).toContain('**/.git/**');
     });
 
     it('ignores node_modules directories', async () => {
@@ -660,8 +659,7 @@ describe('WatchService', () => {
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
       const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
-      expect(config.ignored.test('node_modules')).toBe(true);
-      expect(config.ignored.test('some/path/node_modules/pkg')).toBe(true);
+      expect(config.ignored).toContain('**/node_modules/**');
     });
 
     it('ignores dist and build directories', async () => {
@@ -670,8 +668,8 @@ describe('WatchService', () => {
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
       const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
-      expect(config.ignored.test('dist')).toBe(true);
-      expect(config.ignored.test('build')).toBe(true);
+      expect(config.ignored).toContain('**/dist/**');
+      expect(config.ignored).toContain('**/build/**');
     });
 
     it('ignores .bluera directory', async () => {
@@ -680,8 +678,7 @@ describe('WatchService', () => {
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
       const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
-      expect(config.ignored.test('.bluera')).toBe(true);
-      expect(config.ignored.test('some/path/.bluera/file')).toBe(true);
+      expect(config.ignored).toContain('**/.bluera/**');
     });
 
     it('sets persistent to true', async () => {

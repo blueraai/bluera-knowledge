@@ -113,8 +113,11 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
         process.exit(3);
       }
 
+      const appConfig = await services.config.load();
       const { WatchService } = await import('../../services/watch.service.js');
-      const watchService = new WatchService(services.index, services.lance);
+      const watchService = new WatchService(services.index, services.lance, {
+        ignorePatterns: appConfig.indexing.ignorePatterns,
+      });
 
       if (globalOpts.quiet !== true) {
         console.log(`Watching ${store.name} for changes...`);

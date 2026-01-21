@@ -31,6 +31,7 @@ interface IndexOptions {
   codeGraphService?: CodeGraphService;
   concurrency?: number;
   manifestService?: ManifestService;
+  ignorePatterns?: readonly string[];
 }
 
 interface IncrementalIndexResult extends IndexResult {
@@ -70,6 +71,37 @@ const TEXT_EXTENSIONS = new Set([
   '.xml',
 ]);
 
+/** Default directories to always ignore (in addition to config patterns) */
+const DEFAULT_IGNORE_DIRS = ['node_modules', '.git', '.bluera', 'dist', 'build'];
+
+/**
+ * Parse ignore patterns into directory names and file extension patterns.
+ * Supports: 'dirname/**', 'dirname', '*.ext'
+ */
+function parseIgnorePatterns(patterns: readonly string[]): {
+  dirs: Set<string>;
+  filePatterns: Array<(filename: string) => boolean>;
+} {
+  const dirs = new Set<string>(DEFAULT_IGNORE_DIRS);
+  const filePatterns: Array<(filename: string) => boolean> = [];
+
+  for (const pattern of patterns) {
+    if (pattern.endsWith('/**')) {
+      // Directory pattern: 'node_modules/**' -> 'node_modules'
+      dirs.add(pattern.slice(0, -3));
+    } else if (pattern.startsWith('*.')) {
+      // Extension pattern: '*.min.js' -> matches files ending with '.min.js'
+      const ext = pattern.slice(1); // Remove leading '*'
+      filePatterns.push((filename) => filename.endsWith(ext));
+    } else if (!pattern.includes('/') && !pattern.includes('*')) {
+      // Simple directory name: 'node_modules' -> treat as directory
+      dirs.add(pattern);
+    }
+  }
+
+  return { dirs, filePatterns };
+}
+
 export class IndexService {
   private readonly lanceStore: LanceStore;
   private readonly embeddingEngine: EmbeddingEngine;
@@ -78,6 +110,8 @@ export class IndexService {
   private readonly manifestService: ManifestService | undefined;
   private readonly driftService: DriftService;
   private readonly concurrency: number;
+  private readonly ignoreDirs: Set<string>;
+  private readonly ignoreFilePatterns: Array<(filename: string) => boolean>;
 
   constructor(
     lanceStore: LanceStore,
@@ -94,6 +128,10 @@ export class IndexService {
     this.manifestService = options.manifestService;
     this.driftService = new DriftService();
     this.concurrency = options.concurrency ?? 4;
+
+    const parsed = parseIgnorePatterns(options.ignorePatterns ?? []);
+    this.ignoreDirs = parsed.dirs;
+    this.ignoreFilePatterns = parsed.filePatterns;
   }
 
   async indexStore(store: Store, onProgress?: ProgressCallback): Promise<Result<IndexResult>> {
@@ -509,11 +547,17 @@ export class IndexService {
       const fullPath = join(dir, entry.name);
 
       if (entry.isDirectory()) {
-        // Skip common ignored directories (keep in sync with watch.service.ts)
-        if (!['node_modules', '.git', '.bluera', 'dist', 'build'].includes(entry.name)) {
+        // Skip directories matching ignore patterns
+        if (!this.ignoreDirs.has(entry.name)) {
           files.push(...(await this.scanDirectory(fullPath)));
         }
       } else if (entry.isFile()) {
+        // Skip files matching ignore patterns (e.g., *.min.js, *.map)
+        const shouldIgnore = this.ignoreFilePatterns.some((matcher) => matcher(entry.name));
+        if (shouldIgnore) {
+          continue;
+        }
+
         const ext = extname(entry.name).toLowerCase();
         if (TEXT_EXTENSIONS.has(ext)) {
           files.push(fullPath);

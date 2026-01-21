@@ -3,15 +3,38 @@ import type { IndexService } from './index.service.js';
 import type { LanceStore } from '../db/lance.js';
 import type { FileStore, RepoStore } from '../types/store.js';
 
+/** Default patterns to always ignore (in addition to config patterns) */
+const DEFAULT_IGNORE_PATTERNS = [
+  '**/node_modules/**',
+  '**/.git/**',
+  '**/.bluera/**',
+  '**/dist/**',
+  '**/build/**',
+];
+
+export interface WatchServiceOptions {
+  ignorePatterns?: readonly string[];
+}
+
 export class WatchService {
   private readonly watchers: Map<string, FSWatcher> = new Map();
   private readonly pendingTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private readonly indexService: IndexService;
   private readonly lanceStore: LanceStore;
+  private readonly ignorePatterns: readonly string[];
 
-  constructor(indexService: IndexService, lanceStore: LanceStore) {
+  constructor(
+    indexService: IndexService,
+    lanceStore: LanceStore,
+    options: WatchServiceOptions = {}
+  ) {
     this.indexService = indexService;
     this.lanceStore = lanceStore;
+    // Merge config patterns with defaults, converting to glob format if needed
+    this.ignorePatterns = [
+      ...DEFAULT_IGNORE_PATTERNS,
+      ...(options.ignorePatterns ?? []).map((p) => (p.startsWith('**/') ? p : `**/${p}`)),
+    ];
   }
 
   async watch(
@@ -27,7 +50,7 @@ export class WatchService {
     let timeout: NodeJS.Timeout | null = null;
 
     const watcher = watch(store.path, {
-      ignored: /(^|[/\\])\.(git|bluera)|(^|[/\\])(node_modules|dist|build)/,
+      ignored: [...this.ignorePatterns],
       persistent: true,
       ignoreInitial: true,
     });

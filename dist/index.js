@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-3NYMXOX5.js";
+} from "./chunk-KASMOS3K.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-3BUNW3NB.js";
+} from "./chunk-N5L6CWP6.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -23,11 +23,11 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-CRVKM6TY.js";
+} from "./chunk-RN242237.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
-import "./chunk-DTZ26E6D.js";
+import "./chunk-GGZACUHE.js";
 
 // src/index.ts
 import { homedir as homedir2 } from "os";
@@ -295,8 +295,11 @@ function createIndexCommand(getOptions) {
       console.error(`Error: File/repo store not found: ${storeIdOrName}`);
       process.exit(3);
     }
-    const { WatchService } = await import("./watch.service-XP6ORS6Z.js");
-    const watchService = new WatchService(services.index, services.lance);
+    const appConfig = await services.config.load();
+    const { WatchService } = await import("./watch.service-BB26B2UV.js");
+    const watchService = new WatchService(services.index, services.lance, {
+      ignorePatterns: appConfig.indexing.ignorePatterns
+    });
     if (globalOpts.quiet !== true) {
       console.log(`Watching ${store.name} for changes...`);
     }

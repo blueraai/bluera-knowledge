@@ -128,6 +128,7 @@ export class LazyServiceContainer implements ServiceContainer {
         chunkSize: this.appConfig.indexing.chunkSize,
         chunkOverlap: this.appConfig.indexing.chunkOverlap,
         concurrency: this.appConfig.indexing.concurrency,
+        ignorePatterns: this.appConfig.indexing.ignorePatterns,
       });
     }
     return this._index;
@@ -247,6 +248,7 @@ export async function createServices(
     chunkSize: appConfig.indexing.chunkSize,
     chunkOverlap: appConfig.indexing.chunkOverlap,
     concurrency: appConfig.indexing.concurrency,
+    ignorePatterns: appConfig.indexing.ignorePatterns,
   });
 
   logger.info({ dataDir: resolvedDataDir }, 'Services initialized successfully');
