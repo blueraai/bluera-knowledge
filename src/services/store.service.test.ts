@@ -608,7 +608,8 @@ describe('StoreService', () => {
         await rm(storeDir, { recursive: true, force: true });
       });
 
-      it('adds repo store definition when creating repo store with path', async () => {
+      it('skips definition for local repo store (path only, no URL)', async () => {
+        // Local repo stores are machine-specific and should not be synced to definitions
         const repoDir = await mkdtemp(join(tmpdir(), 'repo-store-'));
         const result = await serviceWithDefs.create({
           name: 'my-repo',
@@ -620,12 +621,9 @@ describe('StoreService', () => {
 
         expect(result.success).toBe(true);
 
+        // Local repo store should NOT have a definition created
         const def = await defService.getByName('my-repo');
-        expect(def).toBeDefined();
-        expect(def?.type).toBe('repo');
-        if (def?.type === 'repo') {
-          expect(def.branch).toBe('main');
-        }
+        expect(def).toBeUndefined();
 
         await rm(repoDir, { recursive: true, force: true });
       });

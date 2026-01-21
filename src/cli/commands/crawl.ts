@@ -186,7 +186,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
                   title: result.title,
                   extracted: result.extracted !== undefined,
                   depth: result.depth,
-                  indexedAt: new Date(),
+                  indexedAt: new Date().toISOString(),
                   fileType,
                   chunkIndex: chunk.chunkIndex,
                   totalChunks: chunk.totalChunks,

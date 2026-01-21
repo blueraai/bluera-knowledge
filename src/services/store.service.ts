@@ -45,6 +45,8 @@ export interface StoreServiceOptions {
   definitionService?: StoreDefinitionService;
   /** Optional gitignore service for ensuring .gitignore patterns */
   gitignoreService?: GitignoreService;
+  /** Optional project root for resolving relative paths */
+  projectRoot?: string;
 }
 
 export interface OperationOptions {
@@ -60,12 +62,14 @@ export class StoreService {
   private readonly dataDir: string;
   private readonly definitionService: StoreDefinitionService | undefined;
   private readonly gitignoreService: GitignoreService | undefined;
+  private readonly projectRoot: string | undefined;
   private registry: StoreRegistry = { stores: [] };
 
   constructor(dataDir: string, options?: StoreServiceOptions) {
     this.dataDir = dataDir;
     this.definitionService = options?.definitionService ?? undefined;
     this.gitignoreService = options?.gitignoreService ?? undefined;
+    this.projectRoot = options?.projectRoot ?? undefined;
   }
 
   async initialize(): Promise<void> {
@@ -75,8 +79,12 @@ export class StoreService {
 
   /**
    * Convert a Store and CreateStoreInput to a StoreDefinition for persistence.
+   * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
    */
-  private createDefinitionFromStore(store: Store, input: CreateStoreInput): StoreDefinition {
+  private createDefinitionFromStore(
+    store: Store,
+    input: CreateStoreInput
+  ): StoreDefinition | undefined {
     // Copy tags array to convert from readonly to mutable
     const tags = store.tags !== undefined ? [...store.tags] : undefined;
     const base = {
@@ -98,10 +106,14 @@ export class StoreService {
       }
       case 'repo': {
         const repoStore = store;
+        // Local repo stores (no URL) are machine-specific; skip definition sync
+        if (repoStore.url === undefined) {
+          return undefined;
+        }
         const repoDef: RepoStoreDefinition = {
           ...base,
           type: 'repo',
-          url: repoStore.url ?? '',
+          url: repoStore.url,
           branch: repoStore.branch,
           depth: input.depth,
         };
@@ -140,8 +152,11 @@ export class StoreService {
         if (input.path === undefined) {
           return err(new Error('Path is required for file stores'));
         }
-        // Normalize path to absolute path (security: prevents path confusion)
-        const normalizedPath = resolve(input.path);
+        // Normalize path to absolute path, using projectRoot if available
+        const normalizedPath =
+          this.projectRoot !== undefined
+            ? resolve(this.projectRoot, input.path)
+            : resolve(input.path);
         // Validate directory exists
         try {
           const stats = await stat(normalizedPath);
@@ -188,8 +203,9 @@ export class StoreService {
           return err(new Error('Path or URL required for repo stores'));
         }
 
-        // Normalize path to absolute path (security: prevents path confusion)
-        const normalizedRepoPath = resolve(repoPath);
+        // Normalize path to absolute path, using projectRoot if available
+        const normalizedRepoPath =
+          this.projectRoot !== undefined ? resolve(this.projectRoot, repoPath) : resolve(repoPath);
 
         store = {
           type: 'repo',
@@ -243,7 +259,10 @@ export class StoreService {
     // Sync to store definitions if service is available and not skipped
     if (this.definitionService !== undefined && options?.skipDefinitionSync !== true) {
       const definition = this.createDefinitionFromStore(store, input);
-      await this.definitionService.addDefinition(definition);
+      // Only add if definition was created (local repo stores return undefined)
+      if (definition !== undefined) {
+        await this.definitionService.addDefinition(definition);
+      }
     }
 
     return ok(store);

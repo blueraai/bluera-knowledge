@@ -660,8 +660,8 @@ describe('WatchService', () => {
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
       const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
-      expect(config.ignored.test('.node_modules')).toBe(true);
-      expect(config.ignored.test('some/path/.node_modules/pkg')).toBe(true);
+      expect(config.ignored.test('node_modules')).toBe(true);
+      expect(config.ignored.test('some/path/node_modules/pkg')).toBe(true);
     });
 
     it('ignores dist and build directories', async () => {
@@ -670,8 +670,18 @@ describe('WatchService', () => {
       await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
 
       const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
-      expect(config.ignored.test('.dist')).toBe(true);
-      expect(config.ignored.test('.build')).toBe(true);
+      expect(config.ignored.test('dist')).toBe(true);
+      expect(config.ignored.test('build')).toBe(true);
+    });
+
+    it('ignores .bluera directory', async () => {
+      const { watch } = chokidar;
+
+      await watchService.watch(mockFileStore, 1000, undefined, noopErrorHandler);
+
+      const config = (watch as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
+      expect(config.ignored.test('.bluera')).toBe(true);
+      expect(config.ignored.test('some/path/.bluera/file')).toBe(true);
     });
 
     it('sets persistent to true', async () => {

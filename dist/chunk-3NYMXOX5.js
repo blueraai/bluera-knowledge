@@ -9,10 +9,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   summarizePayload
-} from "./chunk-B27TWHZH.js";
-import {
-  createStoreId
-} from "./chunk-CLIMKLTW.js";
+} from "./chunk-CRVKM6TY.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -1039,7 +1036,7 @@ var handleGetStoreInfo = async (args, context) => {
   const validated = GetStoreInfoArgsSchema.parse(args);
   logger4.info({ store: validated.store }, "Get store info started");
   const { services } = context;
-  const store = await services.store.getByIdOrName(createStoreId(validated.store));
+  const store = await services.store.getByIdOrName(validated.store);
   if (store === void 0) {
     logger4.warn({ store: validated.store }, "Store not found");
     throw new Error(`Store not found: ${validated.store}`);
@@ -1139,7 +1136,7 @@ var handleIndexStore = async (args, context) => {
   const validated = IndexStoreArgsSchema.parse(args);
   logger4.info({ store: validated.store }, "Index store started");
   const { services, options } = context;
-  const store = await services.store.getByIdOrName(createStoreId(validated.store));
+  const store = await services.store.getByIdOrName(validated.store);
   if (store === void 0) {
     logger4.warn({ store: validated.store }, "Store not found for indexing");
     throw new Error(`Store not found: ${validated.store}`);
@@ -1187,7 +1184,7 @@ var handleDeleteStore = async (args, context) => {
   const validated = DeleteStoreArgsSchema.parse(args);
   logger4.info({ store: validated.store }, "Delete store started");
   const { services, options } = context;
-  const store = await services.store.getByIdOrName(createStoreId(validated.store));
+  const store = await services.store.getByIdOrName(validated.store);
   if (store === void 0) {
     logger4.warn({ store: validated.store }, "Store not found for deletion");
     throw new Error(`Store not found: ${validated.store}`);
@@ -1196,6 +1193,8 @@ var handleDeleteStore = async (args, context) => {
   await services.lance.deleteStore(store.id);
   logger4.debug({ storeId: store.id }, "Deleting code graph");
   await services.codeGraph.deleteGraph(store.id);
+  logger4.debug({ storeId: store.id }, "Deleting manifest");
+  await services.manifest.delete(store.id);
   if (store.type === "repo" && "url" in store && store.url !== void 0) {
     if (options.dataDir === void 0) {
       throw new Error("dataDir is required to delete cloned repository files");
@@ -2157,4 +2156,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-XMNF6VQS.js.map
+//# sourceMappingURL=chunk-3NYMXOX5.js.map

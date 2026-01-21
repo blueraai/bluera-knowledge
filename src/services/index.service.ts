@@ -329,6 +329,11 @@ export class IndexService {
     // Clear existing documents before full re-index to prevent duplicates
     await this.lanceStore.clearAllDocuments(store.id);
 
+    // Clear stale manifest to ensure fresh incremental indexing later
+    if (this.manifestService) {
+      await this.manifestService.delete(store.id);
+    }
+
     const files = await this.scanDirectory(store.path);
     const documents: Document[] = [];
     let filesProcessed = 0;
@@ -441,8 +446,8 @@ export class IndexService {
     const fileName = basename(filePath).toLowerCase();
     const fileType = this.classifyFileType(ext, fileName, filePath);
 
-    // Track source file for code graph
-    const sourceFile = ['.ts', '.tsx', '.js', '.jsx'].includes(ext)
+    // Track source file for code graph (supports JS/TS, Python, Rust, Go)
+    const sourceFile = ['.ts', '.tsx', '.js', '.jsx', '.py', '.rs', '.go'].includes(ext)
       ? { path: filePath, content }
       : undefined;
 
@@ -480,7 +485,7 @@ export class IndexService {
           type: chunks.length > 1 ? 'chunk' : 'file',
           storeId: store.id,
           path: filePath,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           fileHash,
           chunkIndex: chunk.chunkIndex,
           totalChunks: chunk.totalChunks,
@@ -504,8 +509,8 @@ export class IndexService {
       const fullPath = join(dir, entry.name);
 
       if (entry.isDirectory()) {
-        // Skip common ignored directories
-        if (!['node_modules', '.git', 'dist', 'build'].includes(entry.name)) {
+        // Skip common ignored directories (keep in sync with watch.service.ts)
+        if (!['node_modules', '.git', '.bluera', 'dist', 'build'].includes(entry.name)) {
           files.push(...(await this.scanDirectory(fullPath)));
         }
       } else if (entry.isFile()) {

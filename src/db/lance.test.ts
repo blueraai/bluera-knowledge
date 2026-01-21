@@ -28,7 +28,7 @@ describe('LanceStore', () => {
       metadata: {
         type: 'file' as const,
         storeId,
-        indexedAt: new Date(),
+        indexedAt: new Date().toISOString(),
         path: '/test/file.txt',
       },
     };
@@ -49,7 +49,7 @@ describe('LanceStore', () => {
       metadata: {
         type: 'file' as const,
         storeId,
-        indexedAt: new Date(),
+        indexedAt: new Date().toISOString(),
       },
     };
 
@@ -69,7 +69,7 @@ describe('LanceStore', () => {
       metadata: {
         type: 'file' as const,
         storeId,
-        indexedAt: new Date(),
+        indexedAt: new Date().toISOString(),
       },
     };
 
@@ -90,7 +90,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -101,7 +101,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -122,7 +122,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -141,7 +141,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -165,7 +165,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: newStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -190,7 +190,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: newStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -212,7 +212,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: existingStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -228,7 +228,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: existingStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -251,7 +251,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: lazyStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -275,7 +275,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: deleteStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -304,7 +304,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: closeStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -335,7 +335,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: asyncCloseStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -366,7 +366,7 @@ describe('LanceStore', () => {
         metadata: {
           type: 'file' as const,
           storeId: timedStoreId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
         },
       };
 
@@ -396,7 +396,7 @@ describe('LanceStore', () => {
           metadata: {
             type: 'file' as const,
             storeId: multiStoreId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
         {
@@ -406,7 +406,7 @@ describe('LanceStore', () => {
           metadata: {
             type: 'file' as const,
             storeId: multiStoreId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
         {
@@ -416,7 +416,7 @@ describe('LanceStore', () => {
           metadata: {
             type: 'file' as const,
             storeId: multiStoreId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
       ];
@@ -439,7 +439,7 @@ describe('LanceStore', () => {
           metadata: {
             type: 'file' as const,
             storeId: multiDelStoreId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
         {
@@ -449,7 +449,7 @@ describe('LanceStore', () => {
           metadata: {
             type: 'file' as const,
             storeId: multiDelStoreId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
         {
@@ -459,7 +459,7 @@ describe('LanceStore', () => {
           metadata: {
             type: 'file' as const,
             storeId: multiDelStoreId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
       ];

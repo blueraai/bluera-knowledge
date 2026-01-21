@@ -41,7 +41,7 @@ describe('SearchService', () => {
           metadata: {
             type: 'file',
             storeId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         },
       ]);
@@ -121,13 +121,13 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.8,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ];
 
@@ -136,13 +136,13 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc2'),
         score: 0.95,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc3'),
         score: 0.85,
         content: 'result 3',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ];
 
@@ -171,7 +171,7 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         metadata: {
           type: 'web' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           url: 'https://example.com/docs',
         },
       },
@@ -184,7 +184,7 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         metadata: {
           type: 'web' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           url: 'https://example.com/docs',
         },
       },
@@ -208,7 +208,12 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'function test() {}',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date(), path: '/src/test.ts' },
+        metadata: {
+          type: 'file' as const,
+          storeId,
+          indexedAt: new Date().toISOString(),
+          path: '/src/test.ts',
+        },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([
@@ -219,7 +224,7 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/example.ts',
         },
       },
@@ -241,7 +246,7 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'vector only',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -264,7 +269,7 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'fts only',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
 
@@ -285,13 +290,13 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.5,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([
@@ -299,7 +304,7 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.95,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
 
@@ -323,13 +328,13 @@ describe('SearchService - RRF Ranking Algorithm', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.9,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -383,7 +388,7 @@ describe('SearchService - Query Intent Classification', () => {
           metadata: {
             type: 'file' as const,
             storeId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
             fileType: 'example',
           },
         },
@@ -419,7 +424,7 @@ describe('SearchService - Query Intent Classification', () => {
           metadata: {
             type: 'file' as const,
             storeId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
             fileType: 'source-internal',
           },
         },
@@ -454,7 +459,7 @@ describe('SearchService - Query Intent Classification', () => {
           metadata: {
             type: 'file' as const,
             storeId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
             fileType: 'documentation',
           },
         },
@@ -489,7 +494,7 @@ describe('SearchService - Query Intent Classification', () => {
           metadata: {
             type: 'file' as const,
             storeId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
             fileType: 'documentation-primary',
           },
         },
@@ -524,7 +529,7 @@ describe('SearchService - Query Intent Classification', () => {
           metadata: {
             type: 'file' as const,
             storeId,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
             fileType: 'test',
           },
         },
@@ -551,7 +556,7 @@ describe('SearchService - Query Intent Classification', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           fileType: 'documentation',
         },
       },
@@ -597,7 +602,7 @@ describe('SearchService - Framework Context Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/docs/react/components.md',
         },
       },
@@ -608,7 +613,7 @@ describe('SearchService - Framework Context Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/docs/vue/components.md',
         },
       },
@@ -635,7 +640,7 @@ describe('SearchService - Framework Context Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/node_modules/express/README.md',
         },
       },
@@ -661,7 +666,7 @@ describe('SearchService - Framework Context Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/docs/vue3/api.md',
         },
       },
@@ -687,7 +692,7 @@ describe('SearchService - Framework Context Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/docs/typescript/generics.md',
         },
       },
@@ -713,7 +718,7 @@ describe('SearchService - Framework Context Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/docs/general.md',
         },
       },
@@ -759,7 +764,7 @@ describe('SearchService - Deduplication Logic', () => {
         metadata: {
           type: 'chunk' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/file.ts',
           chunkIndex: 0,
           totalChunks: 2,
@@ -772,7 +777,7 @@ describe('SearchService - Deduplication Logic', () => {
         metadata: {
           type: 'chunk' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/file.ts',
           chunkIndex: 1,
           totalChunks: 2,
@@ -801,7 +806,7 @@ describe('SearchService - Deduplication Logic', () => {
         metadata: {
           type: 'chunk' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/file.ts',
           chunkIndex: 0,
           totalChunks: 2,
@@ -814,7 +819,7 @@ describe('SearchService - Deduplication Logic', () => {
         metadata: {
           type: 'chunk' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/file.ts',
           chunkIndex: 1,
           totalChunks: 2,
@@ -843,7 +848,7 @@ describe('SearchService - Deduplication Logic', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/file1.ts',
         },
       },
@@ -854,7 +859,7 @@ describe('SearchService - Deduplication Logic', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/file2.ts',
         },
       },
@@ -901,7 +906,7 @@ describe('SearchService - Progressive Context Enhancement', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/example.ts',
         },
       },
@@ -930,7 +935,7 @@ describe('SearchService - Progressive Context Enhancement', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/Component.tsx',
         },
       },
@@ -961,7 +966,7 @@ describe('SearchService - Progressive Context Enhancement', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/example.ts',
         },
       },
@@ -992,7 +997,7 @@ describe('SearchService - Progressive Context Enhancement', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/api.ts',
         },
       },
@@ -1018,7 +1023,7 @@ describe('SearchService - Progressive Context Enhancement', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/Component.ts',
         },
       },
@@ -1092,7 +1097,7 @@ describe('SearchService - Edge Cases', () => {
       metadata: {
         type: 'file' as const,
         storeId,
-        indexedAt: new Date(),
+        indexedAt: new Date().toISOString(),
         path: `/src/file${i}.ts`,
       },
     }));
@@ -1121,7 +1126,11 @@ describe('SearchService - Edge Cases', () => {
             id: createDocumentId('doc1'),
             score: 0.9,
             content: 'from store 1',
-            metadata: { type: 'file' as const, storeId: store1, indexedAt: new Date() },
+            metadata: {
+              type: 'file' as const,
+              storeId: store1,
+              indexedAt: new Date().toISOString(),
+            },
           },
         ];
       }
@@ -1130,7 +1139,7 @@ describe('SearchService - Edge Cases', () => {
           id: createDocumentId('doc2'),
           score: 0.8,
           content: 'from store 2',
-          metadata: { type: 'file' as const, storeId: store2, indexedAt: new Date() },
+          metadata: { type: 'file' as const, storeId: store2, indexedAt: new Date().toISOString() },
         },
       ];
     });
@@ -1167,19 +1176,19 @@ describe('SearchService - Edge Cases', () => {
         id: createDocumentId('doc1'),
         score: 0.95,
         content: 'high score',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.5,
         content: 'medium score',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc3'),
         score: 0.3,
         content: 'low score',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
 
@@ -1236,7 +1245,7 @@ describe('SearchService - Path Keyword Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils/helpers.py',
         },
       },
@@ -1247,7 +1256,7 @@ describe('SearchService - Path Keyword Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/async_dispatcher.py',
         },
       },
@@ -1274,7 +1283,7 @@ describe('SearchService - Path Keyword Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/crawler.py',
         },
       },
@@ -1285,7 +1294,7 @@ describe('SearchService - Path Keyword Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/deep_crawling/crawler.py',
         },
       },
@@ -1312,7 +1321,7 @@ describe('SearchService - Path Keyword Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/config.ts',
         },
       },
@@ -1339,7 +1348,7 @@ describe('SearchService - Path Keyword Boosting', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils/helpers.ts',
         },
       },
@@ -1406,7 +1415,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils.ts',
         },
       },
@@ -1449,7 +1458,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/readme.md',
         },
       },
@@ -1490,7 +1499,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/empty.ts',
         },
       },
@@ -1548,7 +1557,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils.ts',
         },
       },
@@ -1605,7 +1614,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/notes.txt',
         },
       },
@@ -1659,7 +1668,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils.ts',
         },
       },
@@ -1700,7 +1709,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils.ts',
         },
       },
@@ -1736,7 +1745,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils.ts',
         },
       },
@@ -1783,7 +1792,7 @@ describe('SearchService - Code Graph Integration', () => {
         metadata: {
           type: 'file' as const,
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           path: '/src/utils.ts',
         },
       },
@@ -1834,19 +1843,19 @@ describe('SearchService - Threshold Filtering', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.7,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc3'),
         score: 0.5,
         content: 'result 3',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     // Add doc1 and doc2 to FTS results so they both have good RRF scores
@@ -1855,13 +1864,13 @@ describe('SearchService - Threshold Filtering', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.7,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
 
@@ -1894,13 +1903,13 @@ describe('SearchService - Threshold Filtering', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.1,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -1923,13 +1932,13 @@ describe('SearchService - Threshold Filtering', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.8,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -1952,13 +1961,13 @@ describe('SearchService - Threshold Filtering', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.3,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
 
@@ -1982,19 +1991,19 @@ describe('SearchService - Threshold Filtering', () => {
         id: createDocumentId('doc1'),
         score: 0.9,
         content: 'result 1',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.5,
         content: 'result 2',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc3'),
         score: 0.1,
         content: 'result 3',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2039,13 +2048,13 @@ describe('SearchService - Raw Score and Confidence', () => {
         id: createDocumentId('doc1'),
         score: 0.85, // Raw cosine similarity
         content: 'vector result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
       {
         id: createDocumentId('doc2'),
         score: 0.65,
         content: 'another vector result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2072,7 +2081,7 @@ describe('SearchService - Raw Score and Confidence', () => {
         id: createDocumentId('doc1'),
         score: 0.6, // High confidence threshold
         content: 'high score result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2094,7 +2103,7 @@ describe('SearchService - Raw Score and Confidence', () => {
         id: createDocumentId('doc1'),
         score: 0.4, // Medium confidence
         content: 'medium score result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2116,7 +2125,7 @@ describe('SearchService - Raw Score and Confidence', () => {
         id: createDocumentId('doc1'),
         score: 0.2, // Low confidence
         content: 'low score result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2138,7 +2147,7 @@ describe('SearchService - Raw Score and Confidence', () => {
         id: createDocumentId('doc1'),
         score: 0.25, // Below minRelevance threshold
         content: 'low relevance result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2162,7 +2171,7 @@ describe('SearchService - Raw Score and Confidence', () => {
         id: createDocumentId('doc1'),
         score: 0.5, // Above minRelevance threshold
         content: 'relevant result',
-        metadata: { type: 'file' as const, storeId, indexedAt: new Date() },
+        metadata: { type: 'file' as const, storeId, indexedAt: new Date().toISOString() },
       },
     ]);
     vi.mocked(mockLanceStore.fullTextSearch).mockResolvedValue([]);
@@ -2207,7 +2216,7 @@ describe('SearchService Environment Variables', () => {
         id: createDocumentId('doc-1'),
         content: text,
         vector,
-        metadata: { type: 'file', storeId, indexedAt: new Date() },
+        metadata: { type: 'file', storeId, indexedAt: new Date().toISOString() },
       },
     ]);
 
@@ -2245,7 +2254,7 @@ describe('SearchService Environment Variables', () => {
         metadata: {
           type: 'file',
           storeId,
-          indexedAt: new Date(),
+          indexedAt: new Date().toISOString(),
           filePath: 'tests/example.test.ts',
           fileType: 'test', // Uses default SEARCH_TEST_FILE_BOOST (0.5)
         },

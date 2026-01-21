@@ -292,6 +292,7 @@ describe('createServices', () => {
     expect(StoreService).toHaveBeenCalledWith('/tmp/test-data', {
       definitionService: mockDefinitionService,
       gitignoreService: mockGitignoreService,
+      projectRoot: '/test/project',
     });
 
     await destroyServices(services);
@@ -403,6 +404,7 @@ describe('createLazyServices', () => {
     expect(StoreService).toHaveBeenCalledWith('/tmp/test-data', {
       definitionService: mockDefinitionService,
       gitignoreService: mockGitignoreService,
+      projectRoot: '/test/project',
     });
 
     await destroyServices(services);

@@ -2,7 +2,6 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createLogger } from '../../logging/index.js';
 import { JobService } from '../../services/job.service.js';
-import { createStoreId } from '../../types/brands.js';
 import { spawnBackgroundWorker } from '../../workers/spawn-worker.js';
 import {
   ListStoresArgsSchema,
@@ -82,7 +81,7 @@ export const handleGetStoreInfo: ToolHandler<GetStoreInfoArgs> = async (
 
   const { services } = context;
 
-  const store = await services.store.getByIdOrName(createStoreId(validated.store));
+  const store = await services.store.getByIdOrName(validated.store);
 
   if (store === undefined) {
     logger.warn({ store: validated.store }, 'Store not found');
@@ -223,7 +222,7 @@ export const handleIndexStore: ToolHandler<IndexStoreArgs> = async (
 
   const { services, options } = context;
 
-  const store = await services.store.getByIdOrName(createStoreId(validated.store));
+  const store = await services.store.getByIdOrName(validated.store);
 
   if (store === undefined) {
     logger.warn({ store: validated.store }, 'Store not found for indexing');
@@ -293,7 +292,7 @@ export const handleDeleteStore: ToolHandler<DeleteStoreArgs> = async (
 
   const { services, options } = context;
 
-  const store = await services.store.getByIdOrName(createStoreId(validated.store));
+  const store = await services.store.getByIdOrName(validated.store);
 
   if (store === undefined) {
     logger.warn({ store: validated.store }, 'Store not found for deletion');
@@ -307,6 +306,10 @@ export const handleDeleteStore: ToolHandler<DeleteStoreArgs> = async (
   logger.debug({ storeId: store.id }, 'Deleting code graph');
   // Delete code graph file
   await services.codeGraph.deleteGraph(store.id);
+
+  logger.debug({ storeId: store.id }, 'Deleting manifest');
+  // Delete manifest file
+  await services.manifest.delete(store.id);
 
   // For repo stores cloned from URL, remove the cloned directory
   if (store.type === 'repo' && 'url' in store && store.url !== undefined) {

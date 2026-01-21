@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-XMNF6VQS.js";
+} from "./chunk-3NYMXOX5.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-P52RAEMU.js";
+} from "./chunk-3BUNW3NB.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -23,12 +23,11 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-B27TWHZH.js";
+} from "./chunk-CRVKM6TY.js";
 import {
-  createDocumentId,
-  createStoreId
+  createDocumentId
 } from "./chunk-CLIMKLTW.js";
-import "./chunk-36VVVOMW.js";
+import "./chunk-DTZ26E6D.js";
 
 // src/index.ts
 import { homedir as homedir2 } from "os";
@@ -156,7 +155,7 @@ function createCrawlCommand(getOptions) {
                 title: result.title,
                 extracted: result.extracted !== void 0,
                 depth: result.depth,
-                indexedAt: /* @__PURE__ */ new Date(),
+                indexedAt: (/* @__PURE__ */ new Date()).toISOString(),
                 fileType,
                 chunkIndex: chunk.chunkIndex,
                 totalChunks: chunk.totalChunks,
@@ -296,7 +295,7 @@ function createIndexCommand(getOptions) {
       console.error(`Error: File/repo store not found: ${storeIdOrName}`);
       process.exit(3);
     }
-    const { WatchService } = await import("./watch.service-I6YOZ4UJ.js");
+    const { WatchService } = await import("./watch.service-XP6ORS6Z.js");
     const watchService = new WatchService(services.index, services.lance);
     if (globalOpts.quiet !== true) {
       console.log(`Watching ${store.name} for changes...`);
@@ -1252,6 +1251,7 @@ function createApp(services, dataDir) {
     if (!store) return c.json({ error: "Not found" }, 404);
     await services.lance.deleteStore(store.id);
     await services.codeGraph.deleteGraph(store.id);
+    await services.manifest.delete(store.id);
     if (store.type === "repo" && "url" in store && store.url !== void 0 && dataDir !== void 0) {
       const repoPath = join2(dataDir, "repos", store.id);
       await rm(repoPath, { recursive: true, force: true });
@@ -1270,7 +1270,18 @@ function createApp(services, dataDir) {
     for (const id of storeIds) {
       await services.lance.initialize(id);
     }
-    const requestedStores = parseResult.data.stores !== void 0 ? parseResult.data.stores.map((s) => createStoreId(s)) : storeIds;
+    let requestedStores = storeIds;
+    if (parseResult.data.stores !== void 0) {
+      const resolvedStores = [];
+      for (const requested of parseResult.data.stores) {
+        const store = await services.store.getByIdOrName(requested);
+        if (store === void 0) {
+          return c.json({ error: `Store not found: ${requested}` }, 404);
+        }
+        resolvedStores.push(store.id);
+      }
+      requestedStores = resolvedStores;
+    }
     const query = {
       query: parseResult.data.query,
       detail: parseResult.data.detail ?? "minimal",

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-P52RAEMU.js";
+} from "../chunk-3BUNW3NB.js";
 import {
   JobService,
   createLogger,
   createServices,
   destroyServices,
   shutdownLogger
-} from "../chunk-B27TWHZH.js";
+} from "../chunk-CRVKM6TY.js";
 import {
   createDocumentId,
   createStoreId
 } from "../chunk-CLIMKLTW.js";
-import "../chunk-36VVVOMW.js";
+import "../chunk-DTZ26E6D.js";
 
 // src/workers/background-worker-cli.ts
 import { platform } from "os";
@@ -227,7 +227,7 @@ var BackgroundWorker = class {
             title: result.title,
             extracted: result.extracted !== void 0,
             depth: result.depth,
-            indexedAt: /* @__PURE__ */ new Date()
+            indexedAt: (/* @__PURE__ */ new Date()).toISOString()
           }
         });
       }

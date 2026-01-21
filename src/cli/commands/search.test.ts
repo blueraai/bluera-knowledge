@@ -74,6 +74,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
             summary: {
               type: 'function',
@@ -430,6 +431,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
           },
         ],
@@ -526,6 +528,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
             summary: {
               type: 'function',
@@ -575,6 +578,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
           },
         ],
@@ -639,6 +643,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
             summary: {
               type: 'function',
@@ -697,6 +702,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
             summary: {
               type: 'function',
@@ -752,6 +758,7 @@ describe('search command execution', () => {
               type: 'file',
               storeId: createStoreId('store-1'),
               path: '/test/file.ts',
+              indexedAt: new Date().toISOString(),
             },
             summary: {
               type: 'function',
@@ -811,6 +818,7 @@ describe('search command execution', () => {
             metadata: {
               type: 'file',
               storeId: createStoreId('store-1'),
+              indexedAt: new Date().toISOString(),
             },
           },
         ],

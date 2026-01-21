@@ -13,7 +13,7 @@ export const DocumentMetadataSchema = z
     url: z.string().optional(),
     type: DocumentTypeSchema,
     storeId: z.string(),
-    indexedAt: z.union([z.string(), z.date()]),
+    indexedAt: z.string(), // ISO 8601 string (what JSON serialization produces)
     fileHash: z.string().optional(),
     chunkIndex: z.number().optional(),
     totalChunks: z.number().optional(),
@@ -31,7 +31,7 @@ export interface DocumentMetadata {
   readonly url?: string | undefined;
   readonly type: DocumentType;
   readonly storeId: StoreId;
-  readonly indexedAt: Date;
+  readonly indexedAt: string; // ISO 8601 string
   readonly fileHash?: string | undefined;
   readonly chunkIndex?: number | undefined;
   readonly totalChunks?: number | undefined;

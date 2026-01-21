@@ -71,6 +71,9 @@ describe('Server Integration - Store CRUD Flow', () => {
       codeGraph: {
         deleteGraph: vi.fn().mockResolvedValue(undefined),
       },
+      manifest: {
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
       search: {
         search: vi.fn(),
       },
@@ -416,6 +419,9 @@ describe('Server Integration - HTTP Methods', () => {
       },
       codeGraph: {
         deleteGraph: vi.fn().mockResolvedValue(undefined),
+      },
+      manifest: {
+        delete: vi.fn().mockResolvedValue(undefined),
       },
       search: {
         search: vi.fn(),

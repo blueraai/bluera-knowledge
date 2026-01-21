@@ -89,10 +89,7 @@ export class LazyServiceContainer implements ServiceContainer {
   get embeddings(): EmbeddingEngine {
     if (this._embeddings === null) {
       logger.debug('Lazy-initializing EmbeddingEngine');
-      this._embeddings = new EmbeddingEngine(
-        this.appConfig.embedding.model,
-        this.appConfig.embedding.dimensions
-      );
+      this._embeddings = new EmbeddingEngine(this.appConfig.embedding.model);
     }
     return this._embeddings;
   }
@@ -189,7 +186,7 @@ export async function createLazyServices(
   if (projectRoot !== undefined) {
     const definitionService = new StoreDefinitionService(projectRoot);
     const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService };
+    storeOptions = { definitionService, gitignoreService, projectRoot };
   }
 
   const store = new StoreService(resolvedDataDir, storeOptions);
@@ -226,7 +223,7 @@ export async function createServices(
 
   // Now safe to initialize lancedb and other services
   const lance = new LanceStore(resolvedDataDir);
-  const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.dimensions);
+  const embeddings = new EmbeddingEngine(appConfig.embedding.model);
 
   await embeddings.initialize();
 
@@ -235,7 +232,7 @@ export async function createServices(
   if (projectRoot !== undefined) {
     const definitionService = new StoreDefinitionService(projectRoot);
     const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService };
+    storeOptions = { definitionService, gitignoreService, projectRoot };
   }
 
   const store = new StoreService(resolvedDataDir, storeOptions);

@@ -44,11 +44,6 @@ describe('EmbeddingEngine', () => {
     expect(embedding).toHaveLength(384);
   });
 
-  it('supports custom model dimensions', async () => {
-    const customEngine = new EmbeddingEngine('Xenova/all-MiniLM-L6-v2', 512);
-    expect(customEngine.getDimensions()).toBe(512);
-  });
-
   it('skips initialization when already initialized', async () => {
     // Engine is already initialized from beforeAll
     // Calling initialize again should be a no-op

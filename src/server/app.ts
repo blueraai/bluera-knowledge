@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { z } from 'zod';
-import { createStoreId } from '../types/brands.js';
 import type { ServiceContainer } from '../services/index.js';
 import type { SearchQuery } from '../types/search.js';
 
@@ -86,6 +85,9 @@ export function createApp(services: ServiceContainer, dataDir?: string): Hono {
     // Delete code graph
     await services.codeGraph.deleteGraph(store.id);
 
+    // Delete manifest
+    await services.manifest.delete(store.id);
+
     // For repo stores cloned from URL, remove the cloned directory
     if (
       store.type === 'repo' &&
@@ -117,11 +119,19 @@ export function createApp(services: ServiceContainer, dataDir?: string): Hono {
       await services.lance.initialize(id);
     }
 
-    // Convert user-provided store strings to StoreIds, or use all stores
-    const requestedStores =
-      parseResult.data.stores !== undefined
-        ? parseResult.data.stores.map((s) => createStoreId(s))
-        : storeIds;
+    // Resolve user-provided store strings to StoreIds, or use all stores
+    let requestedStores = storeIds;
+    if (parseResult.data.stores !== undefined) {
+      const resolvedStores: typeof storeIds = [];
+      for (const requested of parseResult.data.stores) {
+        const store = await services.store.getByIdOrName(requested);
+        if (store === undefined) {
+          return c.json({ error: `Store not found: ${requested}` }, 404);
+        }
+        resolvedStores.push(store.id);
+      }
+      requestedStores = resolvedStores;
+    }
 
     const query: SearchQuery = {
       query: parseResult.data.query,

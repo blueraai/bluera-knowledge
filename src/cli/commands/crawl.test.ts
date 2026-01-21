@@ -941,10 +941,10 @@ describe('crawl command execution', () => {
         ])
       );
 
-      // Verify indexedAt is reasonable
+      // Verify indexedAt is reasonable (now an ISO string)
       const call = mockServices.lance.addDocuments.mock.calls[0];
       const docs = call[1];
-      const indexedAt = docs[0].metadata.indexedAt;
+      const indexedAt = new Date(docs[0].metadata.indexedAt);
       expect(indexedAt.getTime()).toBeGreaterThanOrEqual(beforeIndex.getTime());
       expect(indexedAt.getTime()).toBeLessThanOrEqual(afterIndex.getTime());
     });

@@ -45,6 +45,9 @@ describe('store.handler', () => {
         codeGraph: {
           deleteGraph: vi.fn().mockResolvedValue(undefined),
         },
+        manifest: {
+          delete: vi.fn().mockResolvedValue(undefined),
+        },
       } as any,
       options: { dataDir: tempDir },
     };

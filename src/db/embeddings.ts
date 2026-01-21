@@ -6,14 +6,15 @@ import { pipeline, env, type FeatureExtractionPipeline } from '@huggingface/tran
 // This allows CI caching and prevents model re-downloads on each npm install
 env.cacheDir = join(homedir(), '.cache', 'huggingface-transformers');
 
+// Embedding dimensions for all-MiniLM-L6-v2 model (fixed, not configurable)
+export const EMBEDDING_DIMENSIONS = 384;
+
 export class EmbeddingEngine {
   private extractor: FeatureExtractionPipeline | null = null;
   private readonly modelName: string;
-  private readonly dimensions: number;
 
-  constructor(modelName = 'Xenova/all-MiniLM-L6-v2', dimensions = 384) {
+  constructor(modelName = 'Xenova/all-MiniLM-L6-v2') {
     this.modelName = modelName;
-    this.dimensions = dimensions;
   }
 
   async initialize(): Promise<void> {
@@ -62,7 +63,7 @@ export class EmbeddingEngine {
   }
 
   getDimensions(): number {
-    return this.dimensions;
+    return EMBEDDING_DIMENSIONS;
   }
 
   /**

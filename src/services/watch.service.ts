@@ -27,7 +27,7 @@ export class WatchService {
     let timeout: NodeJS.Timeout | null = null;
 
     const watcher = watch(store.path, {
-      ignored: /(^|[/\\])\.(git|node_modules|dist|build)/,
+      ignored: /(^|[/\\])\.(git|bluera)|(^|[/\\])(node_modules|dist|build)/,
       persistent: true,
       ignoreInitial: true,
     });

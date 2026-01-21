@@ -293,7 +293,7 @@ export class BackgroundWorker {
             title: result.title,
             extracted: result.extracted !== undefined,
             depth: result.depth,
-            indexedAt: new Date(),
+            indexedAt: new Date().toISOString(),
           },
         });
       }

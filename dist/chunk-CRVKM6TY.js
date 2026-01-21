@@ -2008,8 +2008,7 @@ var DEFAULT_CONFIG = {
   dataDir: ".bluera/bluera-knowledge/data",
   embedding: {
     model: "Xenova/all-MiniLM-L6-v2",
-    batchSize: 32,
-    dimensions: 384
+    batchSize: 32
   },
   indexing: {
     concurrency: 4,
@@ -2815,6 +2814,9 @@ var IndexService = class {
   async indexFileStore(store, onProgress) {
     const startTime = Date.now();
     await this.lanceStore.clearAllDocuments(store.id);
+    if (this.manifestService) {
+      await this.manifestService.delete(store.id);
+    }
     const files = await this.scanDirectory(store.path);
     const documents = [];
     let filesProcessed = 0;
@@ -2896,7 +2898,7 @@ var IndexService = class {
     const ext = extname(filePath).toLowerCase();
     const fileName = basename(filePath).toLowerCase();
     const fileType = this.classifyFileType(ext, fileName, filePath);
-    const sourceFile = [".ts", ".tsx", ".js", ".jsx"].includes(ext) ? { path: filePath, content } : void 0;
+    const sourceFile = [".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go"].includes(ext) ? { path: filePath, content } : void 0;
     if (chunks.length === 0) {
       return { documents: [], sourceFile };
     }
@@ -2920,7 +2922,7 @@ var IndexService = class {
           type: chunks.length > 1 ? "chunk" : "file",
           storeId: store.id,
           path: filePath,
-          indexedAt: /* @__PURE__ */ new Date(),
+          indexedAt: (/* @__PURE__ */ new Date()).toISOString(),
           fileHash,
           chunkIndex: chunk.chunkIndex,
           totalChunks: chunk.totalChunks,
@@ -2940,7 +2942,7 @@ var IndexService = class {
     for (const entry of entries) {
       const fullPath = join7(dir, entry.name);
       if (entry.isDirectory()) {
-        if (!["node_modules", ".git", "dist", "build"].includes(entry.name)) {
+        if (!["node_modules", ".git", ".bluera", "dist", "build"].includes(entry.name)) {
           files.push(...await this.scanDirectory(fullPath));
         }
       } else if (entry.isFile()) {
@@ -4531,11 +4533,13 @@ var StoreService = class {
   dataDir;
   definitionService;
   gitignoreService;
+  projectRoot;
   registry = { stores: [] };
   constructor(dataDir, options) {
     this.dataDir = dataDir;
     this.definitionService = options?.definitionService ?? void 0;
     this.gitignoreService = options?.gitignoreService ?? void 0;
+    this.projectRoot = options?.projectRoot ?? void 0;
   }
   async initialize() {
     await mkdir5(this.dataDir, { recursive: true });
@@ -4543,6 +4547,7 @@ var StoreService = class {
   }
   /**
    * Convert a Store and CreateStoreInput to a StoreDefinition for persistence.
+   * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
    */
   createDefinitionFromStore(store, input) {
     const tags = store.tags !== void 0 ? [...store.tags] : void 0;
@@ -4564,10 +4569,13 @@ var StoreService = class {
       }
       case "repo": {
         const repoStore = store;
+        if (repoStore.url === void 0) {
+          return void 0;
+        }
         const repoDef = {
           ...base,
           type: "repo",
-          url: repoStore.url ?? "",
+          url: repoStore.url,
           branch: repoStore.branch,
           depth: input.depth
         };
@@ -4601,7 +4609,7 @@ var StoreService = class {
         if (input.path === void 0) {
           return err(new Error("Path is required for file stores"));
         }
-        const normalizedPath = resolve3(input.path);
+        const normalizedPath = this.projectRoot !== void 0 ? resolve3(this.projectRoot, input.path) : resolve3(input.path);
         try {
           const stats = await stat2(normalizedPath);
           if (!stats.isDirectory()) {
@@ -4641,7 +4649,7 @@ var StoreService = class {
         if (repoPath === void 0) {
           return err(new Error("Path or URL required for repo stores"));
         }
-        const normalizedRepoPath = resolve3(repoPath);
+        const normalizedRepoPath = this.projectRoot !== void 0 ? resolve3(this.projectRoot, repoPath) : resolve3(repoPath);
         store = {
           type: "repo",
           id,
@@ -4686,7 +4694,9 @@ var StoreService = class {
     }
     if (this.definitionService !== void 0 && options?.skipDefinitionSync !== true) {
       const definition = this.createDefinitionFromStore(store, input);
-      await this.definitionService.addDefinition(definition);
+      if (definition !== void 0) {
+        await this.definitionService.addDefinition(definition);
+      }
     }
     return ok(store);
   }
@@ -5123,13 +5133,12 @@ import { homedir as homedir2 } from "os";
 import { join as join11 } from "path";
 import { pipeline, env } from "@huggingface/transformers";
 env.cacheDir = join11(homedir2(), ".cache", "huggingface-transformers");
+var EMBEDDING_DIMENSIONS = 384;
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
-  dimensions;
-  constructor(modelName = "Xenova/all-MiniLM-L6-v2", dimensions = 384) {
+  constructor(modelName = "Xenova/all-MiniLM-L6-v2") {
     this.modelName = modelName;
-    this.dimensions = dimensions;
   }
   async initialize() {
     if (this.extractor !== null) return;
@@ -5165,7 +5174,7 @@ var EmbeddingEngine = class {
     return results;
   }
   getDimensions() {
-    return this.dimensions;
+    return EMBEDDING_DIMENSIONS;
   }
   /**
    * Dispose the embedding pipeline to free resources.
@@ -5190,7 +5199,8 @@ var DocumentMetadataSchema = z5.object({
   url: z5.string().optional(),
   type: DocumentTypeSchema,
   storeId: z5.string(),
-  indexedAt: z5.union([z5.string(), z5.date()]),
+  indexedAt: z5.string(),
+  // ISO 8601 string (what JSON serialization produces)
   fileHash: z5.string().optional(),
   chunkIndex: z5.number().optional(),
   totalChunks: z5.number().optional()
@@ -5213,7 +5223,7 @@ var LanceStore = class {
         {
           id: "__init__",
           content: "",
-          vector: new Array(384).fill(0),
+          vector: new Array(EMBEDDING_DIMENSIONS).fill(0),
           metadata: "{}"
         }
       ]);
@@ -5353,10 +5363,7 @@ var LazyServiceContainer = class {
   get embeddings() {
     if (this._embeddings === null) {
       logger4.debug("Lazy-initializing EmbeddingEngine");
-      this._embeddings = new EmbeddingEngine(
-        this.appConfig.embedding.model,
-        this.appConfig.embedding.dimensions
-      );
+      this._embeddings = new EmbeddingEngine(this.appConfig.embedding.model);
     }
     return this._embeddings;
   }
@@ -5426,7 +5433,7 @@ async function createLazyServices(configPath, dataDir, projectRoot) {
   if (projectRoot !== void 0) {
     const definitionService = new StoreDefinitionService(projectRoot);
     const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService };
+    storeOptions = { definitionService, gitignoreService, projectRoot };
   }
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
@@ -5442,13 +5449,13 @@ async function createServices(configPath, dataDir, projectRoot) {
   const pythonBridge = new PythonBridge();
   await pythonBridge.start();
   const lance = new LanceStore(resolvedDataDir);
-  const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.dimensions);
+  const embeddings = new EmbeddingEngine(appConfig.embedding.model);
   await embeddings.initialize();
   let storeOptions;
   if (projectRoot !== void 0) {
     const definitionService = new StoreDefinitionService(projectRoot);
     const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService };
+    storeOptions = { definitionService, gitignoreService, projectRoot };
   }
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
@@ -5535,4 +5542,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-B27TWHZH.js.map
+//# sourceMappingURL=chunk-CRVKM6TY.js.map

@@ -232,7 +232,6 @@ declare class CodeGraphService {
 interface EmbeddingConfig {
     readonly model: string;
     readonly batchSize: number;
-    readonly dimensions: number;
 }
 interface IndexingConfig {
     readonly concurrency: number;
@@ -346,8 +345,7 @@ declare class ManifestService {
 declare class EmbeddingEngine {
     private extractor;
     private readonly modelName;
-    private readonly dimensions;
-    constructor(modelName?: string, dimensions?: number);
+    constructor(modelName?: string);
     initialize(): Promise<void>;
     embed(text: string): Promise<number[]>;
     embedBatch(texts: string[]): Promise<number[][]>;
@@ -370,7 +368,7 @@ interface DocumentMetadata {
     readonly url?: string | undefined;
     readonly type: DocumentType;
     readonly storeId: StoreId;
-    readonly indexedAt: Date;
+    readonly indexedAt: string;
     readonly fileHash?: string | undefined;
     readonly chunkIndex?: number | undefined;
     readonly totalChunks?: number | undefined;
@@ -886,6 +884,8 @@ interface StoreServiceOptions {
     definitionService?: StoreDefinitionService;
     /** Optional gitignore service for ensuring .gitignore patterns */
     gitignoreService?: GitignoreService;
+    /** Optional project root for resolving relative paths */
+    projectRoot?: string;
 }
 interface OperationOptions {
     /** Skip syncing to store definitions (used by stores:sync command) */
@@ -895,11 +895,13 @@ declare class StoreService {
     private readonly dataDir;
     private readonly definitionService;
     private readonly gitignoreService;
+    private readonly projectRoot;
     private registry;
     constructor(dataDir: string, options?: StoreServiceOptions);
     initialize(): Promise<void>;
     /**
      * Convert a Store and CreateStoreInput to a StoreDefinition for persistence.
+     * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
      */
     private createDefinitionFromStore;
     create(input: CreateStoreInput, options?: OperationOptions): Promise<Result<Store>>;

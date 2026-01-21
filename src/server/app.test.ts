@@ -405,6 +405,9 @@ describe('Server App - DELETE /api/stores/:id', () => {
       codeGraph: {
         deleteGraph: vi.fn().mockResolvedValue(undefined),
       },
+      manifest: {
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
     } as unknown as ServiceContainer;
   });
 
@@ -483,6 +486,7 @@ describe('Server App - POST /api/search', () => {
     mockServices = {
       store: {
         list: vi.fn(),
+        getByIdOrName: vi.fn(),
       },
       lance: {
         initialize: vi.fn(),
@@ -571,16 +575,17 @@ describe('Server App - POST /api/search', () => {
   });
 
   it('uses provided stores list', async () => {
-    vi.mocked(mockServices.store.list).mockResolvedValue([
-      {
-        id: createStoreId('store-1'),
-        name: 'test',
-        type: 'file',
-        path: '/tmp/test',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ]);
+    const customStore = {
+      id: createStoreId('custom-store'),
+      name: 'custom-store',
+      type: 'file' as const,
+      path: '/tmp/custom',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    vi.mocked(mockServices.store.list).mockResolvedValue([customStore]);
+    vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(customStore);
 
     vi.mocked(mockServices.search.search).mockResolvedValue({
       results: [],
@@ -595,7 +600,7 @@ describe('Server App - POST /api/search', () => {
       },
       body: JSON.stringify({
         query: 'test',
-        stores: [createStoreId('custom-store')],
+        stores: ['custom-store'],
       }),
     });
 

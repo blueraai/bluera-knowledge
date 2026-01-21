@@ -1,4 +1,5 @@
 import * as lancedb from '@lancedb/lancedb';
+import { EMBEDDING_DIMENSIONS } from './embeddings.js';
 import { createDocumentId } from '../types/brands.js';
 import { DocumentMetadataSchema } from '../types/document.js';
 import type { StoreId, DocumentId } from '../types/brands.js';
@@ -41,7 +42,7 @@ export class LanceStore {
         {
           id: '__init__',
           content: '',
-          vector: new Array(384).fill(0),
+          vector: new Array(EMBEDDING_DIMENSIONS).fill(0),
           metadata: '{}',
         },
       ]);

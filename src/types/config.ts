@@ -1,7 +1,7 @@
 export interface EmbeddingConfig {
   readonly model: string;
   readonly batchSize: number;
-  readonly dimensions: number;
+  // Note: dimensions is fixed at 384 (determined by all-MiniLM-L6-v2 model)
 }
 
 export interface IndexingConfig {
@@ -49,7 +49,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   embedding: {
     model: 'Xenova/all-MiniLM-L6-v2',
     batchSize: 32,
-    dimensions: 384,
   },
   indexing: {
     concurrency: 4,

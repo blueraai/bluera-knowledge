@@ -15,7 +15,7 @@ var WatchService = class {
     }
     let timeout = null;
     const watcher = watch(store.path, {
-      ignored: /(^|[/\\])\.(git|node_modules|dist|build)/,
+      ignored: /(^|[/\\])\.(git|bluera)|(^|[/\\])(node_modules|dist|build)/,
       persistent: true,
       ignoreInitial: true
     });
@@ -75,4 +75,4 @@ var WatchService = class {
 export {
   WatchService
 };
-//# sourceMappingURL=chunk-36VVVOMW.js.map
+//# sourceMappingURL=chunk-DTZ26E6D.js.map
