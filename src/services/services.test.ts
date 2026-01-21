@@ -192,13 +192,20 @@ describe('createServices', () => {
       } as unknown as EmbeddingEngine;
     });
 
-    vi.mocked(ConfigService).mockImplementation(function () {
+    vi.mocked(ConfigService).mockImplementation(function (
+      _configPath?: string,
+      _dataDir?: string,
+      projectRoot?: string
+    ) {
+      // Mock mirrors real ConfigService: use explicit projectRoot if provided, else default
+      const resolvedProjectRoot = projectRoot ?? '/default/project';
       return {
         load: vi.fn().mockResolvedValue({
           embedding: { model: 'test', dimensions: 384 },
           indexing: { concurrency: 4, chunkSize: 1000, chunkOverlap: 150, ignorePatterns: [] },
         }),
         resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),
+        resolveProjectRoot: vi.fn().mockReturnValue(resolvedProjectRoot),
       };
     });
 
@@ -298,14 +305,18 @@ describe('createServices', () => {
     await destroyServices(services);
   });
 
-  it('does not create StoreDefinitionService when projectRoot is undefined', async () => {
+  it('creates StoreDefinitionService with resolved projectRoot when not explicitly provided', async () => {
     const { StoreDefinitionService } = await import('./store-definition.service.js');
 
     vi.mocked(StoreDefinitionService).mockClear();
+    vi.mocked(StoreDefinitionService).mockImplementation(function () {
+      return {} as unknown as StoreDefinitionService;
+    });
 
     const services = await createServices();
 
-    expect(StoreDefinitionService).not.toHaveBeenCalled();
+    // Should use ConfigService's resolved project root
+    expect(StoreDefinitionService).toHaveBeenCalledWith('/default/project');
 
     await destroyServices(services);
   });
@@ -334,13 +345,20 @@ describe('createLazyServices', () => {
       } as unknown as LanceStore;
     });
 
-    vi.mocked(ConfigService).mockImplementation(function () {
+    vi.mocked(ConfigService).mockImplementation(function (
+      _configPath?: string,
+      _dataDir?: string,
+      projectRoot?: string
+    ) {
+      // Mock mirrors real ConfigService: use explicit projectRoot if provided, else default
+      const resolvedProjectRoot = projectRoot ?? '/default/project';
       return {
         load: vi.fn().mockResolvedValue({
           embedding: { model: 'test', dimensions: 384 },
           indexing: { concurrency: 4, chunkSize: 1000, chunkOverlap: 150, ignorePatterns: [] },
         }),
         resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),
+        resolveProjectRoot: vi.fn().mockReturnValue(resolvedProjectRoot),
       };
     });
 
@@ -410,14 +428,18 @@ describe('createLazyServices', () => {
     await destroyServices(services);
   });
 
-  it('does not create StoreDefinitionService when projectRoot is undefined', async () => {
+  it('creates StoreDefinitionService with resolved projectRoot when not explicitly provided', async () => {
     const { StoreDefinitionService } = await import('./store-definition.service.js');
 
     vi.mocked(StoreDefinitionService).mockClear();
+    vi.mocked(StoreDefinitionService).mockImplementation(function () {
+      return {} as unknown as StoreDefinitionService;
+    });
 
     const services = await createLazyServices();
 
-    expect(StoreDefinitionService).not.toHaveBeenCalled();
+    // Should use ConfigService's resolved project root
+    expect(StoreDefinitionService).toHaveBeenCalledWith('/default/project');
 
     await destroyServices(services);
   });

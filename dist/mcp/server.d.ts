@@ -271,8 +271,13 @@ interface AppConfig {
 declare class ConfigService {
     private readonly configPath;
     private readonly dataDir;
+    private readonly projectRoot;
     private config;
     constructor(configPath?: string, dataDir?: string, projectRoot?: string);
+    /**
+     * Get the resolved project root directory.
+     */
+    resolveProjectRoot(): string;
     load(): Promise<AppConfig>;
     save(config: AppConfig): Promise<void>;
     resolveDataDir(): string;

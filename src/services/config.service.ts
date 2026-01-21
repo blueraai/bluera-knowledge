@@ -24,25 +24,33 @@ async function fileExists(path: string): Promise<boolean> {
 export class ConfigService {
   private readonly configPath: string;
   private readonly dataDir: string;
+  private readonly projectRoot: string;
   private config: AppConfig | null = null;
 
   constructor(configPath?: string, dataDir?: string, projectRoot?: string) {
     // Resolve project root using hierarchical detection
-    const root = projectRoot ?? ProjectRootService.resolve();
+    this.projectRoot = projectRoot ?? ProjectRootService.resolve();
 
     // Resolve configPath - per-repo by default
     if (configPath !== undefined && configPath !== '') {
       this.configPath = configPath;
     } else {
-      this.configPath = join(root, DEFAULT_CONFIG_PATH);
+      this.configPath = join(this.projectRoot, DEFAULT_CONFIG_PATH);
     }
 
     // Resolve dataDir - per-repo by default
     if (dataDir !== undefined && dataDir !== '') {
       this.dataDir = dataDir;
     } else {
-      this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, root);
+      this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, this.projectRoot);
     }
+  }
+
+  /**
+   * Get the resolved project root directory.
+   */
+  resolveProjectRoot(): string {
+    return this.projectRoot;
   }
 
   async load(): Promise<AppConfig> {

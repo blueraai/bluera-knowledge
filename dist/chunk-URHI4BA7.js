@@ -2050,19 +2050,26 @@ async function fileExists(path4) {
 var ConfigService = class {
   configPath;
   dataDir;
+  projectRoot;
   config = null;
   constructor(configPath, dataDir, projectRoot) {
-    const root = projectRoot ?? ProjectRootService.resolve();
+    this.projectRoot = projectRoot ?? ProjectRootService.resolve();
     if (configPath !== void 0 && configPath !== "") {
       this.configPath = configPath;
     } else {
-      this.configPath = join5(root, DEFAULT_CONFIG_PATH);
+      this.configPath = join5(this.projectRoot, DEFAULT_CONFIG_PATH);
     }
     if (dataDir !== void 0 && dataDir !== "") {
       this.dataDir = dataDir;
     } else {
-      this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, root);
+      this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, this.projectRoot);
     }
+  }
+  /**
+   * Get the resolved project root directory.
+   */
+  resolveProjectRoot() {
+    return this.projectRoot;
   }
   async load() {
     if (this.config !== null) {
@@ -5455,16 +5462,21 @@ async function createLazyServices(configPath, dataDir, projectRoot) {
   const pythonBridge = new PythonBridge();
   await pythonBridge.start();
   const lance = new LanceStore(resolvedDataDir);
-  let storeOptions;
-  if (projectRoot !== void 0) {
-    const definitionService = new StoreDefinitionService(projectRoot);
-    const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService, projectRoot };
-  }
+  const resolvedProjectRoot = config.resolveProjectRoot();
+  const definitionService = new StoreDefinitionService(resolvedProjectRoot);
+  const gitignoreService = new GitignoreService(resolvedProjectRoot);
+  const storeOptions = {
+    definitionService,
+    gitignoreService,
+    projectRoot: resolvedProjectRoot
+  };
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
   const durationMs = Date.now() - startTime;
-  logger4.info({ dataDir: resolvedDataDir, durationMs }, "Lazy services initialized");
+  logger4.info(
+    { dataDir: resolvedDataDir, projectRoot: resolvedProjectRoot, durationMs },
+    "Lazy services initialized"
+  );
   return new LazyServiceContainer(config, appConfig, resolvedDataDir, store, lance, pythonBridge);
 }
 async function createServices(configPath, dataDir, projectRoot) {
@@ -5477,12 +5489,14 @@ async function createServices(configPath, dataDir, projectRoot) {
   const lance = new LanceStore(resolvedDataDir);
   const embeddings = new EmbeddingEngine(appConfig.embedding.model);
   await embeddings.initialize();
-  let storeOptions;
-  if (projectRoot !== void 0) {
-    const definitionService = new StoreDefinitionService(projectRoot);
-    const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService, projectRoot };
-  }
+  const resolvedProjectRoot = config.resolveProjectRoot();
+  const definitionService = new StoreDefinitionService(resolvedProjectRoot);
+  const gitignoreService = new GitignoreService(resolvedProjectRoot);
+  const storeOptions = {
+    definitionService,
+    gitignoreService,
+    projectRoot: resolvedProjectRoot
+  };
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
@@ -5496,7 +5510,10 @@ async function createServices(configPath, dataDir, projectRoot) {
     concurrency: appConfig.indexing.concurrency,
     ignorePatterns: appConfig.indexing.ignorePatterns
   });
-  logger4.info({ dataDir: resolvedDataDir }, "Services initialized successfully");
+  logger4.info(
+    { dataDir: resolvedDataDir, projectRoot: resolvedProjectRoot },
+    "Services initialized successfully"
+  );
   return {
     config,
     store,
@@ -5569,4 +5586,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-5YO7VA2G.js.map
+//# sourceMappingURL=chunk-URHI4BA7.js.map

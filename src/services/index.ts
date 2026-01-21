@@ -182,19 +182,24 @@ export async function createLazyServices(
   // Now safe to create LanceStore wrapper (doesn't connect until initialize() is called)
   const lance = new LanceStore(resolvedDataDir);
 
-  // Create project-root-dependent services
-  let storeOptions: StoreServiceOptions | undefined;
-  if (projectRoot !== undefined) {
-    const definitionService = new StoreDefinitionService(projectRoot);
-    const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService, projectRoot };
-  }
+  // Create project-root-dependent services using resolved project root
+  const resolvedProjectRoot = config.resolveProjectRoot();
+  const definitionService = new StoreDefinitionService(resolvedProjectRoot);
+  const gitignoreService = new GitignoreService(resolvedProjectRoot);
+  const storeOptions: StoreServiceOptions = {
+    definitionService,
+    gitignoreService,
+    projectRoot: resolvedProjectRoot,
+  };
 
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
 
   const durationMs = Date.now() - startTime;
-  logger.info({ dataDir: resolvedDataDir, durationMs }, 'Lazy services initialized');
+  logger.info(
+    { dataDir: resolvedDataDir, projectRoot: resolvedProjectRoot, durationMs },
+    'Lazy services initialized'
+  );
 
   return new LazyServiceContainer(config, appConfig, resolvedDataDir, store, lance, pythonBridge);
 }
@@ -228,13 +233,15 @@ export async function createServices(
 
   await embeddings.initialize();
 
-  // Create project-root-dependent services
-  let storeOptions: StoreServiceOptions | undefined;
-  if (projectRoot !== undefined) {
-    const definitionService = new StoreDefinitionService(projectRoot);
-    const gitignoreService = new GitignoreService(projectRoot);
-    storeOptions = { definitionService, gitignoreService, projectRoot };
-  }
+  // Create project-root-dependent services using resolved project root
+  const resolvedProjectRoot = config.resolveProjectRoot();
+  const definitionService = new StoreDefinitionService(resolvedProjectRoot);
+  const gitignoreService = new GitignoreService(resolvedProjectRoot);
+  const storeOptions: StoreServiceOptions = {
+    definitionService,
+    gitignoreService,
+    projectRoot: resolvedProjectRoot,
+  };
 
   const store = new StoreService(resolvedDataDir, storeOptions);
   await store.initialize();
@@ -251,7 +258,10 @@ export async function createServices(
     ignorePatterns: appConfig.indexing.ignorePatterns,
   });
 
-  logger.info({ dataDir: resolvedDataDir }, 'Services initialized successfully');
+  logger.info(
+    { dataDir: resolvedDataDir, projectRoot: resolvedProjectRoot },
+    'Services initialized successfully'
+  );
 
   return {
     config,
