@@ -566,7 +566,6 @@ interface SearchQuery {
     readonly threshold?: number | undefined;
     readonly minRelevance?: number | undefined;
     readonly filter?: Record<string, unknown> | undefined;
-    readonly includeContent?: boolean | undefined;
     readonly contextLines?: number | undefined;
     readonly detail?: DetailLevel | undefined;
 }

@@ -22,7 +22,6 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
       '--min-relevance <score>',
       'Minimum raw cosine similarity 0-1; returns empty if no results meet threshold'
     )
-    .option('--include-content', 'Show full document content, not just preview snippet')
     .option(
       '--detail <level>',
       'Context detail: minimal, contextual, full (default: minimal)',
@@ -37,7 +36,6 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
           limit: string;
           threshold?: string;
           minRelevance?: string;
-          includeContent?: boolean;
           detail: DetailLevel;
         }
       ) => {
@@ -93,7 +91,6 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
                 options.threshold !== undefined ? parseFloat(options.threshold) : undefined,
               minRelevance:
                 options.minRelevance !== undefined ? parseFloat(options.minRelevance) : undefined,
-              includeContent: options.includeContent,
               detail: options.detail,
             });
 

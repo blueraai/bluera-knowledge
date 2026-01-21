@@ -53,7 +53,6 @@ export interface SearchQuery {
   readonly threshold?: number | undefined;
   readonly minRelevance?: number | undefined; // Minimum raw cosine similarity [0-1] to include results
   readonly filter?: Record<string, unknown> | undefined;
-  readonly includeContent?: boolean | undefined;
   readonly contextLines?: number | undefined;
 
   // Detail level for progressive context

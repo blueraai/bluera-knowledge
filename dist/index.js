@@ -1047,7 +1047,7 @@ function createSearchCommand(getOptions) {
   ).option("-n, --limit <count>", "Maximum results to return (default: 10)", "10").option("-t, --threshold <score>", "Minimum score 0-1; omit low-relevance results").option(
     "--min-relevance <score>",
     "Minimum raw cosine similarity 0-1; returns empty if no results meet threshold"
-  ).option("--include-content", "Show full document content, not just preview snippet").option(
+  ).option(
     "--detail <level>",
     "Context detail: minimal, contextual, full (default: minimal)",
     "minimal"
@@ -1093,7 +1093,6 @@ function createSearchCommand(getOptions) {
             limit: parseInt(options.limit, 10),
             threshold: options.threshold !== void 0 ? parseFloat(options.threshold) : void 0,
             minRelevance: options.minRelevance !== void 0 ? parseFloat(options.minRelevance) : void 0,
-            includeContent: options.includeContent,
             detail: options.detail
           });
           if (globalOpts.format === "json") {

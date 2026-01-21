@@ -107,7 +107,6 @@ describe('search command execution', () => {
         mode: 'hybrid',
         limit: 10,
         threshold: undefined,
-        includeContent: undefined,
         detail: 'minimal',
       });
       expect(processExitSpy).not.toHaveBeenCalled();
@@ -149,7 +148,6 @@ describe('search command execution', () => {
         mode: 'hybrid',
         limit: 10,
         threshold: undefined,
-        includeContent: undefined,
         detail: 'minimal',
       });
     });
@@ -192,7 +190,6 @@ describe('search command execution', () => {
         mode: 'hybrid',
         limit: 10,
         threshold: undefined,
-        includeContent: undefined,
         detail: 'minimal',
       });
     });
@@ -309,35 +306,6 @@ describe('search command execution', () => {
       expect(mockServices.search.search).toHaveBeenCalledWith(
         expect.objectContaining({
           threshold: 0.8,
-        })
-      );
-    });
-
-    it('respects includeContent option', async () => {
-      const mockStores = [{ id: createStoreId('store-1'), name: 'store1', type: 'file' as const }];
-
-      const mockSearchResponse: SearchResponse = {
-        query: 'test query',
-        mode: 'hybrid',
-        stores: [createStoreId('store-1')],
-        results: [],
-        totalResults: 0,
-        timeMs: 10,
-      };
-
-      mockServices.store.list.mockResolvedValue(mockStores);
-      mockServices.lance.initialize.mockResolvedValue(undefined);
-      mockServices.search.search.mockResolvedValue(mockSearchResponse);
-
-      const command = createSearchCommand(getOptions);
-      const actionHandler = command._actionHandler;
-      command.parseOptions(['--include-content']);
-
-      await actionHandler(['test query']);
-
-      expect(mockServices.search.search).toHaveBeenCalledWith(
-        expect.objectContaining({
-          includeContent: true,
         })
       );
     });
@@ -828,7 +796,7 @@ describe('search command execution', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Doc:'));
     });
 
-    it('handles results with fallback path display when path is missing', async () => {
+    it('handles results with alternative path display when path is missing', async () => {
       const mockStores = [{ id: createStoreId('store-1'), name: 'store1', type: 'file' as const }];
 
       const mockSearchResponse: SearchResponse = {
