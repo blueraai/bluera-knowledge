@@ -283,6 +283,7 @@ Check status with: /bluera-knowledge:check-status job_abc123def456
 **What gets deleted:**
 - Store registry entry
 - LanceDB search index (vector embeddings)
+- Code graph index (semantic relationships)
 - Cloned repository files (for repo stores created from URLs)
 
 **Example:**

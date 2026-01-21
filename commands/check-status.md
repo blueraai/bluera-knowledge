@@ -73,6 +73,6 @@ If job not found:
 
 Common issues:
 - Check the job ID is correct
-- Job may have been cleaned up (completed jobs are removed after 24 hours)
+- Job may have expired (stale pending jobs are marked failed after 2 hours)
 - Use /bluera-knowledge:check-status to see all active jobs
 ```

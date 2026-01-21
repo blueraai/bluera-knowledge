@@ -68,7 +68,7 @@ sequenceDiagram
 | **Default to headless** | Maximum compatibility with modern JavaScript-rendered sites (React, Vue, Next.js) |
 | **Fast mode available** | Use `--fast` for static HTML sites when speed is critical |
 | **Intelligent crawling preserved** | Claude Code CLI analyzes pages and selects URLs in both modes |
-| **Fail-fast behavior** | No silent fallback - errors throw immediately for visibility |
+| **Fail-fast for critical errors** | Extraction/CLI/headless failures throw immediately; page fetch errors emit progress and continue |
 
 ---
 
