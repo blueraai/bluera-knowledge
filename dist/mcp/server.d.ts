@@ -462,7 +462,7 @@ interface WebStore extends BaseStore {
 type Store = FileStore | RepoStore | WebStore;
 
 interface IndexResult {
-    documentsIndexed: number;
+    filesIndexed: number;
     chunksCreated: number;
     timeMs: number;
 }

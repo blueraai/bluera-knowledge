@@ -147,7 +147,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -204,7 +204,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -248,7 +248,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -293,7 +293,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -341,7 +341,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -413,7 +413,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -456,7 +456,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -499,7 +499,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -588,7 +588,7 @@ describe('Setup Command - Execution Tests', () => {
 
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 25, chunksCreated: 100, timeMs: 2000 },
+        data: { filesIndexed: 25, chunksCreated: 100, timeMs: 2000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -741,7 +741,7 @@ describe('Setup Command - Execution Tests', () => {
         }
         return {
           success: true,
-          data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+          data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
         };
       });
 
@@ -790,7 +790,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -830,7 +830,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);
@@ -876,7 +876,7 @@ describe('Setup Command - Execution Tests', () => {
       });
       vi.mocked(mockServices.index.indexStore).mockResolvedValue({
         success: true,
-        data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+        data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
       });
 
       const command = createSetupCommand(getOptions);

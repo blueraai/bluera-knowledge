@@ -111,7 +111,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 10,
+          filesIndexed: 10,
           chunksCreated: 25,
           timeMs: 1500,
           filesAdded: 5,
@@ -144,7 +144,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 5,
+          filesIndexed: 5,
           chunksCreated: 12,
           timeMs: 800,
           filesAdded: 2,
@@ -182,7 +182,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 3,
+          filesIndexed: 3,
           chunksCreated: 7,
           timeMs: 500,
           filesAdded: 1,
@@ -196,10 +196,10 @@ describe('createIndexCommand - Execution Tests', () => {
       const action = command._actionHandler;
       await action(['test']);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('"documentsIndexed": 3'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('"filesIndexed": 3'));
 
       const jsonOutput = JSON.parse(consoleLogSpy.mock.calls[0]?.[0] as string);
-      expect(jsonOutput.documentsIndexed).toBe(3);
+      expect(jsonOutput.filesIndexed).toBe(3);
       expect(jsonOutput.chunksCreated).toBe(7);
       expect(jsonOutput.timeMs).toBe(500);
     });
@@ -225,7 +225,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 1,
+          filesIndexed: 1,
           chunksCreated: 2,
           timeMs: 100,
           filesAdded: 1,
@@ -259,7 +259,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 1,
+          filesIndexed: 1,
           chunksCreated: 2,
           timeMs: 100,
           filesAdded: 1,
@@ -296,7 +296,7 @@ describe('createIndexCommand - Execution Tests', () => {
           return {
             success: true,
             data: {
-              documentsIndexed: 5,
+              filesIndexed: 5,
               chunksCreated: 10,
               timeMs: 1000,
               filesAdded: 3,
@@ -329,7 +329,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 1,
+          filesIndexed: 1,
           chunksCreated: 1,
           timeMs: 100,
           filesAdded: 1,
@@ -720,7 +720,7 @@ describe('createIndexCommand - Execution Tests', () => {
       vi.mocked(mockServices.index.indexStoreIncremental).mockResolvedValue({
         success: true,
         data: {
-          documentsIndexed: 1,
+          filesIndexed: 1,
           chunksCreated: 1,
           timeMs: 100,
         },
@@ -756,7 +756,7 @@ describe('createIndexCommand - Execution Tests', () => {
         return {
           success: true,
           data: {
-            documentsIndexed: 1,
+            filesIndexed: 1,
             chunksCreated: 1,
             timeMs: 100,
             filesAdded: 1,

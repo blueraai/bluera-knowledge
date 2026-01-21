@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-KASMOS3K.js";
+} from "./chunk-ELIGLTO2.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-N5L6CWP6.js";
+} from "./chunk-SGWTAPWP.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -23,7 +23,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-RN242237.js";
+} from "./chunk-5YO7VA2G.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
@@ -254,7 +254,7 @@ function createIndexCommand(getOptions) {
           if (globalOpts.format === "json") {
             console.log(JSON.stringify(result.data, null, 2));
           } else {
-            const message = `Indexed ${String(result.data.documentsIndexed)} documents, ${String(result.data.chunksCreated)} chunks in ${String(result.data.timeMs)}ms`;
+            const message = `Indexed ${String(result.data.filesIndexed)} documents, ${String(result.data.chunksCreated)} chunks in ${String(result.data.timeMs)}ms`;
             if (spinner !== void 0) {
               spinner.succeed(message);
             } else if (globalOpts.quiet !== true) {
@@ -842,7 +842,7 @@ async function handleAddRepo(args, options = {}) {
     console.log("\nIndexing...");
     const indexResult = await services.index.indexStore(result.data);
     if (indexResult.success) {
-      console.log(`Indexed ${String(indexResult.data.documentsIndexed)} files`);
+      console.log(`Indexed ${String(indexResult.data.filesIndexed)} files`);
     } else {
       console.error(`Indexing failed: ${indexResult.error.message}`);
     }
@@ -876,7 +876,7 @@ async function handleAddFolder(args, options = {}) {
     console.log("\nIndexing...");
     const indexResult = await services.index.indexStore(result.data);
     if (indexResult.success) {
-      console.log(`Indexed ${String(indexResult.data.documentsIndexed)} files`);
+      console.log(`Indexed ${String(indexResult.data.filesIndexed)} files`);
     } else {
       console.error(`Indexing failed: ${indexResult.error.message}`);
     }
@@ -1507,7 +1507,7 @@ Setting up ${String(repos.length)} repositories...
                 });
                 if (indexResult.success) {
                   spinner.succeed(
-                    `${repo.name}: ${String(indexResult.data.documentsIndexed)} docs, ${String(indexResult.data.chunksCreated)} chunks`
+                    `${repo.name}: ${String(indexResult.data.filesIndexed)} docs, ${String(indexResult.data.chunksCreated)} chunks`
                   );
                 } else {
                   throw new Error(

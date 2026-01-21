@@ -20,7 +20,7 @@ import type { Store, FileStore, RepoStore } from '../types/store.js';
 const logger = createLogger('index-service');
 
 interface IndexResult {
-  documentsIndexed: number;
+  filesIndexed: number;
   chunksCreated: number;
   timeMs: number;
 }
@@ -338,7 +338,7 @@ export class IndexService {
       );
 
       return ok({
-        documentsIndexed: filesToProcess.length,
+        filesIndexed: filesToProcess.length,
         chunksCreated: documents.length,
         timeMs,
         filesAdded: drift.added.length,
@@ -450,7 +450,7 @@ export class IndexService {
       {
         storeId: store.id,
         storeName: store.name,
-        documentsIndexed: filesProcessed,
+        filesIndexed: filesProcessed,
         chunksCreated: documents.length,
         sourceFilesForGraph: sourceFiles.length,
         timeMs,
@@ -459,7 +459,7 @@ export class IndexService {
     );
 
     return ok({
-      documentsIndexed: filesProcessed,
+      filesIndexed: filesProcessed,
       chunksCreated: documents.length,
       timeMs,
     });

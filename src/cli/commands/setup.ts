@@ -149,7 +149,7 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
 
                   if (indexResult.success) {
                     spinner.succeed(
-                      `${repo.name}: ${String(indexResult.data.documentsIndexed)} docs, ${String(indexResult.data.chunksCreated)} chunks`
+                      `${repo.name}: ${String(indexResult.data.filesIndexed)} docs, ${String(indexResult.data.chunksCreated)} chunks`
                     );
                   } else {
                     throw new Error(

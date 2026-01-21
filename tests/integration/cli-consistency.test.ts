@@ -174,7 +174,7 @@ describe('CLI Consistency', () => {
       const result = runCli('index json-test-store --format json');
       expect(result.exitCode).toBe(0);
       const parsed = JSON.parse(result.stdout);
-      expect(parsed).toHaveProperty('documentsIndexed');
+      expect(parsed).toHaveProperty('filesIndexed');
     }, 120000);
   });
 

@@ -231,7 +231,7 @@ describe('Server Integration - Index Flow', () => {
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
       data: {
-        documentsIndexed: 5,
+        filesIndexed: 5,
         chunksCreated: 25,
         timeMs: 500,
       },

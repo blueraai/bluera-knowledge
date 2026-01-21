@@ -2813,7 +2813,7 @@ var IndexService = class {
         "Incremental indexing complete"
       );
       return ok({
-        documentsIndexed: filesToProcess.length,
+        filesIndexed: filesToProcess.length,
         chunksCreated: documents.length,
         timeMs,
         filesAdded: drift.added.length,
@@ -2895,7 +2895,7 @@ var IndexService = class {
       {
         storeId: store.id,
         storeName: store.name,
-        documentsIndexed: filesProcessed,
+        filesIndexed: filesProcessed,
         chunksCreated: documents.length,
         sourceFilesForGraph: sourceFiles.length,
         timeMs
@@ -2903,7 +2903,7 @@ var IndexService = class {
       "Store indexing complete"
     );
     return ok({
-      documentsIndexed: filesProcessed,
+      filesIndexed: filesProcessed,
       chunksCreated: documents.length,
       timeMs
     });
@@ -5569,4 +5569,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RN242237.js.map
+//# sourceMappingURL=chunk-5YO7VA2G.js.map

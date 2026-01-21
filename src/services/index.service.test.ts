@@ -53,7 +53,7 @@ describe('IndexService', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBeGreaterThan(0);
+      expect(result.data.filesIndexed).toBeGreaterThan(0);
     }
   });
 
@@ -75,7 +75,7 @@ describe('IndexService', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.chunksCreated).toBeGreaterThan(result.data.documentsIndexed);
+      expect(result.data.chunksCreated).toBeGreaterThan(result.data.filesIndexed);
     }
   });
 });
@@ -350,7 +350,7 @@ describe('IndexService - Path Pattern Matching', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       // Should only index app.js, not node_modules
-      expect(result.data.documentsIndexed).toBe(1);
+      expect(result.data.filesIndexed).toBe(1);
     }
   });
 
@@ -372,7 +372,7 @@ describe('IndexService - Path Pattern Matching', () => {
     const result = await indexService.indexStore(store);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(1);
+      expect(result.data.filesIndexed).toBe(1);
     }
   });
 
@@ -394,7 +394,7 @@ describe('IndexService - Path Pattern Matching', () => {
     const result = await indexService.indexStore(store);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(1);
+      expect(result.data.filesIndexed).toBe(1);
     }
   });
 
@@ -416,7 +416,7 @@ describe('IndexService - Path Pattern Matching', () => {
     const result = await indexService.indexStore(store);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(1);
+      expect(result.data.filesIndexed).toBe(1);
     }
   });
 
@@ -438,7 +438,7 @@ describe('IndexService - Path Pattern Matching', () => {
     const result = await indexService.indexStore(store);
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBeGreaterThan(0);
+      expect(result.data.filesIndexed).toBeGreaterThan(0);
     }
   });
 
@@ -462,7 +462,7 @@ describe('IndexService - Path Pattern Matching', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       // Should only index app.ts
-      expect(result.data.documentsIndexed).toBe(1);
+      expect(result.data.filesIndexed).toBe(1);
     }
   });
 });
@@ -782,7 +782,7 @@ describe('IndexService - Error Handling', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(0);
+      expect(result.data.filesIndexed).toBe(0);
     }
   });
 
@@ -804,7 +804,7 @@ describe('IndexService - Error Handling', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(0);
+      expect(result.data.filesIndexed).toBe(0);
     }
   });
 });
@@ -1065,7 +1065,7 @@ describe('IndexService - Unsupported Store Types', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(1);
+      expect(result.data.filesIndexed).toBe(1);
     }
   });
 });
@@ -2124,7 +2124,7 @@ describe('IndexService - Batch Embedding', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       // Should index all 3 files
-      expect(result.data.documentsIndexed).toBe(3);
+      expect(result.data.filesIndexed).toBe(3);
     }
 
     // embedBatch should be called once per file (3 times)
@@ -2202,7 +2202,7 @@ describe('IndexService - Parallel File Processing', () => {
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.documentsIndexed).toBe(10);
+      expect(result.data.filesIndexed).toBe(10);
     }
 
     vi.restoreAllMocks();
@@ -2293,7 +2293,7 @@ describe('IndexService - Parallel File Processing', () => {
     // This test documents the current behavior
     if (result.success) {
       // If it succeeds, it should have indexed at least the valid files
-      expect(result.data.documentsIndexed).toBeGreaterThanOrEqual(0);
+      expect(result.data.filesIndexed).toBeGreaterThanOrEqual(0);
     } else {
       // If it fails, it should have an error
       expect(result.error).toBeDefined();

@@ -102,7 +102,7 @@ export async function handleAddRepo(
     const indexResult = await services.index.indexStore(result.data);
 
     if (indexResult.success) {
-      console.log(`Indexed ${String(indexResult.data.documentsIndexed)} files`);
+      console.log(`Indexed ${String(indexResult.data.filesIndexed)} files`);
     } else {
       console.error(`Indexing failed: ${indexResult.error.message}`);
     }
@@ -148,7 +148,7 @@ export async function handleAddFolder(
     const indexResult = await services.index.indexStore(result.data);
 
     if (indexResult.success) {
-      console.log(`Indexed ${String(indexResult.data.documentsIndexed)} files`);
+      console.log(`Indexed ${String(indexResult.data.filesIndexed)} files`);
     } else {
       console.error(`Indexing failed: ${indexResult.error.message}`);
     }
@@ -174,7 +174,7 @@ export async function handleIndex(args: { store: string }): Promise<void> {
 
     if (result.success) {
       console.log(
-        `Indexed ${String(result.data.documentsIndexed)} documents in ${String(result.data.timeMs)}ms`
+        `Indexed ${String(result.data.filesIndexed)} documents in ${String(result.data.timeMs)}ms`
       );
     } else {
       console.error(`Error: ${result.error.message}`);

@@ -63,7 +63,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
             if (globalOpts.format === 'json') {
               console.log(JSON.stringify(result.data, null, 2));
             } else {
-              const message = `Indexed ${String(result.data.documentsIndexed)} documents, ${String(result.data.chunksCreated)} chunks in ${String(result.data.timeMs)}ms`;
+              const message = `Indexed ${String(result.data.filesIndexed)} documents, ${String(result.data.chunksCreated)} chunks in ${String(result.data.timeMs)}ms`;
               if (spinner !== undefined) {
                 spinner.succeed(message);
               } else if (globalOpts.quiet !== true) {

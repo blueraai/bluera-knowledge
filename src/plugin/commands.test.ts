@@ -267,7 +267,7 @@ describe('Commands - handleAddRepo', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+      data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
     });
 
     await handleAddRepo({ url: 'https://github.com/user/test-repo.git' });
@@ -293,7 +293,7 @@ describe('Commands - handleAddRepo', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+      data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
     });
 
     await handleAddRepo({ url: 'https://github.com/user/repo.git', name: 'my-name' });
@@ -320,7 +320,7 @@ describe('Commands - handleAddRepo', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+      data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
     });
 
     await handleAddRepo({ url: 'https://github.com/user/repo.git', branch: 'develop' });
@@ -349,7 +349,7 @@ describe('Commands - handleAddRepo', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+      data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
     });
 
     await handleAddRepo({ url: 'https://github.com/user/test.git' });
@@ -440,7 +440,7 @@ describe('Commands - handleAddFolder', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 5, chunksCreated: 20, timeMs: 500 },
+      data: { filesIndexed: 5, chunksCreated: 20, timeMs: 500 },
     });
 
     await handleAddFolder({ path: '/path/to/my-folder' });
@@ -466,7 +466,7 @@ describe('Commands - handleAddFolder', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 5, chunksCreated: 20, timeMs: 500 },
+      data: { filesIndexed: 5, chunksCreated: 20, timeMs: 500 },
     });
 
     await handleAddFolder({ path: '/path/folder', name: 'custom' });
@@ -494,7 +494,7 @@ describe('Commands - handleAddFolder', () => {
     });
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 5, chunksCreated: 20, timeMs: 500 },
+      data: { filesIndexed: 5, chunksCreated: 20, timeMs: 500 },
     });
 
     await handleAddFolder({ path: '/tmp/test' });
@@ -561,7 +561,7 @@ describe('Commands - handleIndex', () => {
     vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+      data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
     });
 
     await handleIndex({ store: 'store-1' });
@@ -583,7 +583,7 @@ describe('Commands - handleIndex', () => {
     vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 10, chunksCreated: 50, timeMs: 1000 },
+      data: { filesIndexed: 10, chunksCreated: 50, timeMs: 1000 },
     });
 
     await handleIndex({ store: 'my-store' });
@@ -604,7 +604,7 @@ describe('Commands - handleIndex', () => {
     vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(mockStore);
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
-      data: { documentsIndexed: 25, chunksCreated: 100, timeMs: 2000 },
+      data: { filesIndexed: 25, chunksCreated: 100, timeMs: 2000 },
     });
 
     await handleIndex({ store: 'test' });

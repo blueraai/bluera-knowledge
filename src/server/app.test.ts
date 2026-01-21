@@ -674,7 +674,7 @@ describe('Server App - POST /api/stores/:id/index', () => {
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
       data: {
-        documentsIndexed: 10,
+        filesIndexed: 10,
         chunksCreated: 50,
         timeMs: 1000,
       },
@@ -688,7 +688,7 @@ describe('Server App - POST /api/stores/:id/index', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json).toMatchObject({
-      documentsIndexed: 10,
+      filesIndexed: 10,
       chunksCreated: 50,
       timeMs: 1000,
     });
@@ -708,7 +708,7 @@ describe('Server App - POST /api/stores/:id/index', () => {
     vi.mocked(mockServices.index.indexStore).mockResolvedValue({
       success: true,
       data: {
-        documentsIndexed: 0,
+        filesIndexed: 0,
         chunksCreated: 0,
         timeMs: 0,
       },
