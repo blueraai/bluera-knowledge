@@ -82,7 +82,6 @@ The crawler operates in two modes depending on Claude Code CLI availability:
 | **Simple (BFS)** | No | Breadth-first crawl up to max depth (2 levels) |
 
 **Requirements:**
-- Claude Code CLI is required for `--crawl` and `--extract` instructions
-- If Claude Code CLI is unavailable, throws an error with installation instructions
-
-> **Note:** Install Claude Code to use intelligent crawling with `--crawl` (AI-guided URL selection) and `--extract` (AI content extraction). The `--simple` flag can be used for basic BFS crawling without Claude Code.
+- Claude Code CLI is required only for `--crawl` and `--extract` instructions (intelligent mode)
+- Simple BFS crawling (without `--crawl`/`--extract`) works without Claude Code CLI
+- If Claude Code CLI is unavailable and intelligent mode is requested, throws an error with installation instructions

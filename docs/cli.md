@@ -37,6 +37,8 @@ bluera-knowledge store create fastapi-docs --type web --source https://fastapi.t
 
 > **Note:** Web stores created with `store create --type web` are empty shells. Use the `crawl` command to populate them with content. The `index` command does not work for web stores.
 
+> **Note:** The CLI only accepts HTTP(S) URLs for repository sources. SSH URLs (`git@github.com:...`) are not supported—use the HTTPS URL instead.
+
 **Create Options:**
 
 | Option | Description |
@@ -147,7 +149,7 @@ bluera-knowledge search "express middleware" --format json
 ```bash
 --config <path>        # Custom config file
 --data-dir <path>      # Custom data directory
---project-root <path>  # Project root for store definitions (defaults to current directory)
+--project-root <path>  # Project root for store definitions (auto-detected from git root or current directory)
 --format <format>      # Output format: json | table | plain
 --quiet                # Suppress non-essential output
 --verbose              # Enable verbose logging

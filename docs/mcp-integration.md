@@ -57,7 +57,7 @@ Every MCP tool exposed requires its full schema to be sent to Claude with each t
 
 1. **Native tools for common workflow** - `search` and `get_full_context` are the operations Claude uses most often, so they get dedicated tools with full schemas
 
-2. **Meta-tool for management** - The `execute` tool consolidates 8 store/job management commands into a single tool. Commands are discovered on-demand via `execute("commands")` or `execute("help", {command: "store:create"})`
+2. **Meta-tool for management** - The `execute` tool consolidates store/job management commands into a single tool. Commands are discovered on-demand via `execute("commands")` or `execute("help", {command: "store:create"})`
 
 3. **Lazy documentation** - Command help isn't pre-sent with tool listings; it's discoverable when needed
 
