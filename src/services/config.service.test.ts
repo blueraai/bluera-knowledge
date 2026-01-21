@@ -60,9 +60,9 @@ describe('ConfigService', () => {
     it('expands tilde to home directory', () => {
       const service = new ConfigService(configPath, '~/.bluera/data');
       const dataDir = service.resolveDataDir();
-      // Note: expandPath is called in constructor, so ~ will be kept
-      // since dataDir parameter is explicitly provided
-      expect(dataDir).toBe('~/.bluera/data');
+      // Explicit paths are now expanded via expandPath()
+      expect(dataDir).not.toContain('~');
+      expect(dataDir).toContain('.bluera/data');
     });
 
     it('resolves relative paths against project root', () => {

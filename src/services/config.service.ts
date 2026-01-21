@@ -32,15 +32,17 @@ export class ConfigService {
     this.projectRoot = projectRoot ?? ProjectRootService.resolve();
 
     // Resolve configPath - per-repo by default
+    // Explicit paths are resolved against projectRoot (handles ~ and relative paths)
     if (configPath !== undefined && configPath !== '') {
-      this.configPath = configPath;
+      this.configPath = this.expandPath(configPath, this.projectRoot);
     } else {
       this.configPath = join(this.projectRoot, DEFAULT_CONFIG_PATH);
     }
 
     // Resolve dataDir - per-repo by default
+    // Explicit paths are resolved against projectRoot (handles ~ and relative paths)
     if (dataDir !== undefined && dataDir !== '') {
-      this.dataDir = dataDir;
+      this.dataDir = this.expandPath(dataDir, this.projectRoot);
     } else {
       this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, this.projectRoot);
     }

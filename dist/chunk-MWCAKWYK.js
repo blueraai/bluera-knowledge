@@ -2055,12 +2055,12 @@ var ConfigService = class {
   constructor(configPath, dataDir, projectRoot) {
     this.projectRoot = projectRoot ?? ProjectRootService.resolve();
     if (configPath !== void 0 && configPath !== "") {
-      this.configPath = configPath;
+      this.configPath = this.expandPath(configPath, this.projectRoot);
     } else {
       this.configPath = join5(this.projectRoot, DEFAULT_CONFIG_PATH);
     }
     if (dataDir !== void 0 && dataDir !== "") {
-      this.dataDir = dataDir;
+      this.dataDir = this.expandPath(dataDir, this.projectRoot);
     } else {
       this.dataDir = this.expandPath(DEFAULT_CONFIG.dataDir, this.projectRoot);
     }
@@ -5586,4 +5586,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-URHI4BA7.js.map
+//# sourceMappingURL=chunk-MWCAKWYK.js.map
