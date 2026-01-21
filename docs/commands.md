@@ -262,10 +262,11 @@ Shows store name, type, ID, and source location in a clean table format.
 <summary><b>Expected Output</b></summary>
 
 ```
-✓ Indexing store: react...
-✓ Indexed 1,247 documents in 3,421ms
+✓ Starting index for store: react...
+🔄 Indexing started in background
+   Job ID: job_abc123def456
 
-Store search index is up to date!
+Check status with: /bluera-knowledge:check-status job_abc123def456
 ```
 </details>
 

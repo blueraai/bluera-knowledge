@@ -110,6 +110,8 @@ bluera-knowledge index watch react --debounce 2000  # Custom debounce (default: 
 |--------|-------------|
 | `--debounce <ms>` | Debounce delay for file changes (default: 1000ms) |
 
+> **Note:** Watch mode only supports `file` and `repo` stores. Web stores cannot be watched.
+
 ---
 
 ## Searching
@@ -219,6 +221,8 @@ bluera-knowledge crawl https://example.com docs --simple --max-pages 100
 | `--max-pages <n>` | Maximum pages to crawl (default: 50) |
 | `--fast` | Use fast axios-only mode (may fail on JS-heavy sites) |
 
+> **Note:** The crawl command automatically creates a web store if one doesn't exist with the specified name.
+
 ### Start MCP Server
 
 ```bash
@@ -288,6 +292,8 @@ bluera-knowledge setup repos --list
 | `--skip-index` | Clone and create stores but don't index yet |
 | `--only <names>` | Only process matching repos (comma-separated, partial match) |
 | `--list` | Print available repos without cloning/indexing |
+
+> **Note:** The default repositories use SSH URLs (`git@github.com:...`). You must have SSH keys configured for GitHub. Alternatively, use `--list` to see repos and clone them manually with HTTPS URLs.
 
 ### Plugin API Commands
 

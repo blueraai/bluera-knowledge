@@ -82,7 +82,7 @@ Semantic vector search across all indexed stores or a specific subset. Returns s
 | `mode` | string | Search mode: hybrid (default), vector, or fts |
 | `detail` | string | Context level: minimal, contextual, or full |
 | `limit` | number | Maximum results (default: 10) |
-| `stores` | array | Array of specific store IDs to search (optional, searches all stores if not specified) |
+| `stores` | array | Array of store IDs or names to search (optional, searches all stores if not specified) |
 | `threshold` | number | Minimum normalized score (0-1) for filtering results |
 | `minRelevance` | number | Minimum raw cosine similarity (0-1) for filtering results |
 
