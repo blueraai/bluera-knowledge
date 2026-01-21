@@ -157,61 +157,59 @@ Use this section if `--dev` flag is NOT present.
 
 ## Part 4: Web Crawl Testing
 
-17. **Create crawl store**: Call `execute` with:
-    ```json
-    { "command": "store:create", "args": { "name": "bk-crawl-test", "type": "web", "source": "https://httpbin.org/html", "options": { "maxPages": 1 } } }
+> **Note:** Web crawl functionality requires the CLI (`bluera-knowledge crawl`). MCP `store:create` only supports `file` and `repo` types. Skip this section if testing MCP-only environments.
+
+17. **Create web store via CLI** (requires CLI access):
+    ```bash
+    bluera-knowledge crawl https://httpbin.org/html bk-crawl-test --max-pages 1
     ```
-    - PASS if store creation initiates and returns job id
+    - PASS if crawl completes and store is created
+    - SKIP if CLI not available
 
-18. **Verify crawl job**: Call `execute` with `{ command: "jobs" }`
-    - PASS if bk-crawl-test job appears in list (or completed)
+18. **Verify store exists**: Call `execute` with `{ command: "stores" }`
+    - PASS if bk-crawl-test appears in store list
+    - SKIP if test 17 was skipped
 
-19. **job:cancel** (if crawl still running): Call `execute` with:
-    ```json
-    { "command": "job:cancel", "args": { "jobId": "<crawl-job-id>" } }
-    ```
-    - PASS if job cancelled or already completed
-    - SKIP if job already completed
-
-20. **Delete crawl store**: Call `execute` with:
+19. **Delete crawl store**: Call `execute` with:
     ```json
     { "command": "store:delete", "args": { "store": "bk-crawl-test" } }
     ```
     - PASS if deletion succeeds
+    - SKIP if test 17 was skipped
 
 ## Part 5: Hook Tests
 
-21. **Hook Registration**:
+20. **Hook Registration**:
     ```bash
     cat hooks/hooks.json | jq -e '.hooks.PostToolUse and .hooks.UserPromptSubmit and .hooks.SessionStart'
     ```
     - PASS if returns `true`
 
-22. **PostToolUse Hook - Library Detection**:
+21. **PostToolUse Hook - Library Detection**:
     ```bash
     echo '{"tool_name": "Read", "tool_input": {"file_path": "/project/node_modules/express/index.js"}}' | python3 hooks/posttooluse-bk-reminder.py
     ```
     - PASS if output contains "BLUERA-KNOWLEDGE REMINDER"
 
-23. **PostToolUse Hook - Non-Library**:
+22. **PostToolUse Hook - Non-Library**:
     ```bash
     echo '{"tool_name": "Read", "tool_input": {"file_path": "/project/src/index.ts"}}' | python3 hooks/posttooluse-bk-reminder.py
     ```
     - PASS if output is empty
 
-24. **Skill Activation Hook - Matching**:
+23. **Skill Activation Hook - Matching**:
     ```bash
     export CLAUDE_PLUGIN_ROOT="$(pwd)" && echo '{"prompt": "why does the express package throw this error?"}' | python3 hooks/skill-activation.py
     ```
     - PASS if output contains "MANDATORY EVALUATION"
 
-25. **Skill Activation Hook - Excluded**:
+24. **Skill Activation Hook - Excluded**:
     ```bash
     export CLAUDE_PLUGIN_ROOT="$(pwd)" && echo '{"prompt": "/bluera-knowledge:search express"}' | python3 hooks/skill-activation.py
     ```
     - PASS if output is empty
 
-26. **Skill Rules File**:
+25. **Skill Rules File**:
     ```bash
     jq -e '(.skills | length) > 0 and (.globalExclusions | length) > 0' hooks/skill-rules.json
     ```
@@ -219,19 +217,19 @@ Use this section if `--dev` flag is NOT present.
 
 ## Part 6: Cleanup
 
-27. **Delete test store**: Call `execute` with:
+26. **Delete test store**: Call `execute` with:
     ```json
     { "command": "store:delete", "args": { "store": "bk-test-store" } }
     ```
     - PASS if deletion succeeds
 
-28. **Remove test content**:
+27. **Remove test content**:
     ```bash
     rm -rf .bluera/bluera-knowledge/test-content
     ```
     - PASS if command succeeds
 
-29. **Verify store cleanup**: Call `execute` with `{ command: "stores" }`
+28. **Verify store cleanup**: Call `execute` with `{ command: "stores" }`
     - PASS if bk-test-store is NOT in the list
 
 30. **Verify no test artifacts**:

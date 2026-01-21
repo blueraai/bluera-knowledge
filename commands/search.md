@@ -15,7 +15,7 @@ Search indexed library sources for: **$ARGUMENTS**
    - Extract --stores parameter (optional, comma-separated store names)
    - Extract --limit parameter (optional, default 10)
    - Extract --mode parameter (optional: vector, fts, hybrid; default hybrid)
-   - Extract --detail parameter (optional: minimal, contextual, full; default contextual)
+   - Extract --detail parameter (optional: minimal, contextual, full; default minimal)
    - Extract --threshold parameter (optional, 0-1 range for normalized score filtering)
    - Extract --min-relevance parameter (optional, 0-1 range for raw cosine similarity filtering)
 
@@ -24,7 +24,7 @@ Search indexed library sources for: **$ARGUMENTS**
    - stores: Array of store names (if --stores specified)
    - limit: Number of results (if --limit specified, default 10)
    - mode: Search mode (if --mode specified, default "hybrid")
-   - detail: Detail level (if --detail specified, default "contextual")
+   - detail: Detail level (if --detail specified, default "minimal")
    - threshold: Minimum normalized score (if --threshold specified)
    - minRelevance: Minimum raw cosine similarity (if --min-relevance specified)
    - intent: "find-implementation"

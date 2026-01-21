@@ -21,13 +21,16 @@ npm install --save-dev bluera-knowledge
 ### Create a Store
 
 ```bash
-# Add a Git repository
+# Add a remote Git repository
 bluera-knowledge store create react --type repo --source https://github.com/facebook/react
 
-# Add a Git repository with specific branch
+# Add a remote Git repository with specific branch
 bluera-knowledge store create react-canary --type repo --source https://github.com/facebook/react --branch canary
 
-# Add a local folder
+# Add a local Git repository
+bluera-knowledge store create my-local-repo --type repo --source /path/to/local/repo
+
+# Add a local folder (non-git)
 bluera-knowledge store create my-docs --type file --source ./docs
 
 # Create a web store (requires crawl command to populate)
@@ -37,7 +40,7 @@ bluera-knowledge store create fastapi-docs --type web --source https://fastapi.t
 
 > **Note:** Web stores created with `store create --type web` are empty shells. Use the `crawl` command to populate them with content. The `index` command does not work for web stores.
 
-> **Note:** The CLI only accepts HTTP(S) URLs for repository sources. SSH URLs (`git@github.com:...`) are not supported—use the HTTPS URL instead.
+> **Note:** For remote repository URLs, only HTTP(S) URLs are supported. SSH URLs (`git@github.com:...`) are not supported—use the HTTPS URL instead. Local repository paths work with `--type repo`.
 
 **Create Options:**
 

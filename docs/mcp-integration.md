@@ -98,7 +98,7 @@ Retrieve complete code and context for a specific search result by ID.
 
 ### `execute`
 
-Meta-tool for store and job management. Consolidates 8 operations into one tool with subcommands.
+Meta-tool for store and job management. Consolidates operations into one tool with subcommands.
 
 **Parameters:**
 
