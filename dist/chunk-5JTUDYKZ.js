@@ -485,16 +485,20 @@ async function getCrawlStrategy(seedUrl, crawlInstruction, useHeadless = false) 
     await bridge.stop();
   }
 }
+var DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; BlueraKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)";
+var DEFAULT_TIMEOUT = 3e4;
 var IntelligentCrawler = class extends EventEmitter {
   claudeClient;
   pythonBridge;
   visited;
+  config;
   stopped;
-  constructor() {
+  constructor(config) {
     super();
     this.claudeClient = new ClaudeClient();
     this.pythonBridge = new PythonBridge();
     this.visited = /* @__PURE__ */ new Set();
+    this.config = config ?? {};
     this.stopped = false;
   }
   /**
@@ -758,9 +762,9 @@ var IntelligentCrawler = class extends EventEmitter {
     }
     try {
       const response = await axios.get(url, {
-        timeout: 3e4,
+        timeout: this.config.timeout ?? DEFAULT_TIMEOUT,
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; bluera-knowledge-crawler/1.0)"
+          "User-Agent": this.config.userAgent ?? DEFAULT_USER_AGENT
         }
       });
       const durationMs = Date.now() - startTime;
@@ -833,4 +837,4 @@ export {
   getCrawlStrategy,
   IntelligentCrawler
 };
-//# sourceMappingURL=chunk-CR6CVZNR.js.map
+//# sourceMappingURL=chunk-5JTUDYKZ.js.map

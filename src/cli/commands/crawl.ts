@@ -123,7 +123,8 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
           console.log(`Crawling ${url}`);
         }
 
-        const crawler = new IntelligentCrawler();
+        const appConfig = await services.config.load();
+        const crawler = new IntelligentCrawler(appConfig.crawl);
         // Use web preset for larger prose-friendly chunks
         const webChunker = ChunkingService.forContentType('web');
         let pagesIndexed = 0;

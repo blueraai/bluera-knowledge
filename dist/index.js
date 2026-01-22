@@ -7,7 +7,7 @@ import {
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-CR6CVZNR.js";
+} from "./chunk-5JTUDYKZ.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -107,7 +107,8 @@ function createCrawlCommand(getOptions) {
       } else if (globalOpts.quiet !== true && globalOpts.format !== "json") {
         console.log(`Crawling ${url}`);
       }
-      const crawler = new IntelligentCrawler();
+      const appConfig = await services.config.load();
+      const crawler = new IntelligentCrawler(appConfig.crawl);
       const webChunker = ChunkingService.forContentType("web");
       let pagesIndexed = 0;
       let chunksCreated = 0;

@@ -55,6 +55,12 @@ export async function getCrawlStrategy(
   }
 }
 
+export interface CrawlConfig {
+  userAgent?: string; // User-Agent header for requests
+  timeout?: number; // Per-page timeout in ms (default: 30000)
+  maxConcurrency?: number; // Max concurrent requests (for future use)
+}
+
 export interface CrawlOptions {
   crawlInstruction?: string; // Natural language: what to crawl
   extractInstruction?: string; // Natural language: what to extract
@@ -82,6 +88,11 @@ export interface CrawlProgress {
   error?: Error;
 }
 
+// Default values for crawl config
+const DEFAULT_USER_AGENT =
+  'Mozilla/5.0 (compatible; BlueraKnowledge/1.0; +https://github.com/blueraai/bluera-knowledge)';
+const DEFAULT_TIMEOUT = 30000;
+
 /**
  * Intelligent crawler that uses Claude CLI for strategy and extraction
  */
@@ -89,13 +100,15 @@ export class IntelligentCrawler extends EventEmitter {
   private readonly claudeClient: ClaudeClient;
   private readonly pythonBridge: PythonBridge;
   private readonly visited: Set<string>;
+  private readonly config: CrawlConfig;
   private stopped: boolean;
 
-  constructor() {
+  constructor(config?: CrawlConfig) {
     super();
     this.claudeClient = new ClaudeClient();
     this.pythonBridge = new PythonBridge();
     this.visited = new Set();
+    this.config = config ?? {};
     this.stopped = false;
   }
 
@@ -447,9 +460,9 @@ export class IntelligentCrawler extends EventEmitter {
     // Original axios implementation for static sites
     try {
       const response = await axios.get<string>(url, {
-        timeout: 30000,
+        timeout: this.config.timeout ?? DEFAULT_TIMEOUT,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; bluera-knowledge-crawler/1.0)',
+          'User-Agent': this.config.userAgent ?? DEFAULT_USER_AGENT,
         },
       });
 

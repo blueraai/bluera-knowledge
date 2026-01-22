@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-CR6CVZNR.js";
+} from "../chunk-5JTUDYKZ.js";
 import {
   JobService,
   createLogger,
@@ -26,12 +26,13 @@ function calculateIndexProgress(current, total, scale = 100) {
   return current / total * scale;
 }
 var BackgroundWorker = class {
-  constructor(jobService, storeService, indexService, lanceStore, embeddingEngine) {
+  constructor(jobService, storeService, indexService, lanceStore, embeddingEngine, crawlConfig) {
     this.jobService = jobService;
     this.storeService = storeService;
     this.indexService = indexService;
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
+    this.crawlConfig = crawlConfig;
   }
   /**
    * Execute a job based on its type
@@ -181,7 +182,7 @@ var BackgroundWorker = class {
       throw new Error(`Web store ${storeId} not found`);
     }
     const resolvedMaxPages = typeof maxPages === "number" ? maxPages : 50;
-    const crawler = new IntelligentCrawler();
+    const crawler = new IntelligentCrawler(this.crawlConfig);
     crawler.on("progress", (progress) => {
       const currentJob = this.jobService.getJob(job.id);
       if (currentJob?.status === "cancelled") {
@@ -332,12 +333,14 @@ async function main() {
     }
     void shutdownLogger().finally(() => process.exit(0));
   });
+  const appConfig = await services.config.load();
   const worker = new BackgroundWorker(
     jobService,
     services.store,
     services.index,
     services.lance,
-    services.embeddings
+    services.embeddings,
+    appConfig.crawl
   );
   try {
     await worker.executeJob(jobId);

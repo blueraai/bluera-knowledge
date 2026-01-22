@@ -36,6 +36,11 @@ describe('crawl command execution', () => {
     vi.clearAllMocks();
 
     mockServices = {
+      config: {
+        load: vi.fn().mockResolvedValue({
+          crawl: { userAgent: 'test-agent', timeout: 30000, maxConcurrency: 3 },
+        }),
+      },
       store: {
         getByIdOrName: vi.fn(),
         list: vi.fn(),

@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
-import { IntelligentCrawler, type CrawlProgress } from '../crawl/intelligent-crawler.js';
+import {
+  IntelligentCrawler,
+  type CrawlConfig,
+  type CrawlProgress,
+} from '../crawl/intelligent-crawler.js';
 import { createLogger } from '../logging/index.js';
 import { IndexService } from '../services/index.service.js';
 import { JobService } from '../services/job.service.js';
@@ -34,7 +38,8 @@ export class BackgroundWorker {
     private readonly storeService: StoreService,
     private readonly indexService: IndexService,
     private readonly lanceStore: LanceStore,
-    private readonly embeddingEngine: EmbeddingEngine
+    private readonly embeddingEngine: EmbeddingEngine,
+    private readonly crawlConfig?: CrawlConfig
   ) {}
 
   /**
@@ -225,7 +230,7 @@ export class BackgroundWorker {
     }
 
     const resolvedMaxPages = typeof maxPages === 'number' ? maxPages : 50;
-    const crawler = new IntelligentCrawler();
+    const crawler = new IntelligentCrawler(this.crawlConfig);
 
     // Listen for progress events
     crawler.on('progress', (progress: CrawlProgress) => {

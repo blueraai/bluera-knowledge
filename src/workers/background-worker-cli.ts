@@ -92,13 +92,15 @@ async function main(): Promise<void> {
     void shutdownLogger().finally(() => process.exit(0));
   });
 
-  // Create worker and execute job
+  // Load config and create worker
+  const appConfig = await services.config.load();
   const worker = new BackgroundWorker(
     jobService,
     services.store,
     services.index,
     services.lance,
-    services.embeddings
+    services.embeddings,
+    appConfig.crawl
   );
 
   try {
