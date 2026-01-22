@@ -9,7 +9,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   summarizePayload
-} from "./chunk-MWCAKWYK.js";
+} from "./chunk-WK6CXAFP.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -964,12 +964,13 @@ var logger3 = createLogger("spawn-worker");
 function spawnBackgroundWorker(jobId, dataDir) {
   const currentFilePath = fileURLToPath(import.meta.url);
   const currentDir = path.dirname(currentFilePath);
-  const isProduction = currentFilePath.includes("/dist/");
+  const distPattern = `${path.sep}dist${path.sep}`;
+  const isProduction = currentFilePath.includes(distPattern);
   let command;
   let args;
   if (isProduction) {
-    const distIndex = currentFilePath.indexOf("/dist/");
-    const distDir = currentFilePath.substring(0, distIndex + 6);
+    const distIndex = currentFilePath.indexOf(distPattern);
+    const distDir = currentFilePath.substring(0, distIndex + distPattern.length);
     const workerScript = path.join(distDir, "workers", "background-worker-cli.js");
     command = process.execPath;
     args = [workerScript, jobId];
@@ -2156,4 +2157,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-MDQU4RVT.js.map
+//# sourceMappingURL=chunk-HHKFZZRG.js.map

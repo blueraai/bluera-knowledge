@@ -4912,11 +4912,12 @@ var PythonBridge = class {
   start() {
     if (this.process) return Promise.resolve();
     const currentFilePath = fileURLToPath(import.meta.url);
-    const isProduction = currentFilePath.includes("/dist/");
+    const distPattern = `${path3.sep}dist${path3.sep}`;
+    const isProduction = currentFilePath.includes(distPattern);
     let pythonWorkerPath;
     let pythonPath;
     if (isProduction) {
-      const distIndex = currentFilePath.indexOf("/dist/");
+      const distIndex = currentFilePath.indexOf(distPattern);
       const pluginRoot = currentFilePath.substring(0, distIndex);
       pythonWorkerPath = path3.join(pluginRoot, "python", "crawl_worker.py");
       const venvPython = path3.join(pluginRoot, ".venv", "bin", "python3");
@@ -5586,4 +5587,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-MWCAKWYK.js.map
+//# sourceMappingURL=chunk-WK6CXAFP.js.map

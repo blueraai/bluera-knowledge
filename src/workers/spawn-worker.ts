@@ -23,7 +23,9 @@ export function spawnBackgroundWorker(jobId: string, dataDir?: string): void {
 
   // Check if we're running from dist (production) or src (development)
   // Note: In bundled code, import.meta.url may point to a chunk file in dist root
-  const isProduction = currentFilePath.includes('/dist/');
+  // Platform-agnostic check: match both /dist/ and \dist\ (Windows)
+  const distPattern = `${path.sep}dist${path.sep}`;
+  const isProduction = currentFilePath.includes(distPattern);
 
   let command: string;
   let args: string[];
@@ -32,8 +34,8 @@ export function spawnBackgroundWorker(jobId: string, dataDir?: string): void {
     // Production: Use Node.js directly with compiled file
     // When bundled, the chunk may be in dist/ root, but worker CLI is in dist/workers/
     // Find the dist directory and construct the correct path
-    const distIndex = currentFilePath.indexOf('/dist/');
-    const distDir = currentFilePath.substring(0, distIndex + 6); // includes '/dist/'
+    const distIndex = currentFilePath.indexOf(distPattern);
+    const distDir = currentFilePath.substring(0, distIndex + distPattern.length);
     const workerScript = path.join(distDir, 'workers', 'background-worker-cli.js');
     command = process.execPath; // Use the same Node.js binary
     args = [workerScript, jobId];

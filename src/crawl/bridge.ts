@@ -43,14 +43,16 @@ export class PythonBridge {
     // Compute absolute path to Python worker using import.meta.url
     // This works both in development (src/) and production (dist/)
     const currentFilePath = fileURLToPath(import.meta.url);
-    const isProduction = currentFilePath.includes('/dist/');
+    // Platform-agnostic check: match both /dist/ and \dist\ (Windows)
+    const distPattern = `${path.sep}dist${path.sep}`;
+    const isProduction = currentFilePath.includes(distPattern);
 
     let pythonWorkerPath: string;
     let pythonPath: string;
 
     if (isProduction) {
       // Production: Find dist dir and go to sibling python/ directory
-      const distIndex = currentFilePath.indexOf('/dist/');
+      const distIndex = currentFilePath.indexOf(distPattern);
       const pluginRoot = currentFilePath.substring(0, distIndex);
       pythonWorkerPath = path.join(pluginRoot, 'python', 'crawl_worker.py');
 
