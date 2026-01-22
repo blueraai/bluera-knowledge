@@ -208,7 +208,7 @@ function createCrawlCommand(getOptions) {
         await destroyServices(services);
       }
       if (exitCode !== 0) {
-        process.exit(exitCode);
+        process.exitCode = exitCode;
       }
     }
   );
@@ -276,7 +276,7 @@ function createIndexCommand(getOptions) {
       await destroyServices(services);
     }
     if (exitCode !== 0) {
-      process.exit(exitCode);
+      process.exitCode = exitCode;
     }
   });
   index.command("watch <store>").description("Watch store directory; re-index when files change").option(
@@ -293,7 +293,9 @@ function createIndexCommand(getOptions) {
     const store = await services.store.getByIdOrName(storeIdOrName);
     if (store === void 0 || store.type !== "file" && store.type !== "repo") {
       console.error(`Error: File/repo store not found: ${storeIdOrName}`);
-      process.exit(3);
+      await destroyServices(services);
+      process.exitCode = 3;
+      return;
     }
     const appConfig = await services.config.load();
     const { WatchService } = await import("./watch.service-BB26B2UV.js");
@@ -1427,24 +1429,25 @@ function createSetupCommand(getOptions) {
         }
         return;
       }
+      let repos = DEFAULT_REPOS;
+      if (options.only !== void 0 && options.only !== "") {
+        const onlyNames = options.only.split(",").map((n) => n.trim().toLowerCase());
+        repos = DEFAULT_REPOS.filter(
+          (r) => onlyNames.some((n) => r.name.toLowerCase().includes(n))
+        );
+        if (repos.length === 0) {
+          console.error(`No repos matched: ${options.only}`);
+          console.log("Available repos:", DEFAULT_REPOS.map((r) => r.name).join(", "));
+          process.exitCode = 1;
+          return;
+        }
+      }
       const services = await createServices(
         globalOpts.config,
         globalOpts.dataDir,
         globalOpts.projectRoot
       );
       try {
-        let repos = DEFAULT_REPOS;
-        if (options.only !== void 0 && options.only !== "") {
-          const onlyNames = options.only.split(",").map((n) => n.trim().toLowerCase());
-          repos = DEFAULT_REPOS.filter(
-            (r) => onlyNames.some((n) => r.name.toLowerCase().includes(n))
-          );
-          if (repos.length === 0) {
-            console.error(`No repos matched: ${options.only}`);
-            console.log("Available repos:", DEFAULT_REPOS.map((r) => r.name).join(", "));
-            process.exit(1);
-          }
-        }
         console.log(`
 Setting up ${String(repos.length)} repositories...
 `);

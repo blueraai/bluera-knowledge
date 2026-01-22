@@ -87,7 +87,8 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       }
 
       if (exitCode !== 0) {
-        process.exit(exitCode);
+        // Using process.exitCode avoids mutex crashes from native code (LanceDB, tree-sitter)
+        process.exitCode = exitCode;
       }
     });
 
@@ -110,7 +111,10 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       const store = await services.store.getByIdOrName(storeIdOrName);
       if (store === undefined || (store.type !== 'file' && store.type !== 'repo')) {
         console.error(`Error: File/repo store not found: ${storeIdOrName}`);
-        process.exit(3);
+        // Cleanup services before exiting (using exitCode avoids mutex crashes)
+        await destroyServices(services);
+        process.exitCode = 3;
+        return;
       }
 
       const appConfig = await services.config.load();

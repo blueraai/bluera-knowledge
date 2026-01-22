@@ -246,7 +246,8 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
         }
 
         if (exitCode !== 0) {
-          process.exit(exitCode);
+          // Using process.exitCode avoids mutex crashes from native code (LanceDB, tree-sitter)
+          process.exitCode = exitCode;
         }
       }
     );

@@ -32,11 +32,13 @@ describe('createIndexCommand - Execution Tests', () => {
   let processExitSpy: ReturnType<typeof vi.spyOn>;
   let processOnSpy: ReturnType<typeof vi.spyOn>;
   let getOptions: () => GlobalOptions;
+  let destroyServicesMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    const { createServices } = await import('../../services/index.js');
+    const { createServices, destroyServices } = await import('../../services/index.js');
+    destroyServicesMock = vi.mocked(destroyServices);
 
     mockServices = {
       config: {
@@ -350,23 +352,27 @@ describe('createIndexCommand - Execution Tests', () => {
 
   describe('index command - error handling', () => {
     it('exits with code 3 when store not found', async () => {
-      const { destroyServices } = await import('../../services/index.js');
-
       vi.mocked(mockServices.store.getByIdOrName).mockResolvedValue(undefined);
 
       const command = createIndexCommand(getOptions);
       const action = command._actionHandler;
-      await expect(action(['nonexistent-store'])).rejects.toThrow('process.exit: 3');
 
+      // Reset exitCode before test
+      process.exitCode = undefined;
+
+      // Action handler completes normally but sets exitCode
+      await action(['nonexistent-store']);
+
+      expect(process.exitCode).toBe(3);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Store not found: nonexistent-store');
-      expect(processExitSpy).toHaveBeenCalledWith(3);
-      // Must call destroyServices before process.exit per CLAUDE.md
-      expect(destroyServices).toHaveBeenCalled();
+      // destroyServices should be called via finally block
+      expect(destroyServicesMock).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('exits with code 4 when indexing fails', async () => {
-      const { destroyServices } = await import('../../services/index.js');
-
       const mockStore: Store = {
         id: 'store-123',
         name: 'test',
@@ -384,12 +390,20 @@ describe('createIndexCommand - Execution Tests', () => {
 
       const command = createIndexCommand(getOptions);
       const action = command._actionHandler;
-      await expect(action(['test'])).rejects.toThrow('process.exit: 4');
 
+      // Reset exitCode before test
+      process.exitCode = undefined;
+
+      // Action handler completes normally but sets exitCode
+      await action(['test']);
+
+      expect(process.exitCode).toBe(4);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Failed to read files');
-      expect(processExitSpy).toHaveBeenCalledWith(4);
-      // Must call destroyServices before process.exit per CLAUDE.md
-      expect(destroyServices).toHaveBeenCalled();
+      // destroyServices should be called via finally block
+      expect(destroyServicesMock).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('handles lance initialization errors', async () => {
@@ -669,10 +683,20 @@ describe('createIndexCommand - Execution Tests', () => {
       const command = createIndexCommand(getOptions);
       const watchCmd = command.commands.find((c) => c.name() === 'watch');
       const action = watchCmd!._actionHandler;
-      await expect(action(['nonexistent'])).rejects.toThrow('process.exit: 3');
 
+      // Reset exitCode before test
+      process.exitCode = undefined;
+
+      // Action handler completes normally but sets exitCode
+      await action(['nonexistent']);
+
+      expect(process.exitCode).toBe(3);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: File/repo store not found: nonexistent');
-      expect(processExitSpy).toHaveBeenCalledWith(3);
+      // destroyServices should be called before setting exitCode
+      expect(destroyServicesMock).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('exits with code 3 when store type is not file or repo', async () => {
@@ -690,10 +714,20 @@ describe('createIndexCommand - Execution Tests', () => {
       const command = createIndexCommand(getOptions);
       const watchCmd = command.commands.find((c) => c.name() === 'watch');
       const action = watchCmd!._actionHandler;
-      await expect(action(['web-store'])).rejects.toThrow('process.exit: 3');
 
+      // Reset exitCode before test
+      process.exitCode = undefined;
+
+      // Action handler completes normally but sets exitCode
+      await action(['web-store']);
+
+      expect(process.exitCode).toBe(3);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: File/repo store not found: web-store');
-      expect(processExitSpy).toHaveBeenCalledWith(3);
+      // destroyServices should be called before setting exitCode
+      expect(destroyServicesMock).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
   });
 

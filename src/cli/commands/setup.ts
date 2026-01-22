@@ -53,26 +53,27 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
           return;
         }
 
+        // Filter repos BEFORE creating services to avoid cleanup bypass
+        let repos: readonly DefaultRepo[] = DEFAULT_REPOS;
+        if (options.only !== undefined && options.only !== '') {
+          const onlyNames = options.only.split(',').map((n) => n.trim().toLowerCase());
+          repos = DEFAULT_REPOS.filter((r) =>
+            onlyNames.some((n) => r.name.toLowerCase().includes(n))
+          );
+          if (repos.length === 0) {
+            console.error(`No repos matched: ${options.only}`);
+            console.log('Available repos:', DEFAULT_REPOS.map((r) => r.name).join(', '));
+            process.exitCode = 1;
+            return;
+          }
+        }
+
         const services = await createServices(
           globalOpts.config,
           globalOpts.dataDir,
           globalOpts.projectRoot
         );
         try {
-          // Filter repos if --only specified
-          let repos: readonly DefaultRepo[] = DEFAULT_REPOS;
-          if (options.only !== undefined && options.only !== '') {
-            const onlyNames = options.only.split(',').map((n) => n.trim().toLowerCase());
-            repos = DEFAULT_REPOS.filter((r) =>
-              onlyNames.some((n) => r.name.toLowerCase().includes(n))
-            );
-            if (repos.length === 0) {
-              console.error(`No repos matched: ${options.only}`);
-              console.log('Available repos:', DEFAULT_REPOS.map((r) => r.name).join(', '));
-              process.exit(1);
-            }
-          }
-
           console.log(`\nSetting up ${String(repos.length)} repositories...\n`);
 
           // Ensure repos directory exists

@@ -166,15 +166,27 @@ describe('Setup Command - Execution Tests', () => {
     });
 
     it('exits with error when no repos match filter', async () => {
+      const { createServices } = await import('../../services/index.js');
+
       const command = createSetupCommand(getOptions);
       const reposCmd = command.commands.find((c) => c.name() === 'repos');
 
       const actionHandler = (reposCmd as any)._actionHandler;
       reposCmd.parseOptions(['--only', 'nonexistent-repo']);
-      await expect(actionHandler([])).rejects.toThrow('process.exit: 1');
 
+      // Reset exitCode before test
+      process.exitCode = undefined;
+
+      // Action handler completes normally but sets exitCode
+      await actionHandler([]);
+
+      expect(process.exitCode).toBe(1);
       expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('No repos matched'));
-      expect(processExitSpy).toHaveBeenCalledWith(1);
+      // Services should NOT have been created since validation happens first
+      expect(createServices).not.toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('handles comma-separated filter values', async () => {

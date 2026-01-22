@@ -501,13 +501,18 @@ describe('crawl command execution', () => {
       const command = createCrawlCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['https://example.com', 'test-store'])).rejects.toThrow(
-        'process.exit: 6'
-      );
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['https://example.com', 'test-store']);
+
+      expect(process.exitCode).toBe(6);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Crawl failed: Network timeout');
-      expect(processExitSpy).toHaveBeenCalledWith(6);
       expect(mockCrawler.stop).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('exits with code 6 when embedding fails', async () => {
@@ -539,15 +544,20 @@ describe('crawl command execution', () => {
       const command = createCrawlCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['https://example.com', 'test-store'])).rejects.toThrow(
-        'process.exit: 6'
-      );
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['https://example.com', 'test-store']);
+
+      expect(process.exitCode).toBe(6);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Error: Crawl failed: Embedding service unavailable'
       );
-      expect(processExitSpy).toHaveBeenCalledWith(6);
       expect(mockCrawler.stop).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('exits with code 6 when indexing fails', async () => {
@@ -580,13 +590,18 @@ describe('crawl command execution', () => {
       const command = createCrawlCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['https://example.com', 'test-store'])).rejects.toThrow(
-        'process.exit: 6'
-      );
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['https://example.com', 'test-store']);
+
+      expect(process.exitCode).toBe(6);
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Crawl failed: Database write error');
-      expect(processExitSpy).toHaveBeenCalledWith(6);
       expect(mockCrawler.stop).toHaveBeenCalled();
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
 
     it('always calls crawler.stop in finally block', async () => {
@@ -613,9 +628,18 @@ describe('crawl command execution', () => {
       const command = createCrawlCommand(getOptions);
       const actionHandler = command._actionHandler;
 
-      await expect(actionHandler(['https://example.com', 'test-store'])).rejects.toThrow();
+      // Reset exitCode before test
+      process.exitCode = undefined;
 
+      // Action handler completes normally but sets exitCode
+      await actionHandler(['https://example.com', 'test-store']);
+
+      // The important assertion: stop is always called even on error
       expect(mockCrawler.stop).toHaveBeenCalled();
+      expect(process.exitCode).toBe(6);
+
+      // Reset for other tests
+      process.exitCode = undefined;
     });
   });
 
