@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-72LMZVDE.js";
+} from "./chunk-LR4UUIEM.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-P55QEC4T.js";
+} from "./chunk-CR6CVZNR.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -20,10 +20,11 @@ import {
   err,
   extractRepoName,
   isFileStoreDefinition,
+  isGitUrl,
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-5VOYDKDR.js";
+} from "./chunk-JOMJYIF6.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
@@ -1587,7 +1588,7 @@ function createStoreCommand(getOptions) {
       );
       let exitCode = 0;
       try {
-        const isUrl = options.source.startsWith("http://") || options.source.startsWith("https://");
+        const isUrl = isGitUrl(options.source);
         const result = await services.store.create({
           name,
           type: options.type,

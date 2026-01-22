@@ -4547,6 +4547,9 @@ async function cloneRepository(options) {
     });
   });
 }
+function isGitUrl(source) {
+  return source.startsWith("http://") || source.startsWith("https://") || source.startsWith("git@");
+}
 function extractRepoName(url) {
   const match = /\/([^/]+?)(\.git)?$/.exec(url);
   const name = match?.[1];
@@ -5594,10 +5597,11 @@ export {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   StoreDefinitionService,
+  isGitUrl,
   extractRepoName,
   JobService,
   createLazyServices,
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-5VOYDKDR.js.map
+//# sourceMappingURL=chunk-JOMJYIF6.js.map

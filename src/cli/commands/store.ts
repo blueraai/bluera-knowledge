@@ -1,6 +1,7 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Command } from 'commander';
+import { isGitUrl } from '../../plugin/git-clone.js';
 import { createServices, destroyServices } from '../../services/index.js';
 import type { StoreType } from '../../types/store.js';
 import type { GlobalOptions } from '../program.js';
@@ -78,8 +79,8 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
         let exitCode = 0;
         try {
           // Detect if source is a URL (for repo stores that should clone from remote)
-          const isUrl =
-            options.source.startsWith('http://') || options.source.startsWith('https://');
+          // Supports http://, https://, and git@ SSH URLs
+          const isUrl = isGitUrl(options.source);
           const result = await services.store.create({
             name,
             type: options.type,
