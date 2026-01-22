@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
-import { join, extname, basename } from 'node:path';
+import { join, extname, basename, relative } from 'node:path';
 import { ChunkingService } from './chunking.service.js';
 import { DriftService } from './drift.service.js';
 import { createLogger } from '../logging/index.js';
@@ -480,6 +480,11 @@ export class IndexService {
     const fileHash = createHash('md5').update(content).digest('hex');
     const chunks = this.chunker.chunk(content, filePath);
 
+    // Use relative path for document ID to ensure consistency across machines
+    // and prevent collisions between files with identical content
+    const relativePath = relative(store.path, filePath);
+    const pathHash = createHash('md5').update(relativePath).digest('hex').slice(0, 8);
+
     const ext = extname(filePath).toLowerCase();
     const fileName = basename(filePath).toLowerCase();
     const fileType = this.classifyFileType(ext, fileName, filePath);
@@ -510,10 +515,11 @@ export class IndexService {
         );
       }
 
+      // Include pathHash in ID to prevent collisions when files have identical content
       const chunkId =
         chunks.length > 1
-          ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}`
-          : `${store.id}-${fileHash}`;
+          ? `${store.id}-${pathHash}-${fileHash}-${String(chunk.chunkIndex)}`
+          : `${store.id}-${pathHash}-${fileHash}`;
 
       documents.push({
         id: createDocumentId(chunkId),

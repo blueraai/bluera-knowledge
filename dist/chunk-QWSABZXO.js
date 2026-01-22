@@ -2213,7 +2213,7 @@ ${REQUIRED_PATTERNS.join("\n")}
 // src/services/index.service.ts
 import { createHash as createHash3 } from "crypto";
 import { readFile as readFile5, readdir } from "fs/promises";
-import { join as join7, extname, basename } from "path";
+import { join as join7, extname, basename, relative } from "path";
 
 // src/services/chunking.service.ts
 var CHUNK_PRESETS = {
@@ -2923,6 +2923,8 @@ var IndexService = class {
     const content = await readFile5(filePath, "utf-8");
     const fileHash = createHash3("md5").update(content).digest("hex");
     const chunks = this.chunker.chunk(content, filePath);
+    const relativePath = relative(store.path, filePath);
+    const pathHash = createHash3("md5").update(relativePath).digest("hex").slice(0, 8);
     const ext = extname(filePath).toLowerCase();
     const fileName = basename(filePath).toLowerCase();
     const fileType = this.classifyFileType(ext, fileName, filePath);
@@ -2941,7 +2943,7 @@ var IndexService = class {
           `Chunk/vector mismatch at index ${String(i)}: chunk=${String(chunk !== void 0)}, vector=${String(vector !== void 0)}`
         );
       }
-      const chunkId = chunks.length > 1 ? `${store.id}-${fileHash}-${String(chunk.chunkIndex)}` : `${store.id}-${fileHash}`;
+      const chunkId = chunks.length > 1 ? `${store.id}-${pathHash}-${fileHash}-${String(chunk.chunkIndex)}` : `${store.id}-${pathHash}-${fileHash}`;
       documents.push({
         id: createDocumentId(chunkId),
         content: chunk.content,
@@ -5587,4 +5589,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-WK6CXAFP.js.map
+//# sourceMappingURL=chunk-QWSABZXO.js.map
