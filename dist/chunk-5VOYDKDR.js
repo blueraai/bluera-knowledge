@@ -5174,8 +5174,10 @@ var EMBEDDING_DIMENSIONS = 384;
 var EmbeddingEngine = class {
   extractor = null;
   modelName;
-  constructor(modelName = "Xenova/all-MiniLM-L6-v2") {
+  batchSize;
+  constructor(modelName = "Xenova/all-MiniLM-L6-v2", batchSize = 32) {
     this.modelName = modelName;
+    this.batchSize = batchSize;
   }
   async initialize() {
     if (this.extractor !== null) return;
@@ -5198,13 +5200,12 @@ var EmbeddingEngine = class {
     return result.map((v) => Number(v));
   }
   async embedBatch(texts) {
-    const BATCH_SIZE = 32;
     const results = [];
-    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-      const batch = texts.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < texts.length; i += this.batchSize) {
+      const batch = texts.slice(i, i + this.batchSize);
       const batchResults = await Promise.all(batch.map((text) => this.embed(text)));
       results.push(...batchResults);
-      if (i + BATCH_SIZE < texts.length) {
+      if (i + this.batchSize < texts.length) {
         await new Promise((resolve4) => setTimeout(resolve4, 100));
       }
     }
@@ -5400,7 +5401,10 @@ var LazyServiceContainer = class {
   get embeddings() {
     if (this._embeddings === null) {
       logger4.debug("Lazy-initializing EmbeddingEngine");
-      this._embeddings = new EmbeddingEngine(this.appConfig.embedding.model);
+      this._embeddings = new EmbeddingEngine(
+        this.appConfig.embedding.model,
+        this.appConfig.embedding.batchSize
+      );
     }
     return this._embeddings;
   }
@@ -5497,7 +5501,7 @@ async function createServices(configPath, dataDir, projectRoot) {
   const pythonBridge = new PythonBridge();
   await pythonBridge.start();
   const lance = new LanceStore(resolvedDataDir);
-  const embeddings = new EmbeddingEngine(appConfig.embedding.model);
+  const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.batchSize);
   await embeddings.initialize();
   const resolvedProjectRoot = config.resolveProjectRoot();
   const definitionService = new StoreDefinitionService(resolvedProjectRoot);
@@ -5596,4 +5600,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-6QOO2XY5.js.map
+//# sourceMappingURL=chunk-5VOYDKDR.js.map

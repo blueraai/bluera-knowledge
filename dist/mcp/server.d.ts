@@ -350,7 +350,8 @@ declare class ManifestService {
 declare class EmbeddingEngine {
     private extractor;
     private readonly modelName;
-    constructor(modelName?: string);
+    private readonly batchSize;
+    constructor(modelName?: string, batchSize?: number);
     initialize(): Promise<void>;
     embed(text: string): Promise<number[]>;
     embedBatch(texts: string[]): Promise<number[][]>;

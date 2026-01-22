@@ -89,7 +89,10 @@ export class LazyServiceContainer implements ServiceContainer {
   get embeddings(): EmbeddingEngine {
     if (this._embeddings === null) {
       logger.debug('Lazy-initializing EmbeddingEngine');
-      this._embeddings = new EmbeddingEngine(this.appConfig.embedding.model);
+      this._embeddings = new EmbeddingEngine(
+        this.appConfig.embedding.model,
+        this.appConfig.embedding.batchSize
+      );
     }
     return this._embeddings;
   }
@@ -234,7 +237,7 @@ export async function createServices(
 
   // Now safe to initialize lancedb and other services
   const lance = new LanceStore(resolvedDataDir);
-  const embeddings = new EmbeddingEngine(appConfig.embedding.model);
+  const embeddings = new EmbeddingEngine(appConfig.embedding.model, appConfig.embedding.batchSize);
 
   await embeddings.initialize();
 

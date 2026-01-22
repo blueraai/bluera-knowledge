@@ -12,9 +12,11 @@ export const EMBEDDING_DIMENSIONS = 384;
 export class EmbeddingEngine {
   private extractor: FeatureExtractionPipeline | null = null;
   private readonly modelName: string;
+  private readonly batchSize: number;
 
-  constructor(modelName = 'Xenova/all-MiniLM-L6-v2') {
+  constructor(modelName = 'Xenova/all-MiniLM-L6-v2', batchSize = 32) {
     this.modelName = modelName;
+    this.batchSize = batchSize;
   }
 
   async initialize(): Promise<void> {
@@ -42,11 +44,10 @@ export class EmbeddingEngine {
   }
 
   async embedBatch(texts: string[]): Promise<number[][]> {
-    const BATCH_SIZE = 32; // Process 32 chunks in parallel
     const results: number[][] = [];
 
-    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
-      const batch = texts.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < texts.length; i += this.batchSize) {
+      const batch = texts.slice(i, i + this.batchSize);
 
       // Process batch in parallel using Promise.all
       const batchResults = await Promise.all(batch.map((text) => this.embed(text)));
@@ -54,7 +55,7 @@ export class EmbeddingEngine {
       results.push(...batchResults);
 
       // Small delay between batches to prevent memory issues
-      if (i + BATCH_SIZE < texts.length) {
+      if (i + this.batchSize < texts.length) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }
