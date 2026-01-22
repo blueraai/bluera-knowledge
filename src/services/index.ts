@@ -111,7 +111,12 @@ export class LazyServiceContainer implements ServiceContainer {
   get search(): SearchService {
     if (this._search === null) {
       logger.debug('Lazy-initializing SearchService');
-      this._search = new SearchService(this.lance, this.embeddings, this.codeGraph);
+      this._search = new SearchService(
+        this.lance,
+        this.embeddings,
+        this.codeGraph,
+        this.appConfig.search
+      );
     }
     return this._search;
   }
@@ -248,7 +253,7 @@ export async function createServices(
 
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
   const manifest = new ManifestService(resolvedDataDir);
-  const search = new SearchService(lance, embeddings, codeGraph);
+  const search = new SearchService(lance, embeddings, codeGraph, appConfig.search);
   const index = new IndexService(lance, embeddings, {
     codeGraphService: codeGraph,
     manifestService: manifest,

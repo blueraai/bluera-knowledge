@@ -3528,12 +3528,14 @@ var SearchService = class {
   codeUnitService;
   codeGraphService;
   graphCache;
-  constructor(lanceStore, embeddingEngine, codeGraphService) {
+  searchConfig;
+  constructor(lanceStore, embeddingEngine, codeGraphService, searchConfig) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
     this.codeUnitService = new CodeUnitService();
     this.codeGraphService = codeGraphService;
     this.graphCache = /* @__PURE__ */ new Map();
+    this.searchConfig = searchConfig;
   }
   /**
    * Load code graph for a store, with caching.
@@ -3561,8 +3563,8 @@ var SearchService = class {
   }
   async search(query) {
     const startTime = Date.now();
-    const mode = query.mode ?? "hybrid";
-    const limit = query.limit ?? 10;
+    const mode = query.mode ?? this.searchConfig?.defaultMode ?? "hybrid";
+    const limit = query.limit ?? this.searchConfig?.defaultLimit ?? 10;
     const stores = query.stores ?? [];
     const detail = query.detail ?? "minimal";
     const intents = classifyQueryIntents(query.query);
@@ -5418,7 +5420,12 @@ var LazyServiceContainer = class {
   get search() {
     if (this._search === null) {
       logger4.debug("Lazy-initializing SearchService");
-      this._search = new SearchService(this.lance, this.embeddings, this.codeGraph);
+      this._search = new SearchService(
+        this.lance,
+        this.embeddings,
+        this.codeGraph,
+        this.appConfig.search
+      );
     }
     return this._search;
   }
@@ -5504,7 +5511,7 @@ async function createServices(configPath, dataDir, projectRoot) {
   await store.initialize();
   const codeGraph = new CodeGraphService(resolvedDataDir, pythonBridge);
   const manifest = new ManifestService(resolvedDataDir);
-  const search = new SearchService(lance, embeddings, codeGraph);
+  const search = new SearchService(lance, embeddings, codeGraph, appConfig.search);
   const index = new IndexService(lance, embeddings, {
     codeGraphService: codeGraph,
     manifestService: manifest,
@@ -5589,4 +5596,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-QWSABZXO.js.map
+//# sourceMappingURL=chunk-6QOO2XY5.js.map

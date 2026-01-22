@@ -5,6 +5,7 @@ import type { CodeGraph } from '../analysis/code-graph.js';
 import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
 import type { StoreId } from '../types/brands.js';
+import type { SearchConfig } from '../types/config.js';
 import type {
   SearchQuery,
   SearchResponse,
@@ -218,17 +219,20 @@ export class SearchService {
   private readonly codeUnitService: CodeUnitService;
   private readonly codeGraphService: CodeGraphService | undefined;
   private readonly graphCache: Map<string, CodeGraph | null>;
+  private readonly searchConfig: SearchConfig | undefined;
 
   constructor(
     lanceStore: LanceStore,
     embeddingEngine: EmbeddingEngine,
-    codeGraphService?: CodeGraphService
+    codeGraphService?: CodeGraphService,
+    searchConfig?: SearchConfig
   ) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
     this.codeUnitService = new CodeUnitService();
     this.codeGraphService = codeGraphService;
     this.graphCache = new Map();
+    this.searchConfig = searchConfig;
   }
 
   /**
@@ -262,8 +266,8 @@ export class SearchService {
 
   async search(query: SearchQuery): Promise<SearchResponse> {
     const startTime = Date.now();
-    const mode = query.mode ?? 'hybrid';
-    const limit = query.limit ?? 10;
+    const mode = query.mode ?? this.searchConfig?.defaultMode ?? 'hybrid';
+    const limit = query.limit ?? this.searchConfig?.defaultLimit ?? 10;
     const stores = query.stores ?? [];
     const detail = query.detail ?? 'minimal';
     const intents = classifyQueryIntents(query.query);

@@ -615,7 +615,8 @@ declare class SearchService {
     private readonly codeUnitService;
     private readonly codeGraphService;
     private readonly graphCache;
-    constructor(lanceStore: LanceStore, embeddingEngine: EmbeddingEngine, codeGraphService?: CodeGraphService);
+    private readonly searchConfig;
+    constructor(lanceStore: LanceStore, embeddingEngine: EmbeddingEngine, codeGraphService?: CodeGraphService, searchConfig?: SearchConfig);
     /**
      * Load code graph for a store, with caching.
      * Returns null if no graph is available.
