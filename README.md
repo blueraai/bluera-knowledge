@@ -536,7 +536,7 @@ Simple mode still crawls effectively—it just doesn't use AI to select which pa
 <details>
 <summary><b>📋 How to view logs for debugging</b></summary>
 
-The plugin logs all MCP server operations to `~/.bluera/bluera-knowledge/logs/app.log`.
+The plugin logs all MCP server operations to `.bluera/bluera-knowledge/logs/app.log` (relative to project root).
 
 **View logs using the `/logs` command:**
 
@@ -559,7 +559,7 @@ The plugin logs all MCP server operations to `~/.bluera/bluera-knowledge/logs/ap
 
 **Manual access:**
 ```bash
-tail -f ~/.bluera/bluera-knowledge/logs/app.log
+tail -f .bluera/bluera-knowledge/logs/app.log
 ```
 
 Logs are JSON formatted (NDJSON) and can be processed with `jq` for pretty-printing.
@@ -675,7 +675,7 @@ When enabled, a UserPromptSubmit hook analyzes your prompt for patterns like:
 
 Claude evaluates each suggestion and invokes relevant skills before answering. Users who already use BK terminology are excluded (they already know the tool).
 
-**Configuration stored in:** `~/.local/share/bluera-knowledge/skill-activation.json`
+**Configuration stored in:** `.bluera/bluera-knowledge/skill-activation.json` (relative to project root)
 
 ---
 
