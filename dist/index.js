@@ -833,7 +833,8 @@ async function handleAddRepo(args, options = {}) {
     });
     if (!result.success) {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     console.log(`Created store: ${storeName} (${result.data.id})`);
     if ("path" in result.data) {
@@ -867,7 +868,8 @@ async function handleAddFolder(args, options = {}) {
     });
     if (!result.success) {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     console.log(`Created store: ${storeName} (${result.data.id})`);
     if ("path" in result.data) {
@@ -931,7 +933,8 @@ async function handleSuggest(options = {}) {
     spinner.stop();
     if (!result.success) {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     const { usages, totalFilesScanned, skippedFiles } = result.data;
     console.log(

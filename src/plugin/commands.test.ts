@@ -50,9 +50,9 @@ describe('Commands - handleSearch', () => {
   let mockServices: ServiceContainer;
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let processExitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    process.exitCode = undefined;
     const { createServices } = await import('../services/index.js');
 
     mockServices = {
@@ -77,11 +77,11 @@ describe('Commands - handleSearch', () => {
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   it('searches all stores when no stores specified', async () => {
@@ -177,7 +177,7 @@ describe('Commands - handleSearch', () => {
     }
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('No stores found to search');
-    expect(processExitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 
   it('displays search results with summary', async () => {
@@ -225,9 +225,9 @@ describe('Commands - handleAddRepo', () => {
   let mockServices: ServiceContainer;
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let processExitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    process.exitCode = undefined;
     const { createServices } = await import('../services/index.js');
 
     mockServices = {
@@ -246,11 +246,11 @@ describe('Commands - handleAddRepo', () => {
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   it('creates repo store with extracted name', async () => {
@@ -370,7 +370,7 @@ describe('Commands - handleAddRepo', () => {
     }
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Clone failed');
-    expect(processExitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 
   it('reports indexing failure without exiting', async () => {
@@ -393,7 +393,7 @@ describe('Commands - handleAddRepo', () => {
     await handleAddRepo({ url: 'https://github.com/user/repo.git' });
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Indexing failed: Indexing failed');
-    expect(processExitSpy).not.toHaveBeenCalled();
+    expect(process.exitCode).toBeUndefined();
   });
 });
 
@@ -401,9 +401,9 @@ describe('Commands - handleAddFolder', () => {
   let mockServices: ServiceContainer;
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let processExitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    process.exitCode = undefined;
     const { createServices } = await import('../services/index.js');
 
     mockServices = {
@@ -419,11 +419,11 @@ describe('Commands - handleAddFolder', () => {
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   it('creates file store with basename when no name provided', async () => {
@@ -515,7 +515,7 @@ describe('Commands - handleAddFolder', () => {
     }
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Path not found');
-    expect(processExitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 });
 
@@ -523,9 +523,9 @@ describe('Commands - handleIndex', () => {
   let mockServices: ServiceContainer;
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let processExitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    process.exitCode = undefined;
     const { createServices } = await import('../services/index.js');
 
     mockServices = {
@@ -541,11 +541,11 @@ describe('Commands - handleIndex', () => {
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    process.exitCode = undefined;
   });
 
   it('indexes store by id', async () => {
@@ -623,7 +623,7 @@ describe('Commands - handleIndex', () => {
     }
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Store not found: nonexistent');
-    expect(processExitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 
   it('exits on indexing failure', async () => {
@@ -649,7 +649,7 @@ describe('Commands - handleIndex', () => {
     }
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Indexing error');
-    expect(processExitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 });
 
@@ -726,9 +726,9 @@ describe('Commands - handleSuggest', () => {
   let mockServices: ServiceContainer;
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let processExitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    process.exitCode = undefined;
     const { createServices } = await import('../services/index.js');
 
     mockServices = {
@@ -741,11 +741,11 @@ describe('Commands - handleSuggest', () => {
 
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    processExitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
   });
 
   afterEach(() => {
     vi.clearAllMocks(); // Don't restore all mocks, just clear call history
+    process.exitCode = undefined;
   });
 
   it('exits on analysis error', async () => {
@@ -763,7 +763,7 @@ describe('Commands - handleSuggest', () => {
     }
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error: Analysis failed');
-    expect(processExitSpy).toHaveBeenCalledWith(1);
+    expect(process.exitCode).toBe(1);
   });
 
   it('shows message when no dependencies found', async () => {

@@ -32,7 +32,8 @@ export async function handleSearch(args: {
 
     if (targetStores.length === 0) {
       console.error('No stores found to search');
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     // Initialize stores
@@ -89,7 +90,8 @@ export async function handleAddRepo(
 
     if (!result.success) {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     console.log(`Created store: ${storeName} (${result.data.id})`);
@@ -135,7 +137,8 @@ export async function handleAddFolder(
 
     if (!result.success) {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     console.log(`Created store: ${storeName} (${result.data.id})`);
@@ -166,7 +169,8 @@ export async function handleIndex(args: { store: string }): Promise<void> {
 
     if (store === undefined) {
       console.error(`Store not found: ${args.store}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     console.log(`Indexing ${store.name}...`);
@@ -178,7 +182,8 @@ export async function handleIndex(args: { store: string }): Promise<void> {
       );
     } else {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   } finally {
     await destroyServices(services);
@@ -250,7 +255,8 @@ export async function handleSuggest(options: CommandOptions = {}): Promise<void>
 
     if (!result.success) {
       console.error(`Error: ${result.error.message}`);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     const { usages, totalFilesScanned, skippedFiles } = result.data;
