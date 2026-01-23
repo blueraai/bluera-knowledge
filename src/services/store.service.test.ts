@@ -181,6 +181,36 @@ describe('StoreService', () => {
         expect(result.error.message).toContain('Path or URL required');
       }
     });
+
+    it('returns error for non-existent local repo path', async () => {
+      const result = await storeService.create({
+        name: 'Bad Repo Path',
+        type: 'repo',
+        path: '/nonexistent/repo/path',
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Repository path does not exist');
+      }
+    });
+
+    it('returns error when local repo path is a file, not directory', async () => {
+      // Create a file instead of a directory
+      const tempFile = join(tempDir, 'not-a-directory.txt');
+      await writeFile(tempFile, 'test content');
+
+      const result = await storeService.create({
+        name: 'File Not Dir',
+        type: 'repo',
+        path: tempFile,
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.message).toContain('Path is not a directory');
+      }
+    });
   });
 
   describe('create web store', () => {

@@ -256,6 +256,18 @@ export class StoreService {
         const normalizedRepoPath =
           this.projectRoot !== undefined ? resolve(this.projectRoot, repoPath) : resolve(repoPath);
 
+        // Validate local repo path exists (only for local repos without URL)
+        if (input.url === undefined) {
+          try {
+            const stats = await stat(normalizedRepoPath);
+            if (!stats.isDirectory()) {
+              return err(new Error(`Path is not a directory: ${normalizedRepoPath}`));
+            }
+          } catch {
+            return err(new Error(`Repository path does not exist: ${normalizedRepoPath}`));
+          }
+        }
+
         store = {
           type: 'repo',
           id,

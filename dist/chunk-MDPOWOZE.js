@@ -4784,6 +4784,16 @@ var StoreService = class {
           return err(new Error("Path or URL required for repo stores"));
         }
         const normalizedRepoPath = this.projectRoot !== void 0 ? resolve3(this.projectRoot, repoPath) : resolve3(repoPath);
+        if (input.url === void 0) {
+          try {
+            const stats = await stat2(normalizedRepoPath);
+            if (!stats.isDirectory()) {
+              return err(new Error(`Path is not a directory: ${normalizedRepoPath}`));
+            }
+          } catch {
+            return err(new Error(`Repository path does not exist: ${normalizedRepoPath}`));
+          }
+        }
         store = {
           type: "repo",
           id,
@@ -5717,4 +5727,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-6A47IZZS.js.map
+//# sourceMappingURL=chunk-MDPOWOZE.js.map
