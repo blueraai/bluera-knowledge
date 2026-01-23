@@ -1691,6 +1691,7 @@ Store: ${s.name}`);
       }
       await services.lance.deleteStore(s.id);
       await services.codeGraph.deleteGraph(s.id);
+      await services.manifest.delete(s.id);
       if (s.type === "repo" && "url" in s && s.url !== void 0) {
         const dataDir = services.config.resolveDataDir();
         const repoPath = join4(dataDir, "repos", s.id);

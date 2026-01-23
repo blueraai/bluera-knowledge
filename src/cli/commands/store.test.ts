@@ -29,10 +29,15 @@ interface MockConfigService {
   resolveDataDir: MockInstance;
 }
 
+interface MockManifestService {
+  delete: MockInstance;
+}
+
 interface MockServices {
   store: MockStoreService;
   lance: MockLanceService;
   codeGraph: MockCodeGraphService;
+  manifest: MockManifestService;
   config: MockConfigService;
 }
 
@@ -58,6 +63,9 @@ describe('store command execution', () => {
       },
       codeGraph: {
         deleteGraph: vi.fn().mockResolvedValue(undefined),
+      },
+      manifest: {
+        delete: vi.fn().mockResolvedValue(undefined),
       },
       config: {
         resolveDataDir: vi.fn().mockReturnValue('/tmp/test-data'),

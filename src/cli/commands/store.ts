@@ -216,6 +216,9 @@ export function createStoreCommand(getOptions: () => GlobalOptions): Command {
         // Delete code graph file
         await services.codeGraph.deleteGraph(s.id);
 
+        // Delete manifest file (matches MCP/server behavior)
+        await services.manifest.delete(s.id);
+
         // For repo stores cloned from URL, remove the cloned directory
         if (s.type === 'repo' && 'url' in s && s.url !== undefined) {
           const dataDir = services.config.resolveDataDir();
