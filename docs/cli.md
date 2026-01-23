@@ -40,7 +40,7 @@ bluera-knowledge store create fastapi-docs --type web --source https://fastapi.t
 
 > **Note:** Web stores created with `store create --type web` are empty shells. Use the `crawl` command to populate them with content. The `index` command does not work for web stores.
 
-> **Note:** For remote repository URLs, only HTTP(S) URLs are supported. SSH URLs (`git@github.com:...`) are not supported—use the HTTPS URL instead. Local repository paths work with `--type repo`.
+> **Note:** For remote repository URLs, both HTTPS and SSH URLs are supported. SSH URLs (`git@github.com:...`) require SSH keys configured for the host. Local repository paths work with `--type repo`.
 
 **Create Options:**
 
