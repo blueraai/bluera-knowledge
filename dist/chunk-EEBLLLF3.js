@@ -2040,6 +2040,34 @@ var DEFAULT_CONFIG = {
   }
 };
 
+// src/utils/deep-merge.ts
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Date);
+}
+function deepMerge(defaults, overrides) {
+  if (!isPlainObject(overrides)) {
+    return { ...defaults };
+  }
+  const defaultsRecord = defaults;
+  return deepMergeRecords(defaultsRecord, overrides);
+}
+function deepMergeRecords(defaults, overrides) {
+  const result = { ...defaults };
+  for (const key of Object.keys(overrides)) {
+    const defaultValue = defaults[key];
+    const overrideValue = overrides[key];
+    if (overrideValue === void 0) {
+      continue;
+    }
+    if (isPlainObject(defaultValue) && isPlainObject(overrideValue)) {
+      result[key] = deepMergeRecords(defaultValue, overrideValue);
+    } else {
+      result[key] = overrideValue;
+    }
+  }
+  return result;
+}
+
 // src/services/config.service.ts
 var DEFAULT_CONFIG_PATH = ".bluera/bluera-knowledge/config.json";
 async function fileExists(path4) {
@@ -2086,7 +2114,7 @@ var ConfigService = class {
     }
     const content = await readFile2(this.configPath, "utf-8");
     try {
-      this.config = { ...DEFAULT_CONFIG, ...JSON.parse(content) };
+      this.config = deepMerge(DEFAULT_CONFIG, JSON.parse(content));
     } catch (error) {
       throw new Error(
         `Failed to parse config file at ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`
@@ -5591,4 +5619,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-PUC3PVXA.js.map
+//# sourceMappingURL=chunk-EEBLLLF3.js.map

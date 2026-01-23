@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { ProjectRootService } from './project-root.service.js';
 import { DEFAULT_CONFIG } from '../types/config.js';
 import { atomicWriteFile } from '../utils/atomic-write.js';
+import { deepMerge } from '../utils/deep-merge.js';
 import type { AppConfig } from '../types/config.js';
 
 /** Default config path relative to project root */
@@ -71,8 +72,7 @@ export class ConfigService {
     // File exists - load it (throws on corruption per CLAUDE.md "fail early")
     const content = await readFile(this.configPath, 'utf-8');
     try {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-      this.config = { ...DEFAULT_CONFIG, ...JSON.parse(content) } as AppConfig;
+      this.config = deepMerge(DEFAULT_CONFIG, JSON.parse(content));
     } catch (error) {
       throw new Error(
         `Failed to parse config file at ${this.configPath}: ${error instanceof Error ? error.message : String(error)}`
