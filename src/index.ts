@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { Command } from 'commander';
 import { AdapterRegistry } from './analysis/adapter-registry.js';
 import { ZilAdapter } from './analysis/zil/index.js';
@@ -25,10 +23,10 @@ import { createProgram, getGlobalOptions } from './cli/program.js';
 const registry = AdapterRegistry.getInstance();
 registry.register(new ZilAdapter());
 
-// Default paths
-const DEFAULT_DATA_DIR = join(homedir(), '.bluera', 'bluera-knowledge', 'data');
-const DEFAULT_CONFIG = join(homedir(), '.bluera', 'bluera-knowledge', 'config.json');
-const DEFAULT_REPOS_DIR = join(homedir(), '.bluera', 'bluera-knowledge', 'repos');
+// Default paths (for help text display only - actual paths resolved by ConfigService)
+const DEFAULT_DATA_DIR = '.bluera/bluera-knowledge/data';
+const DEFAULT_CONFIG = '.bluera/bluera-knowledge/config.json';
+const DEFAULT_REPOS_DIR = '.bluera/bluera-knowledge/repos';
 
 /**
  * Format a command and its subcommands recursively for comprehensive help output.

@@ -30,10 +30,6 @@ import {
 } from "./chunk-CLIMKLTW.js";
 import "./chunk-GGZACUHE.js";
 
-// src/index.ts
-import { homedir as homedir2 } from "os";
-import { join as join6 } from "path";
-
 // src/cli/commands/crawl.ts
 import { createHash } from "crypto";
 import { Command } from "commander";
@@ -1994,9 +1990,9 @@ function getGlobalOptions(program2) {
 // src/index.ts
 var registry = AdapterRegistry.getInstance();
 registry.register(new ZilAdapter());
-var DEFAULT_DATA_DIR = join6(homedir2(), ".bluera", "bluera-knowledge", "data");
-var DEFAULT_CONFIG = join6(homedir2(), ".bluera", "bluera-knowledge", "config.json");
-var DEFAULT_REPOS_DIR2 = join6(homedir2(), ".bluera", "bluera-knowledge", "repos");
+var DEFAULT_DATA_DIR = ".bluera/bluera-knowledge/data";
+var DEFAULT_CONFIG = ".bluera/bluera-knowledge/config.json";
+var DEFAULT_REPOS_DIR2 = ".bluera/bluera-knowledge/repos";
 function formatCommandHelp(cmd, indent = "") {
   const lines = [];
   const name = cmd.name();
