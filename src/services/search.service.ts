@@ -311,10 +311,12 @@ export class SearchService {
     const fetchLimit = limit * 3;
 
     if (mode === 'vector') {
-      // For vector mode, get raw scores first for confidence calculation
+      // For vector mode, call vectorSearchRaw once and reuse results
+      // This avoids double embedding cost (vectorSearch calls vectorSearchRaw internally)
       const rawResults = await this.vectorSearchRaw(query.query, stores, fetchLimit);
       maxRawScore = rawResults.length > 0 ? (rawResults[0]?.score ?? 0) : 0;
-      allResults = await this.vectorSearch(query.query, stores, fetchLimit, query.threshold);
+      // Apply same normalization logic as vectorSearch without re-embedding
+      allResults = this.normalizeAndFilterScores(rawResults, query.threshold).slice(0, fetchLimit);
     } else if (mode === 'fts') {
       // FTS mode doesn't have vector similarity, so no confidence calculation
       allResults = await this.ftsSearch(query.query, stores, fetchLimit);
@@ -516,19 +518,6 @@ export class SearchService {
     }
 
     return results.sort((a, b) => b.score - a.score).slice(0, limit);
-  }
-
-  private async vectorSearch(
-    query: string,
-    stores: readonly StoreId[],
-    limit: number,
-    threshold?: number
-  ): Promise<SearchResult[]> {
-    const results = await this.vectorSearchRaw(query, stores, limit);
-
-    // Normalize scores and apply threshold filter
-    const normalized = this.normalizeAndFilterScores(results, threshold);
-    return normalized.slice(0, limit);
   }
 
   private async ftsSearch(

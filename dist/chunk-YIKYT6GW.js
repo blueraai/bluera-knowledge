@@ -3638,7 +3638,7 @@ var SearchService = class {
     if (mode === "vector") {
       const rawResults = await this.vectorSearchRaw(query.query, stores, fetchLimit);
       maxRawScore = rawResults.length > 0 ? rawResults[0]?.score ?? 0 : 0;
-      allResults = await this.vectorSearch(query.query, stores, fetchLimit, query.threshold);
+      allResults = this.normalizeAndFilterScores(rawResults, query.threshold).slice(0, fetchLimit);
     } else if (mode === "fts") {
       allResults = await this.ftsSearch(query.query, stores, fetchLimit);
     } else {
@@ -3791,11 +3791,6 @@ var SearchService = class {
       );
     }
     return results.sort((a, b) => b.score - a.score).slice(0, limit);
-  }
-  async vectorSearch(query, stores, limit, threshold) {
-    const results = await this.vectorSearchRaw(query, stores, limit);
-    const normalized = this.normalizeAndFilterScores(results, threshold);
-    return normalized.slice(0, limit);
   }
   async ftsSearch(query, stores, limit) {
     const results = [];
@@ -5727,4 +5722,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-MDPOWOZE.js.map
+//# sourceMappingURL=chunk-YIKYT6GW.js.map

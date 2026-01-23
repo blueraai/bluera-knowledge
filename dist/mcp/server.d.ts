@@ -685,7 +685,6 @@ declare class SearchService {
      * Returns results with raw cosine similarity scores [0-1].
      */
     private vectorSearchRaw;
-    private vectorSearch;
     private ftsSearch;
     /**
      * Internal hybrid search result with additional metadata for confidence calculation.
