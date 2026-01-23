@@ -333,29 +333,37 @@ export class SearchService {
     }
 
     // Apply minRelevance filter - if max raw score is below threshold, return empty
-    if (query.minRelevance !== undefined && maxRawScore < query.minRelevance) {
-      const timeMs = Date.now() - startTime;
-      logger.info(
-        {
+    // Skip in FTS mode since there are no vector scores to compare against
+    if (query.minRelevance !== undefined) {
+      if (mode === 'fts') {
+        logger.warn(
+          { query: query.query, minRelevance: query.minRelevance },
+          'minRelevance filter ignored in FTS mode (no vector scores available)'
+        );
+      } else if (maxRawScore < query.minRelevance) {
+        const timeMs = Date.now() - startTime;
+        logger.info(
+          {
+            query: query.query,
+            mode,
+            maxRawScore,
+            minRelevance: query.minRelevance,
+            timeMs,
+          },
+          'Search filtered by minRelevance - no sufficiently relevant results'
+        );
+
+        return {
           query: query.query,
           mode,
-          maxRawScore,
-          minRelevance: query.minRelevance,
+          stores,
+          results: [],
+          totalResults: 0,
           timeMs,
-        },
-        'Search filtered by minRelevance - no sufficiently relevant results'
-      );
-
-      return {
-        query: query.query,
-        mode,
-        stores,
-        results: [],
-        totalResults: 0,
-        timeMs,
-        confidence: this.calculateConfidence(maxRawScore),
-        maxRawScore,
-      };
+          confidence: this.calculateConfidence(maxRawScore),
+          maxRawScore,
+        };
+      }
     }
 
     // Deduplicate by source file - keep best chunk per source (considers query relevance)

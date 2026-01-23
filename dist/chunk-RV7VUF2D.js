@@ -3651,28 +3651,35 @@ var SearchService = class {
       allResults = hybridResult.results;
       maxRawScore = hybridResult.maxRawScore;
     }
-    if (query.minRelevance !== void 0 && maxRawScore < query.minRelevance) {
-      const timeMs2 = Date.now() - startTime;
-      logger2.info(
-        {
+    if (query.minRelevance !== void 0) {
+      if (mode === "fts") {
+        logger2.warn(
+          { query: query.query, minRelevance: query.minRelevance },
+          "minRelevance filter ignored in FTS mode (no vector scores available)"
+        );
+      } else if (maxRawScore < query.minRelevance) {
+        const timeMs2 = Date.now() - startTime;
+        logger2.info(
+          {
+            query: query.query,
+            mode,
+            maxRawScore,
+            minRelevance: query.minRelevance,
+            timeMs: timeMs2
+          },
+          "Search filtered by minRelevance - no sufficiently relevant results"
+        );
+        return {
           query: query.query,
           mode,
-          maxRawScore,
-          minRelevance: query.minRelevance,
-          timeMs: timeMs2
-        },
-        "Search filtered by minRelevance - no sufficiently relevant results"
-      );
-      return {
-        query: query.query,
-        mode,
-        stores,
-        results: [],
-        totalResults: 0,
-        timeMs: timeMs2,
-        confidence: this.calculateConfidence(maxRawScore),
-        maxRawScore
-      };
+          stores,
+          results: [],
+          totalResults: 0,
+          timeMs: timeMs2,
+          confidence: this.calculateConfidence(maxRawScore),
+          maxRawScore
+        };
+      }
     }
     const dedupedResults = this.deduplicateBySource(allResults, query.query);
     const resultsToEnhance = dedupedResults.slice(0, limit);
@@ -5722,4 +5729,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-YIKYT6GW.js.map
+//# sourceMappingURL=chunk-RV7VUF2D.js.map
