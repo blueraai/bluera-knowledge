@@ -4682,6 +4682,51 @@ var StoreService = class {
       }
     }
   }
+  /**
+   * Create a StoreDefinition from an existing store (without original input).
+   * Used when updating/renaming stores where we don't have the original input.
+   * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
+   */
+  createDefinitionFromExistingStore(store) {
+    const tags = store.tags !== void 0 ? [...store.tags] : void 0;
+    const base = {
+      name: store.name,
+      description: store.description,
+      tags
+    };
+    switch (store.type) {
+      case "file": {
+        const fileDef = {
+          ...base,
+          type: "file",
+          path: store.path
+        };
+        return fileDef;
+      }
+      case "repo": {
+        if (store.url === void 0) {
+          return void 0;
+        }
+        const repoDef = {
+          ...base,
+          type: "repo",
+          url: store.url,
+          branch: store.branch
+          // depth is not stored on RepoStore, so we omit it (it's optional in definition)
+        };
+        return repoDef;
+      }
+      case "web": {
+        const webDef = {
+          ...base,
+          type: "web",
+          url: store.url,
+          depth: store.depth
+        };
+        return webDef;
+      }
+    }
+  }
   async create(input, options) {
     if (!input.name || input.name.trim() === "") {
       return err(new Error("Store name cannot be empty"));
@@ -4815,6 +4860,13 @@ var StoreService = class {
     if (store === void 0) {
       return err(new Error(`Store not found: ${id}`));
     }
+    const isRenaming = updates.name !== void 0 && updates.name !== store.name;
+    if (isRenaming) {
+      const existing = this.registry.stores.find((s) => s.name === updates.name && s.id !== id);
+      if (existing !== void 0) {
+        return err(new Error(`Store with name '${updates.name}' already exists`));
+      }
+    }
     const updated = {
       ...store,
       ...updates,
@@ -4823,14 +4875,24 @@ var StoreService = class {
     this.registry.stores[index] = updated;
     await this.saveRegistry();
     if (this.definitionService !== void 0 && options?.skipDefinitionSync !== true) {
-      const defUpdates = {};
-      if (updates.description !== void 0) {
-        defUpdates.description = updates.description;
+      if (isRenaming) {
+        await this.definitionService.removeDefinition(store.name);
+        const newDefinition = this.createDefinitionFromExistingStore(updated);
+        if (newDefinition !== void 0) {
+          await this.definitionService.addDefinition(newDefinition);
+        }
+      } else {
+        const defUpdates = {};
+        if (updates.description !== void 0) {
+          defUpdates.description = updates.description;
+        }
+        if (updates.tags !== void 0) {
+          defUpdates.tags = [...updates.tags];
+        }
+        if (Object.keys(defUpdates).length > 0) {
+          await this.definitionService.updateDefinition(store.name, defUpdates);
+        }
       }
-      if (updates.tags !== void 0) {
-        defUpdates.tags = [...updates.tags];
-      }
-      await this.definitionService.updateDefinition(store.name, defUpdates);
     }
     return ok(updated);
   }
@@ -5655,4 +5717,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RFWJPFQE.js.map
+//# sourceMappingURL=chunk-6A47IZZS.js.map

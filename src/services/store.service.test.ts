@@ -462,6 +462,56 @@ describe('StoreService', () => {
         expect(result.error.message).toContain('Store not found');
       }
     });
+
+    it('returns error when renaming to existing store name', async () => {
+      const dir1 = await mkdtemp(join(tmpdir(), 'rename1-'));
+      const dir2 = await mkdtemp(join(tmpdir(), 'rename2-'));
+
+      await storeService.create({ name: 'Store A', type: 'file', path: dir1 });
+      const createResult = await storeService.create({ name: 'Store B', type: 'file', path: dir2 });
+
+      if (!createResult.success) throw new Error('Create failed');
+
+      // Try to rename Store B to Store A (which already exists)
+      const updateResult = await storeService.update(createResult.data.id, {
+        name: 'Store A',
+      });
+
+      expect(updateResult.success).toBe(false);
+      if (!updateResult.success) {
+        expect(updateResult.error.message).toContain("'Store A' already exists");
+      }
+
+      await rm(dir1, { recursive: true, force: true });
+      await rm(dir2, { recursive: true, force: true });
+    });
+
+    it('allows renaming to a unique name', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'rename-ok-'));
+
+      const createResult = await storeService.create({ name: 'Original', type: 'file', path: dir });
+      if (!createResult.success) throw new Error('Create failed');
+
+      const updateResult = await storeService.update(createResult.data.id, {
+        name: 'Renamed',
+      });
+
+      expect(updateResult.success).toBe(true);
+      if (updateResult.success) {
+        expect(updateResult.data.name).toBe('Renamed');
+      }
+
+      // Verify old name no longer exists
+      const oldStore = await storeService.getByName('Original');
+      expect(oldStore).toBeUndefined();
+
+      // Verify new name exists
+      const newStore = await storeService.getByName('Renamed');
+      expect(newStore).toBeDefined();
+      expect(newStore?.name).toBe('Renamed');
+
+      await rm(dir, { recursive: true, force: true });
+    });
   });
 
   describe('delete store', () => {
@@ -796,6 +846,60 @@ describe('StoreService', () => {
 
         const def = await defService.getByName('skip-update');
         expect(def?.description).toBe('Original');
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+
+      it('syncs definition with new name on rename', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'rename-def-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'original-name',
+          type: 'file',
+          path: storeDir,
+          description: 'My store',
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        // Verify original definition exists
+        let def = await defService.getByName('original-name');
+        expect(def).toBeDefined();
+
+        // Rename the store
+        const updateResult = await serviceWithDefs.update(createResult.data.id, {
+          name: 'new-name',
+        });
+        expect(updateResult.success).toBe(true);
+
+        // Old definition should be removed
+        const oldDef = await defService.getByName('original-name');
+        expect(oldDef).toBeUndefined();
+
+        // New definition should exist with correct data
+        def = await defService.getByName('new-name');
+        expect(def).toBeDefined();
+        expect(def?.name).toBe('new-name');
+        expect(def?.description).toBe('My store');
+
+        await rm(storeDir, { recursive: true, force: true });
+      });
+
+      it('deletes old definition on rename', async () => {
+        const storeDir = await mkdtemp(join(tmpdir(), 'rename-del-'));
+        const createResult = await serviceWithDefs.create({
+          name: 'to-rename',
+          type: 'file',
+          path: storeDir,
+        });
+
+        if (!createResult.success) throw new Error('Create failed');
+
+        // Rename
+        await serviceWithDefs.update(createResult.data.id, { name: 'renamed' });
+
+        // Old definition should not exist
+        const oldDef = await defService.getByName('to-rename');
+        expect(oldDef).toBeUndefined();
 
         await rm(storeDir, { recursive: true, force: true });
       });

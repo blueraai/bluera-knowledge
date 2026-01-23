@@ -132,6 +132,55 @@ export class StoreService {
     }
   }
 
+  /**
+   * Create a StoreDefinition from an existing store (without original input).
+   * Used when updating/renaming stores where we don't have the original input.
+   * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
+   */
+  private createDefinitionFromExistingStore(store: Store): StoreDefinition | undefined {
+    // Copy tags array to convert from readonly to mutable
+    const tags = store.tags !== undefined ? [...store.tags] : undefined;
+    const base = {
+      name: store.name,
+      description: store.description,
+      tags,
+    };
+
+    switch (store.type) {
+      case 'file': {
+        const fileDef: FileStoreDefinition = {
+          ...base,
+          type: 'file',
+          path: store.path,
+        };
+        return fileDef;
+      }
+      case 'repo': {
+        // Local repo stores (no URL) are machine-specific; skip definition sync
+        if (store.url === undefined) {
+          return undefined;
+        }
+        const repoDef: RepoStoreDefinition = {
+          ...base,
+          type: 'repo',
+          url: store.url,
+          branch: store.branch,
+          // depth is not stored on RepoStore, so we omit it (it's optional in definition)
+        };
+        return repoDef;
+      }
+      case 'web': {
+        const webDef: WebStoreDefinition = {
+          ...base,
+          type: 'web',
+          url: store.url,
+          depth: store.depth,
+        };
+        return webDef;
+      }
+    }
+  }
+
   async create(input: CreateStoreInput, options?: OperationOptions): Promise<Result<Store>> {
     if (!input.name || input.name.trim() === '') {
       return err(new Error('Store name cannot be empty'));
@@ -304,6 +353,15 @@ export class StoreService {
       return err(new Error(`Store not found: ${id}`));
     }
 
+    // Check for duplicate name when renaming
+    const isRenaming = updates.name !== undefined && updates.name !== store.name;
+    if (isRenaming) {
+      const existing = this.registry.stores.find((s) => s.name === updates.name && s.id !== id);
+      if (existing !== undefined) {
+        return err(new Error(`Store with name '${updates.name}' already exists`));
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const updated = {
       ...store,
@@ -316,15 +374,29 @@ export class StoreService {
 
     // Sync to store definitions if service is available and not skipped
     if (this.definitionService !== undefined && options?.skipDefinitionSync !== true) {
-      const defUpdates: { description?: string; tags?: string[] } = {};
-      if (updates.description !== undefined) {
-        defUpdates.description = updates.description;
+      if (isRenaming) {
+        // When renaming: remove old definition and add new one with updated store data
+        await this.definitionService.removeDefinition(store.name);
+        const newDefinition = this.createDefinitionFromExistingStore(updated);
+        // Only add if store type supports definitions (local repo stores don't)
+        if (newDefinition !== undefined) {
+          await this.definitionService.addDefinition(newDefinition);
+        }
+      } else {
+        // Not renaming: just update description/tags on existing definition
+        const defUpdates: { description?: string; tags?: string[] } = {};
+        if (updates.description !== undefined) {
+          defUpdates.description = updates.description;
+        }
+        if (updates.tags !== undefined) {
+          // Copy tags array to convert from readonly to mutable
+          defUpdates.tags = [...updates.tags];
+        }
+        // Only update if there are actual changes to sync
+        if (Object.keys(defUpdates).length > 0) {
+          await this.definitionService.updateDefinition(store.name, defUpdates);
+        }
       }
-      if (updates.tags !== undefined) {
-        // Copy tags array to convert from readonly to mutable
-        defUpdates.tags = [...updates.tags];
-      }
-      await this.definitionService.updateDefinition(store.name, defUpdates);
     }
 
     return ok(updated);

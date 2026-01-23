@@ -946,6 +946,12 @@ declare class StoreService {
      * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
      */
     private createDefinitionFromStore;
+    /**
+     * Create a StoreDefinition from an existing store (without original input).
+     * Used when updating/renaming stores where we don't have the original input.
+     * Returns undefined for stores that shouldn't be persisted (e.g., local repo stores).
+     */
+    private createDefinitionFromExistingStore;
     create(input: CreateStoreInput, options?: OperationOptions): Promise<Result<Store>>;
     list(type?: StoreType): Promise<Store[]>;
     get(id: StoreId): Promise<Store | undefined>;
