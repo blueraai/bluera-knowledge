@@ -300,6 +300,9 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
   // LanceDB's native Rust code is not fork-safe and has threading issues
   // if subprocess signals are sent while lancedb is shutting down.
 
+  // 0. Clean up SearchService event subscriptions (no async, just unsubscribe)
+  services.search.cleanup();
+
   // 1. Stop Python bridge first (reverse of init: started first, stopped first)
   try {
     await services.pythonBridge.stop();

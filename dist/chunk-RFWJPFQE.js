@@ -1784,11 +1784,31 @@ var CodeGraphService = class {
   parser;
   parserFactory;
   graphCache;
+  cacheListeners;
   constructor(dataDir, pythonBridge) {
     this.dataDir = dataDir;
     this.parser = new ASTParser();
     this.parserFactory = new ParserFactory(pythonBridge);
     this.graphCache = /* @__PURE__ */ new Map();
+    this.cacheListeners = /* @__PURE__ */ new Set();
+  }
+  /**
+   * Subscribe to cache invalidation events.
+   * Returns an unsubscribe function.
+   */
+  onCacheInvalidation(listener) {
+    this.cacheListeners.add(listener);
+    return () => {
+      this.cacheListeners.delete(listener);
+    };
+  }
+  /**
+   * Emit a cache invalidation event to all listeners.
+   */
+  emitCacheInvalidation(event) {
+    for (const listener of this.cacheListeners) {
+      listener(event);
+    }
   }
   /**
    * Build a code graph from source files.
@@ -1847,6 +1867,7 @@ var CodeGraphService = class {
     await mkdir2(dirname3(graphPath), { recursive: true });
     const serialized = graph.toJSON();
     await writeFile2(graphPath, JSON.stringify(serialized, null, 2));
+    this.emitCacheInvalidation({ type: "graph-updated", storeId });
   }
   /**
    * Delete the code graph file for a store.
@@ -1856,6 +1877,7 @@ var CodeGraphService = class {
     const graphPath = this.getGraphPath(storeId);
     await rm(graphPath, { force: true });
     this.graphCache.delete(storeId);
+    this.emitCacheInvalidation({ type: "graph-deleted", storeId });
   }
   /**
    * Load a code graph for a store.
@@ -3544,6 +3566,7 @@ var SearchService = class {
   codeGraphService;
   graphCache;
   searchConfig;
+  unsubscribeCacheInvalidation;
   constructor(lanceStore, embeddingEngine, codeGraphService, searchConfig) {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
@@ -3551,6 +3574,18 @@ var SearchService = class {
     this.codeGraphService = codeGraphService;
     this.graphCache = /* @__PURE__ */ new Map();
     this.searchConfig = searchConfig;
+    if (codeGraphService) {
+      this.unsubscribeCacheInvalidation = codeGraphService.onCacheInvalidation((event) => {
+        this.graphCache.delete(event.storeId);
+      });
+    }
+  }
+  /**
+   * Clean up resources (unsubscribe from events).
+   * Call this when destroying the service.
+   */
+  cleanup() {
+    this.unsubscribeCacheInvalidation?.();
   }
   /**
    * Load code graph for a store, with caching.
@@ -5561,6 +5596,7 @@ async function createServices(configPath, dataDir, projectRoot) {
 async function destroyServices(services) {
   logger4.info("Shutting down services");
   const errors = [];
+  services.search.cleanup();
   try {
     await services.pythonBridge.stop();
   } catch (e) {
@@ -5619,4 +5655,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-EEBLLLF3.js.map
+//# sourceMappingURL=chunk-RFWJPFQE.js.map

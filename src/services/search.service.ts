@@ -220,6 +220,7 @@ export class SearchService {
   private readonly codeGraphService: CodeGraphService | undefined;
   private readonly graphCache: Map<string, CodeGraph | null>;
   private readonly searchConfig: SearchConfig | undefined;
+  private readonly unsubscribeCacheInvalidation: (() => void) | undefined;
 
   constructor(
     lanceStore: LanceStore,
@@ -233,6 +234,22 @@ export class SearchService {
     this.codeGraphService = codeGraphService;
     this.graphCache = new Map();
     this.searchConfig = searchConfig;
+
+    // Subscribe to cache invalidation events from CodeGraphService
+    if (codeGraphService) {
+      this.unsubscribeCacheInvalidation = codeGraphService.onCacheInvalidation((event) => {
+        // Clear our cached graph when it's updated or deleted
+        this.graphCache.delete(event.storeId);
+      });
+    }
+  }
+
+  /**
+   * Clean up resources (unsubscribe from events).
+   * Call this when destroying the service.
+   */
+  cleanup(): void {
+    this.unsubscribeCacheInvalidation?.();
   }
 
   /**

@@ -295,4 +295,67 @@ function callee() {
       expect(loaded1).not.toBe(loaded2);
     });
   });
+
+  describe('cache invalidation events', () => {
+    it('should emit graph-updated event on saveGraph', async () => {
+      const storeId = createStoreId('event-test-1');
+      const files = [{ path: '/src/main.ts', content: 'export function main() {}' }];
+      const graph = await service.buildGraph(files);
+
+      const events: Array<{ type: string; storeId: string }> = [];
+      const unsubscribe = service.onCacheInvalidation((event) => {
+        events.push(event);
+      });
+
+      await service.saveGraph(storeId, graph);
+
+      expect(events).toHaveLength(1);
+      expect(events[0]).toEqual({ type: 'graph-updated', storeId });
+
+      unsubscribe();
+    });
+
+    it('should emit graph-deleted event on deleteGraph', async () => {
+      const storeId = createStoreId('event-test-2');
+      const files = [{ path: '/src/main.ts', content: 'export function main() {}' }];
+      const graph = await service.buildGraph(files);
+      await service.saveGraph(storeId, graph);
+
+      const events: Array<{ type: string; storeId: string }> = [];
+      const unsubscribe = service.onCacheInvalidation((event) => {
+        events.push(event);
+      });
+
+      await service.deleteGraph(storeId);
+
+      // Filter to only deletion events (saveGraph also emits)
+      const deleteEvents = events.filter((e) => e.type === 'graph-deleted');
+      expect(deleteEvents).toHaveLength(1);
+      expect(deleteEvents[0]).toEqual({ type: 'graph-deleted', storeId });
+
+      unsubscribe();
+    });
+
+    it('should allow unsubscribing from events', async () => {
+      const storeId = createStoreId('event-test-3');
+      const files = [{ path: '/src/main.ts', content: 'export function main() {}' }];
+      const graph = await service.buildGraph(files);
+
+      const events: Array<{ type: string; storeId: string }> = [];
+      const unsubscribe = service.onCacheInvalidation((event) => {
+        events.push(event);
+      });
+
+      // First save - should receive event
+      await service.saveGraph(storeId, graph);
+      expect(events).toHaveLength(1);
+
+      // Unsubscribe
+      unsubscribe();
+
+      // Second save - should NOT receive event
+      await service.saveGraph(storeId, graph);
+      expect(events).toHaveLength(1);
+    });
+  });
 });

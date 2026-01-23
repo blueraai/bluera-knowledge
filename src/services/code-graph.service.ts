@@ -7,6 +7,7 @@ import { ParserFactory } from '../analysis/parser-factory.js';
 import { RustASTParser } from '../analysis/rust-ast-parser.js';
 import type { PythonBridge } from '../crawl/bridge.js';
 import type { StoreId } from '../types/brands.js';
+import type { CacheInvalidationEvent, CacheInvalidationListener } from '../types/cache-events.js';
 
 interface SerializedGraph {
   nodes: Array<{
@@ -37,12 +38,34 @@ export class CodeGraphService {
   private readonly parser: ASTParser;
   private readonly parserFactory: ParserFactory;
   private readonly graphCache: Map<string, CodeGraph>;
+  private readonly cacheListeners: Set<CacheInvalidationListener>;
 
   constructor(dataDir: string, pythonBridge?: PythonBridge) {
     this.dataDir = dataDir;
     this.parser = new ASTParser();
     this.parserFactory = new ParserFactory(pythonBridge);
     this.graphCache = new Map();
+    this.cacheListeners = new Set();
+  }
+
+  /**
+   * Subscribe to cache invalidation events.
+   * Returns an unsubscribe function.
+   */
+  onCacheInvalidation(listener: CacheInvalidationListener): () => void {
+    this.cacheListeners.add(listener);
+    return () => {
+      this.cacheListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Emit a cache invalidation event to all listeners.
+   */
+  private emitCacheInvalidation(event: CacheInvalidationEvent): void {
+    for (const listener of this.cacheListeners) {
+      listener(event);
+    }
   }
 
   /**
@@ -118,6 +141,9 @@ export class CodeGraphService {
 
     const serialized = graph.toJSON();
     await writeFile(graphPath, JSON.stringify(serialized, null, 2));
+
+    // Notify listeners that the graph has been updated
+    this.emitCacheInvalidation({ type: 'graph-updated', storeId });
   }
 
   /**
@@ -128,6 +154,9 @@ export class CodeGraphService {
     const graphPath = this.getGraphPath(storeId);
     await rm(graphPath, { force: true });
     this.graphCache.delete(storeId);
+
+    // Notify listeners that the graph has been deleted
+    this.emitCacheInvalidation({ type: 'graph-deleted', storeId });
   }
 
   /**

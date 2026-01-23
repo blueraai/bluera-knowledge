@@ -157,6 +157,22 @@ type DocumentId = string & {
 };
 
 /**
+ * Events emitted when cached data becomes stale.
+ * Used to notify dependent services (e.g., SearchService) when
+ * source data (e.g., code graphs) has been updated or deleted.
+ */
+interface CacheInvalidationEvent {
+    /** Type of invalidation */
+    type: 'graph-updated' | 'graph-deleted';
+    /** The store whose data changed */
+    storeId: StoreId;
+}
+/**
+ * Listener function for cache invalidation events.
+ */
+type CacheInvalidationListener = (event: CacheInvalidationEvent) => void;
+
+/**
  * Service for building, persisting, and querying code graphs.
  * Code graphs track relationships between code elements (functions, classes, etc.)
  * for enhanced search context.
@@ -166,7 +182,17 @@ declare class CodeGraphService {
     private readonly parser;
     private readonly parserFactory;
     private readonly graphCache;
+    private readonly cacheListeners;
     constructor(dataDir: string, pythonBridge?: PythonBridge);
+    /**
+     * Subscribe to cache invalidation events.
+     * Returns an unsubscribe function.
+     */
+    onCacheInvalidation(listener: CacheInvalidationListener): () => void;
+    /**
+     * Emit a cache invalidation event to all listeners.
+     */
+    private emitCacheInvalidation;
     /**
      * Build a code graph from source files.
      */
@@ -617,7 +643,13 @@ declare class SearchService {
     private readonly codeGraphService;
     private readonly graphCache;
     private readonly searchConfig;
+    private readonly unsubscribeCacheInvalidation;
     constructor(lanceStore: LanceStore, embeddingEngine: EmbeddingEngine, codeGraphService?: CodeGraphService, searchConfig?: SearchConfig);
+    /**
+     * Clean up resources (unsubscribe from events).
+     * Call this when destroying the service.
+     */
+    cleanup(): void;
     /**
      * Load code graph for a store, with caching.
      * Returns null if no graph is available.

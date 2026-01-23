@@ -1370,7 +1370,10 @@ describe('SearchService - Path Keyword Boosting', () => {
 describe('SearchService - Code Graph Integration', () => {
   let mockLanceStore: LanceStore;
   let mockEmbeddingEngine: EmbeddingEngine;
-  let mockCodeGraphService: { loadGraph: ReturnType<typeof vi.fn> };
+  let mockCodeGraphService: {
+    loadGraph: ReturnType<typeof vi.fn>;
+    onCacheInvalidation: ReturnType<typeof vi.fn>;
+  };
   let searchService: SearchService;
   const storeId = createStoreId('test-store');
 
@@ -1386,6 +1389,7 @@ describe('SearchService - Code Graph Integration', () => {
 
     mockCodeGraphService = {
       loadGraph: vi.fn(),
+      onCacheInvalidation: vi.fn().mockReturnValue(() => {}),
     };
 
     // Create SearchService with mock codeGraphService

@@ -47,6 +47,7 @@ describe('destroyServices', () => {
       pythonBridge: mockPythonBridge as unknown as PythonBridge,
       lance: mockLance as unknown as LanceStore,
       embeddings: mockEmbeddings as unknown as EmbeddingEngine,
+      search: { cleanup: vi.fn() },
     } as unknown as ServiceContainer;
   });
 
@@ -220,7 +221,9 @@ describe('createServices', () => {
     });
 
     vi.mocked(SearchService).mockImplementation(function () {
-      return {};
+      return {
+        cleanup: vi.fn(),
+      };
     });
 
     vi.mocked(IndexService).mockImplementation(function () {
