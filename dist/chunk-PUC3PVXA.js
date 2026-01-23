@@ -2,6 +2,9 @@ import {
   createDocumentId,
   createStoreId
 } from "./chunk-CLIMKLTW.js";
+import {
+  parseIgnorePatternsForScanning
+} from "./chunk-UIU36LNA.js";
 
 // src/analysis/adapter-registry.ts
 var AdapterRegistry = class _AdapterRegistry {
@@ -2620,22 +2623,6 @@ var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([
   ".sql",
   ".xml"
 ]);
-var DEFAULT_IGNORE_DIRS = ["node_modules", ".git", ".bluera", "dist", "build"];
-function parseIgnorePatterns(patterns) {
-  const dirs = new Set(DEFAULT_IGNORE_DIRS);
-  const filePatterns = [];
-  for (const pattern of patterns) {
-    if (pattern.endsWith("/**")) {
-      dirs.add(pattern.slice(0, -3));
-    } else if (pattern.startsWith("*.")) {
-      const ext = pattern.slice(1);
-      filePatterns.push((filename) => filename.endsWith(ext));
-    } else if (!pattern.includes("/") && !pattern.includes("*")) {
-      dirs.add(pattern);
-    }
-  }
-  return { dirs, filePatterns };
-}
 var IndexService = class {
   lanceStore;
   embeddingEngine;
@@ -2657,9 +2644,9 @@ var IndexService = class {
     this.manifestService = options.manifestService;
     this.driftService = new DriftService();
     this.concurrency = options.concurrency ?? 4;
-    const parsed = parseIgnorePatterns(options.ignorePatterns ?? []);
+    const parsed = parseIgnorePatternsForScanning(options.ignorePatterns ?? []);
     this.ignoreDirs = parsed.dirs;
-    this.ignoreFilePatterns = parsed.filePatterns;
+    this.ignoreFilePatterns = parsed.fileMatchers;
   }
   async indexStore(store, onProgress) {
     logger.info(
@@ -5604,4 +5591,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-JOMJYIF6.js.map
+//# sourceMappingURL=chunk-PUC3PVXA.js.map

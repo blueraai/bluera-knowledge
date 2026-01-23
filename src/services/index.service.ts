@@ -6,6 +6,7 @@ import { DriftService } from './drift.service.js';
 import { createLogger } from '../logging/index.js';
 import { createDocumentId } from '../types/brands.js';
 import { ok, err } from '../types/result.js';
+import { parseIgnorePatternsForScanning } from '../utils/ignore-patterns.js';
 import type { CodeGraphService } from './code-graph.service.js';
 import type { ManifestService } from './manifest.service.js';
 import type { EmbeddingEngine } from '../db/embeddings.js';
@@ -71,37 +72,6 @@ const TEXT_EXTENSIONS = new Set([
   '.xml',
 ]);
 
-/** Default directories to always ignore (in addition to config patterns) */
-const DEFAULT_IGNORE_DIRS = ['node_modules', '.git', '.bluera', 'dist', 'build'];
-
-/**
- * Parse ignore patterns into directory names and file extension patterns.
- * Supports: 'dirname/**', 'dirname', '*.ext'
- */
-function parseIgnorePatterns(patterns: readonly string[]): {
-  dirs: Set<string>;
-  filePatterns: Array<(filename: string) => boolean>;
-} {
-  const dirs = new Set<string>(DEFAULT_IGNORE_DIRS);
-  const filePatterns: Array<(filename: string) => boolean> = [];
-
-  for (const pattern of patterns) {
-    if (pattern.endsWith('/**')) {
-      // Directory pattern: 'node_modules/**' -> 'node_modules'
-      dirs.add(pattern.slice(0, -3));
-    } else if (pattern.startsWith('*.')) {
-      // Extension pattern: '*.min.js' -> matches files ending with '.min.js'
-      const ext = pattern.slice(1); // Remove leading '*'
-      filePatterns.push((filename) => filename.endsWith(ext));
-    } else if (!pattern.includes('/') && !pattern.includes('*')) {
-      // Simple directory name: 'node_modules' -> treat as directory
-      dirs.add(pattern);
-    }
-  }
-
-  return { dirs, filePatterns };
-}
-
 export class IndexService {
   private readonly lanceStore: LanceStore;
   private readonly embeddingEngine: EmbeddingEngine;
@@ -129,9 +99,9 @@ export class IndexService {
     this.driftService = new DriftService();
     this.concurrency = options.concurrency ?? 4;
 
-    const parsed = parseIgnorePatterns(options.ignorePatterns ?? []);
+    const parsed = parseIgnorePatternsForScanning(options.ignorePatterns ?? []);
     this.ignoreDirs = parsed.dirs;
-    this.ignoreFilePatterns = parsed.filePatterns;
+    this.ignoreFilePatterns = parsed.fileMatchers;
   }
 
   async indexStore(store: Store, onProgress?: ProgressCallback): Promise<Result<IndexResult>> {

@@ -1,16 +1,8 @@
 import { watch, type FSWatcher } from 'chokidar';
+import { normalizeGlobPatterns } from '../utils/ignore-patterns.js';
 import type { IndexService } from './index.service.js';
 import type { LanceStore } from '../db/lance.js';
 import type { FileStore, RepoStore } from '../types/store.js';
-
-/** Default patterns to always ignore (in addition to config patterns) */
-const DEFAULT_IGNORE_PATTERNS = [
-  '**/node_modules/**',
-  '**/.git/**',
-  '**/.bluera/**',
-  '**/dist/**',
-  '**/build/**',
-];
 
 export interface WatchServiceOptions {
   ignorePatterns?: readonly string[];
@@ -30,11 +22,8 @@ export class WatchService {
   ) {
     this.indexService = indexService;
     this.lanceStore = lanceStore;
-    // Merge config patterns with defaults, converting to glob format if needed
-    this.ignorePatterns = [
-      ...DEFAULT_IGNORE_PATTERNS,
-      ...(options.ignorePatterns ?? []).map((p) => (p.startsWith('**/') ? p : `**/${p}`)),
-    ];
+    // Use shared utility to normalize patterns to glob format with defaults
+    this.ignorePatterns = normalizeGlobPatterns(options.ignorePatterns ?? []);
   }
 
   async watch(
