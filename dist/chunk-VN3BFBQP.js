@@ -3728,7 +3728,9 @@ var SearchService = class {
     const bySource = /* @__PURE__ */ new Map();
     const queryTerms = query.toLowerCase().split(/\s+/).filter((t2) => t2.length > 2);
     for (const result of results) {
-      const sourceKey = result.metadata.path ?? result.metadata.url ?? result.id;
+      const storeId = result.metadata.storeId;
+      const source = result.metadata.path ?? result.metadata.url ?? result.id;
+      const sourceKey = `${storeId}:${source}`;
       const existing = bySource.get(sourceKey);
       if (!existing) {
         bySource.set(sourceKey, result);
@@ -5729,4 +5731,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RV7VUF2D.js.map
+//# sourceMappingURL=chunk-VN3BFBQP.js.map

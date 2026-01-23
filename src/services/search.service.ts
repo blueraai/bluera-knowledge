@@ -426,8 +426,11 @@ export class SearchService {
       .filter((t) => t.length > 2);
 
     for (const result of results) {
-      // Use file path as the source key (or url for web content, or id as last resort)
-      const sourceKey = result.metadata.path ?? result.metadata.url ?? result.id;
+      // Use storeId + file path as the source key to distinguish same paths across stores
+      // (or url for web content, or id as last resort)
+      const storeId = result.metadata.storeId;
+      const source = result.metadata.path ?? result.metadata.url ?? result.id;
+      const sourceKey = `${storeId}:${source}`;
 
       const existing = bySource.get(sourceKey);
       if (!existing) {
