@@ -14,12 +14,6 @@ export interface IndexingConfig {
 export interface SearchConfig {
   readonly defaultMode: 'vector' | 'fts' | 'hybrid';
   readonly defaultLimit: number;
-  readonly minScore: number;
-  readonly rrf: {
-    readonly k: number;
-    readonly vectorWeight: number;
-    readonly ftsWeight: number;
-  };
 }
 
 export interface CrawlConfig {
@@ -59,12 +53,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   search: {
     defaultMode: 'hybrid',
     defaultLimit: 10,
-    minScore: 0.5,
-    rrf: {
-      k: 40,
-      vectorWeight: 0.7,
-      ftsWeight: 0.3,
-    },
   },
   crawl: {
     userAgent: 'BlueraKnowledge/1.0',

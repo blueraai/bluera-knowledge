@@ -2043,13 +2043,7 @@ var DEFAULT_CONFIG = {
   },
   search: {
     defaultMode: "hybrid",
-    defaultLimit: 10,
-    minScore: 0.5,
-    rrf: {
-      k: 40,
-      vectorWeight: 0.7,
-      ftsWeight: 0.3
-    }
+    defaultLimit: 10
   },
   crawl: {
     userAgent: "BlueraKnowledge/1.0",
@@ -5754,4 +5748,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-OGNOQPHY.js.map
+//# sourceMappingURL=chunk-66MWEFPW.js.map

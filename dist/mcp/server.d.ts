@@ -268,12 +268,6 @@ interface IndexingConfig {
 interface SearchConfig {
     readonly defaultMode: 'vector' | 'fts' | 'hybrid';
     readonly defaultLimit: number;
-    readonly minScore: number;
-    readonly rrf: {
-        readonly k: number;
-        readonly vectorWeight: number;
-        readonly ftsWeight: number;
-    };
 }
 interface CrawlConfig {
     readonly userAgent: string;
