@@ -3551,6 +3551,17 @@ function classifyQueryIntents(query) {
 function getPrimaryIntent(intents) {
   return intents[0]?.intent ?? "how-to";
 }
+function mapSearchIntentToQueryIntent(intent) {
+  switch (intent) {
+    case "find-pattern":
+    case "find-implementation":
+    case "find-definition":
+      return "implementation";
+    case "find-usage":
+    case "find-documentation":
+      return "how-to";
+  }
+}
 var RRF_PRESETS = {
   code: { k: 20, vectorWeight: 0.6, ftsWeight: 0.4 },
   web: { k: 30, vectorWeight: 0.55, ftsWeight: 0.45 }
@@ -3618,7 +3629,7 @@ var SearchService = class {
     const stores = query.stores ?? [];
     const detail = query.detail ?? "minimal";
     const intents = classifyQueryIntents(query.query);
-    const primaryIntent = getPrimaryIntent(intents);
+    const primaryIntent = query.intent !== void 0 ? mapSearchIntentToQueryIntent(query.intent) : getPrimaryIntent(intents);
     logger2.debug(
       {
         query: query.query,
@@ -3627,7 +3638,8 @@ var SearchService = class {
         stores,
         detail,
         intent: primaryIntent,
-        intents,
+        userIntent: query.intent,
+        autoClassifiedIntents: intents,
         minRelevance: query.minRelevance
       },
       "Search query received"
@@ -5742,4 +5754,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-IGUXBO2U.js.map
+//# sourceMappingURL=chunk-OGNOQPHY.js.map

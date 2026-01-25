@@ -3,6 +3,17 @@ import type { DocumentMetadata } from './document.js';
 
 export type SearchMode = 'vector' | 'fts' | 'hybrid';
 
+/**
+ * Search intent hints for context-aware ranking.
+ * These align with the MCP API contract.
+ */
+export type SearchIntent =
+  | 'find-pattern'
+  | 'find-implementation'
+  | 'find-usage'
+  | 'find-definition'
+  | 'find-documentation';
+
 export interface CodeUnit {
   type: 'function' | 'class' | 'interface' | 'type' | 'const' | 'documentation' | 'example';
   name: string;
@@ -54,6 +65,9 @@ export interface SearchQuery {
   readonly minRelevance?: number | undefined; // Minimum raw cosine similarity [0-1] to include results
   readonly filter?: Record<string, unknown> | undefined;
   readonly contextLines?: number | undefined;
+
+  // Search intent hint for context-aware ranking
+  readonly intent?: SearchIntent | undefined;
 
   // Detail level for progressive context
   readonly detail?: DetailLevel | undefined;

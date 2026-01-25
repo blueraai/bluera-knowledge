@@ -554,6 +554,11 @@ declare class IndexService {
 }
 
 type SearchMode = 'vector' | 'fts' | 'hybrid';
+/**
+ * Search intent hints for context-aware ranking.
+ * These align with the MCP API contract.
+ */
+type SearchIntent = 'find-pattern' | 'find-implementation' | 'find-usage' | 'find-definition' | 'find-documentation';
 interface CodeUnit {
     type: 'function' | 'class' | 'interface' | 'type' | 'const' | 'documentation' | 'example';
     name: string;
@@ -600,6 +605,7 @@ interface SearchQuery {
     readonly minRelevance?: number | undefined;
     readonly filter?: Record<string, unknown> | undefined;
     readonly contextLines?: number | undefined;
+    readonly intent?: SearchIntent | undefined;
     readonly detail?: DetailLevel | undefined;
 }
 interface SearchResult {

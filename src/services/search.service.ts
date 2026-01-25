@@ -13,6 +13,7 @@ import type {
   SearchConfidence,
   DetailLevel,
   CodeUnit,
+  SearchIntent,
 } from '../types/search.js';
 
 const logger = createLogger('search-service');
@@ -197,6 +198,22 @@ function getPrimaryIntent(intents: ClassifiedIntent[]): QueryIntent {
 }
 
 /**
+ * Map MCP SearchIntent to internal QueryIntent.
+ * This allows users to override auto-classification via the API.
+ */
+function mapSearchIntentToQueryIntent(intent: SearchIntent): QueryIntent {
+  switch (intent) {
+    case 'find-pattern':
+    case 'find-implementation':
+    case 'find-definition':
+      return 'implementation';
+    case 'find-usage':
+    case 'find-documentation':
+      return 'how-to';
+  }
+}
+
+/**
  * RRF presets for different content types.
  * Web/docs content uses higher k to reduce noise from repetitive structure.
  */
@@ -287,8 +304,15 @@ export class SearchService {
     const limit = query.limit ?? this.searchConfig?.defaultLimit ?? 10;
     const stores = query.stores ?? [];
     const detail = query.detail ?? 'minimal';
+
+    // Auto-classify intents from query text (used for logging and when user doesn't specify intent)
     const intents = classifyQueryIntents(query.query);
-    const primaryIntent = getPrimaryIntent(intents);
+
+    // Use user-provided intent if available, otherwise use auto-classified
+    const primaryIntent =
+      query.intent !== undefined
+        ? mapSearchIntentToQueryIntent(query.intent)
+        : getPrimaryIntent(intents);
 
     logger.debug(
       {
@@ -298,7 +322,8 @@ export class SearchService {
         stores,
         detail,
         intent: primaryIntent,
-        intents,
+        userIntent: query.intent,
+        autoClassifiedIntents: intents,
         minRelevance: query.minRelevance,
       },
       'Search query received'

@@ -75,6 +75,7 @@ export const handleSearch: ToolHandler<SearchArgs> = async (
     detail: validated.detail,
     threshold: validated.threshold,
     minRelevance: validated.minRelevance,
+    intent: validated.intent,
   };
 
   const results = await services.search.search(searchQuery);

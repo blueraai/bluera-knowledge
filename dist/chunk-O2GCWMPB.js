@@ -9,7 +9,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   summarizePayload
-} from "./chunk-IGUXBO2U.js";
+} from "./chunk-OGNOQPHY.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -1773,7 +1773,8 @@ var handleSearch = async (args, context) => {
     limit: validated.limit,
     detail: validated.detail,
     threshold: validated.threshold,
-    minRelevance: validated.minRelevance
+    minRelevance: validated.minRelevance,
+    intent: validated.intent
   };
   const results = await services.search.search(searchQuery);
   for (const result of results.results) {
@@ -2157,4 +2158,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-KQSDG525.js.map
+//# sourceMappingURL=chunk-O2GCWMPB.js.map
