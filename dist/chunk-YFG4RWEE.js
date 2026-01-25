@@ -669,7 +669,7 @@ var GetStoreInfoArgsSchema = z.object({
 });
 var CreateStoreArgsSchema = z.object({
   name: z.string().min(1, "Store name must be a non-empty string"),
-  type: z.enum(["file", "repo"]),
+  type: z.enum(["file", "repo", "web"]),
   source: z.string().min(1, "Source path or URL must be a non-empty string"),
   branch: z.string().optional(),
   description: z.string().optional()
@@ -1256,11 +1256,11 @@ var storeCommands = [
   },
   {
     name: "store:create",
-    description: "Create a new knowledge store from git URL or local path",
+    description: "Create a new knowledge store from git URL, local path, or web URL",
     argsSchema: z5.object({
       name: z5.string().min(1).describe("Store name"),
-      type: z5.enum(["file", "repo"]).describe("Store type"),
-      source: z5.string().min(1).describe("Git URL or local path"),
+      type: z5.enum(["file", "repo", "web"]).describe("Store type"),
+      source: z5.string().min(1).describe("Git URL, local path, or web URL"),
       branch: z5.string().optional().describe("Git branch (for repo type)"),
       description: z5.string().optional().describe("Store description")
     }),
@@ -2158,4 +2158,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-6MZ6ZZQK.js.map
+//# sourceMappingURL=chunk-YFG4RWEE.js.map

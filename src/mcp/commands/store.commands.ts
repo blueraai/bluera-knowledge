@@ -45,11 +45,11 @@ export const storeCommands: CommandDefinition[] = [
   },
   {
     name: 'store:create',
-    description: 'Create a new knowledge store from git URL or local path',
+    description: 'Create a new knowledge store from git URL, local path, or web URL',
     argsSchema: z.object({
       name: z.string().min(1).describe('Store name'),
-      type: z.enum(['file', 'repo']).describe('Store type'),
-      source: z.string().min(1).describe('Git URL or local path'),
+      type: z.enum(['file', 'repo', 'web']).describe('Store type'),
+      source: z.string().min(1).describe('Git URL, local path, or web URL'),
       branch: z.string().optional().describe('Git branch (for repo type)'),
       description: z.string().optional().describe('Store description'),
     }),

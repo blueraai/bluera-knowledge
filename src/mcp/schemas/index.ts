@@ -79,7 +79,7 @@ export type GetStoreInfoArgs = z.infer<typeof GetStoreInfoArgsSchema>;
  */
 export const CreateStoreArgsSchema = z.object({
   name: z.string().min(1, 'Store name must be a non-empty string'),
-  type: z.enum(['file', 'repo']),
+  type: z.enum(['file', 'repo', 'web']),
   source: z.string().min(1, 'Source path or URL must be a non-empty string'),
   branch: z.string().optional(),
   description: z.string().optional(),
