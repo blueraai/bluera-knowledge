@@ -1294,9 +1294,8 @@ function createApp(services, dataDir) {
     await services.lance.deleteStore(store.id);
     await services.codeGraph.deleteGraph(store.id);
     await services.manifest.delete(store.id);
-    if (store.type === "repo" && "url" in store && store.url !== void 0 && dataDir !== void 0) {
-      const repoPath = join2(dataDir, "repos", store.id);
-      await rm(repoPath, { recursive: true, force: true });
+    if (store.type === "repo" && "url" in store && store.url !== void 0 && dataDir !== void 0 && store.path.startsWith(join2(dataDir, "repos"))) {
+      await rm(store.path, { recursive: true, force: true });
     }
     const result = await services.store.delete(store.id);
     if (result.success) return c.json({ deleted: true });

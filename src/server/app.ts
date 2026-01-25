@@ -89,14 +89,15 @@ export function createApp(services: ServiceContainer, dataDir?: string): Hono {
     await services.manifest.delete(store.id);
 
     // For repo stores cloned from URL, remove the cloned directory
+    // Only delete if path is within our data directory (cloned repos)
     if (
       store.type === 'repo' &&
       'url' in store &&
       store.url !== undefined &&
-      dataDir !== undefined
+      dataDir !== undefined &&
+      store.path.startsWith(join(dataDir, 'repos'))
     ) {
-      const repoPath = join(dataDir, 'repos', store.id);
-      await rm(repoPath, { recursive: true, force: true });
+      await rm(store.path, { recursive: true, force: true });
     }
 
     // Delete from registry last
