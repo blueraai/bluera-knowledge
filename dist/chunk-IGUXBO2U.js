@@ -136,13 +136,13 @@ var ProjectRootService = class {
     if (projectRootEnv !== void 0 && projectRootEnv !== "") {
       return this.normalize(projectRootEnv);
     }
-    const pwdEnv = process.env["PWD"];
-    if (pwdEnv !== void 0 && pwdEnv !== "") {
-      return this.normalize(pwdEnv);
-    }
     const gitRoot = this.findGitRoot(process.cwd());
     if (gitRoot !== null) {
       return gitRoot;
+    }
+    const pwdEnv = process.env["PWD"];
+    if (pwdEnv !== void 0 && pwdEnv !== "") {
+      return this.normalize(pwdEnv);
     }
     return process.cwd();
   }
@@ -5742,4 +5742,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-SJVFKCPU.js.map
+//# sourceMappingURL=chunk-IGUXBO2U.js.map

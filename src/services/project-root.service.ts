@@ -11,8 +11,8 @@ export interface ProjectRootOptions {
  * Resolution hierarchy:
  * 1. Explicit projectRoot option (highest priority)
  * 2. PROJECT_ROOT environment variable (set by plugin commands)
- * 3. PWD environment variable (set by MCP server and shells)
- * 4. Git root detection (walk up to find .git directory)
+ * 3. Git root detection (walk up to find .git directory)
+ * 4. PWD environment variable (set by MCP server and shells)
  * 5. process.cwd() (fallback)
  */
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -32,16 +32,16 @@ export class ProjectRootService {
       return this.normalize(projectRootEnv);
     }
 
-    // 3. Check PWD environment variable (MCP server, shells)
-    const pwdEnv = process.env['PWD'];
-    if (pwdEnv !== undefined && pwdEnv !== '') {
-      return this.normalize(pwdEnv);
-    }
-
-    // 4. Try git root detection
+    // 3. Try git root detection (most reliable for repos)
     const gitRoot = this.findGitRoot(process.cwd());
     if (gitRoot !== null) {
       return gitRoot;
+    }
+
+    // 4. Check PWD environment variable (MCP server, shells) - only if not in a git repo
+    const pwdEnv = process.env['PWD'];
+    if (pwdEnv !== undefined && pwdEnv !== '') {
+      return this.normalize(pwdEnv);
     }
 
     // 5. Fallback to process.cwd()

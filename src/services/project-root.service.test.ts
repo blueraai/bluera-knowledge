@@ -470,10 +470,31 @@ describe('ProjectRootService', () => {
       expect(result).toBe(path.normalize('/project/root'));
     });
 
-    it('uses PWD when PROJECT_ROOT is undefined', () => {
+    it('prefers git root over PWD when in a git repo', () => {
+      delete process.env.PROJECT_ROOT;
+      process.env.PWD = '/project/src'; // PWD is subdirectory
+
+      // Mock git root detection at /project
+      const gitPath = path.join(process.cwd(), '.git');
+      (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation((p: string) => {
+        return p === gitPath;
+      });
+      (fs.statSync as ReturnType<typeof vi.fn>).mockReturnValue({
+        isDirectory: () => true,
+        isFile: () => false,
+      } as fs.Stats);
+
+      const result = ProjectRootService.resolve();
+
+      // Should use git root (process.cwd()) not PWD
+      expect(result).toBe(process.cwd());
+    });
+
+    it('uses PWD when PROJECT_ROOT is undefined and not in git repo', () => {
       delete process.env.PROJECT_ROOT;
       process.env.PWD = '/pwd/path';
 
+      // No git root found (default mock returns false for existsSync)
       const result = ProjectRootService.resolve();
 
       expect(result).toBe(path.normalize('/pwd/path'));
