@@ -14,7 +14,8 @@ import {
 import { homedir } from "os";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-var logDir = join(homedir(), ".bluera", "bluera-knowledge", "logs");
+var envProjectRoot = process.env["PROJECT_ROOT"];
+var logDir = envProjectRoot !== void 0 && envProjectRoot !== "" ? join(envProjectRoot, ".bluera", "bluera-knowledge", "logs") : join(homedir(), ".bluera", "bluera-knowledge", "logs");
 var logFile = join(logDir, "app.log");
 var log = (level, msg, data) => {
   try {
@@ -57,8 +58,26 @@ function installWithPackageManager() {
   })();
   const cmd = hasBun ? "bun install --frozen-lockfile" : "npm ci --silent";
   log("info", "Installing dependencies with package manager", { hasBun, cmd });
-  execSync(cmd, { cwd: pluginRoot, stdio: "inherit" });
-  log("info", "Dependencies installed via package manager");
+  try {
+    const output = execSync(cmd, { cwd: pluginRoot, stdio: "pipe" });
+    if (output.length > 0) {
+      log("debug", "Install output", { output: output.toString().trim() });
+    }
+    log("info", "Dependencies installed via package manager");
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetails = { message: errorMessage };
+    if (typeof error === "object" && error !== null) {
+      if ("stdout" in error && Buffer.isBuffer(error.stdout)) {
+        errorDetails["stdout"] = error.stdout.toString().trim();
+      }
+      if ("stderr" in error && Buffer.isBuffer(error.stderr)) {
+        errorDetails["stderr"] = error.stderr.toString().trim();
+      }
+    }
+    log("error", "Dependency installation failed", errorDetails);
+    throw error;
+  }
 }
 function ensureDependencies() {
   const nodeModulesPath = join(pluginRoot, "node_modules");
