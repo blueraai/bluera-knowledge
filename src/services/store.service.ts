@@ -275,7 +275,7 @@ export class StoreService {
           path: normalizedRepoPath,
           url: input.url,
           branch: input.branch,
-          depth: input.depth,
+          depth: input.depth ?? 1,
           description: input.description,
           tags: input.tags,
           status: 'ready',

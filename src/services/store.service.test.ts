@@ -170,6 +170,19 @@ describe('StoreService', () => {
       }
     });
 
+    it('uses default depth of 1 when not specified', async () => {
+      const result = await storeService.create({
+        name: 'Default Depth Repo',
+        type: 'repo',
+        path: tempDir,
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success && result.data.type === 'repo') {
+        expect(result.data.depth).toBe(1);
+      }
+    });
+
     it('returns error when neither path nor URL provided for repo', async () => {
       const result = await storeService.create({
         name: 'No Path No URL',

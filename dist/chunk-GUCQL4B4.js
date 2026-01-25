@@ -4869,7 +4869,7 @@ var StoreService = class {
           path: normalizedRepoPath,
           url: input.url,
           branch: input.branch,
-          depth: input.depth,
+          depth: input.depth ?? 1,
           description: input.description,
           tags: input.tags,
           status: "ready",
@@ -5796,4 +5796,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-TR42SXYE.js.map
+//# sourceMappingURL=chunk-GUCQL4B4.js.map
