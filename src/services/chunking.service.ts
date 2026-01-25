@@ -35,6 +35,11 @@ export class ChunkingService {
   private readonly chunkOverlap: number;
 
   constructor(config: ChunkConfig) {
+    if (config.chunkOverlap >= config.chunkSize) {
+      throw new Error(
+        `chunkOverlap (${String(config.chunkOverlap)}) must be less than chunkSize (${String(config.chunkSize)})`
+      );
+    }
     this.chunkSize = config.chunkSize;
     this.chunkOverlap = config.chunkOverlap;
   }

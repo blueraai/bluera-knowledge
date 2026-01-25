@@ -4,6 +4,28 @@ import { ChunkingService } from './chunking.service.js';
 describe('ChunkingService', () => {
   const chunker = new ChunkingService({ chunkSize: 100, chunkOverlap: 20 });
 
+  describe('Constructor validation', () => {
+    it('throws when chunkOverlap equals chunkSize', () => {
+      expect(() => new ChunkingService({ chunkSize: 100, chunkOverlap: 100 })).toThrow(
+        /chunkOverlap.*must be less than chunkSize/
+      );
+    });
+
+    it('throws when chunkOverlap exceeds chunkSize', () => {
+      expect(() => new ChunkingService({ chunkSize: 100, chunkOverlap: 150 })).toThrow(
+        /chunkOverlap.*must be less than chunkSize/
+      );
+    });
+
+    it('accepts valid chunkOverlap less than chunkSize', () => {
+      expect(() => new ChunkingService({ chunkSize: 100, chunkOverlap: 99 })).not.toThrow();
+    });
+
+    it('accepts zero chunkOverlap', () => {
+      expect(() => new ChunkingService({ chunkSize: 100, chunkOverlap: 0 })).not.toThrow();
+    });
+  });
+
   describe('Basic sliding window chunking', () => {
     it('splits text into chunks', () => {
       const text = 'A'.repeat(250);

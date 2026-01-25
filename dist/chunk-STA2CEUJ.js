@@ -2272,6 +2272,11 @@ var ChunkingService = class _ChunkingService {
   chunkSize;
   chunkOverlap;
   constructor(config) {
+    if (config.chunkOverlap >= config.chunkSize) {
+      throw new Error(
+        `chunkOverlap (${String(config.chunkOverlap)}) must be less than chunkSize (${String(config.chunkSize)})`
+      );
+    }
     this.chunkSize = config.chunkSize;
     this.chunkOverlap = config.chunkOverlap;
   }
@@ -5799,4 +5804,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-3KOADOTJ.js.map
+//# sourceMappingURL=chunk-STA2CEUJ.js.map
