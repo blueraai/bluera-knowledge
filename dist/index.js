@@ -527,6 +527,7 @@ var DependencyUsageAnalyzer = class {
           if (![
             "node_modules",
             ".git",
+            ".bluera",
             "dist",
             "build",
             "coverage",

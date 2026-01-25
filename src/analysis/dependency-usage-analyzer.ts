@@ -271,6 +271,7 @@ export class DependencyUsageAnalyzer {
             ![
               'node_modules',
               '.git',
+              '.bluera',
               'dist',
               'build',
               'coverage',
