@@ -4379,9 +4379,20 @@ var FileStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
   type: z3.literal("file"),
   path: z3.string().min(1, "Path is required for file stores")
 });
+var GitUrlSchema = z3.string().refine(
+  (val) => {
+    try {
+      new URL(val);
+      return true;
+    } catch {
+      return /^git@[\w.-]+:[\w./-]+$/.test(val);
+    }
+  },
+  { message: "Must be a valid URL or SSH URL (git@host:path)" }
+);
 var RepoStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
   type: z3.literal("repo"),
-  url: z3.url("Valid URL is required for repo stores"),
+  url: GitUrlSchema,
   branch: z3.string().optional(),
   depth: z3.number().int().positive("Depth must be a positive integer").optional()
 });
@@ -5731,4 +5742,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-VN3BFBQP.js.map
+//# sourceMappingURL=chunk-SJVFKCPU.js.map

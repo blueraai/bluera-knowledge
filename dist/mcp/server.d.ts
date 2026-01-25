@@ -790,7 +790,7 @@ declare const StoreDefinitionSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     description: z.ZodOptional<z.ZodString>;
     tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     type: z.ZodLiteral<"repo">;
-    url: z.ZodURL;
+    url: z.ZodString;
     branch: z.ZodOptional<z.ZodString>;
     depth: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>, z.ZodObject<{
@@ -822,7 +822,7 @@ declare const StoreDefinitionsConfigSchema: z.ZodObject<{
         description: z.ZodOptional<z.ZodString>;
         tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
         type: z.ZodLiteral<"repo">;
-        url: z.ZodURL;
+        url: z.ZodString;
         branch: z.ZodOptional<z.ZodString>;
         depth: z.ZodOptional<z.ZodNumber>;
     }, z.core.$strip>, z.ZodObject<{

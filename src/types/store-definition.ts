@@ -41,12 +41,31 @@ export type FileStoreDefinition = z.infer<typeof FileStoreDefinitionSchema>;
 // ============================================================================
 
 /**
+ * Validates git repository URLs, supporting both standard URLs and SCP-style SSH URLs.
+ * - Standard URLs: https://github.com/org/repo.git, ssh://git@github.com/org/repo.git
+ * - SCP-style SSH: git@github.com:org/repo.git
+ */
+const GitUrlSchema = z.string().refine(
+  (val) => {
+    // Accept standard URLs (http://, https://, ssh://, git://)
+    try {
+      new URL(val);
+      return true;
+    } catch {
+      // Accept SCP-style SSH URLs: git@host:org/repo.git or git@host:org/repo
+      return /^git@[\w.-]+:[\w./-]+$/.test(val);
+    }
+  },
+  { message: 'Must be a valid URL or SSH URL (git@host:path)' }
+);
+
+/**
  * Repo store definition - references a git repository.
  * The repo will be cloned on sync.
  */
 export const RepoStoreDefinitionSchema = BaseStoreDefinitionSchema.extend({
   type: z.literal('repo'),
-  url: z.url('Valid URL is required for repo stores'),
+  url: GitUrlSchema,
   branch: z.string().optional(),
   depth: z.number().int().positive('Depth must be a positive integer').optional(),
 });

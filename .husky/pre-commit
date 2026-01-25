@@ -42,7 +42,8 @@ fi
 if [ -n "$HAS_SRC_CHANGES" ] || [ -n "$HAS_CONFIG_CHANGES" ]; then
   bun run build || exit 1
   # Auto-stage dist/ after build (required for Claude Code plugin distribution)
-  git add dist/
+  # Use -f to override global gitignore patterns
+  git add -f dist/
 fi
 
 echo "✅ All checks passed"

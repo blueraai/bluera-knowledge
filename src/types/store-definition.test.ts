@@ -190,6 +190,49 @@ describe('Store Definition Types', () => {
       const result = RepoStoreDefinitionSchema.safeParse(invalid);
       expect(result.success).toBe(false);
     });
+
+    it('accepts SCP-style SSH URLs', () => {
+      const valid = {
+        type: 'repo',
+        name: 'react',
+        url: 'git@github.com:facebook/react.git',
+      };
+      const result = RepoStoreDefinitionSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.url).toBe('git@github.com:facebook/react.git');
+      }
+    });
+
+    it('accepts SCP-style SSH URLs without .git extension', () => {
+      const valid = {
+        type: 'repo',
+        name: 'react',
+        url: 'git@github.com:facebook/react',
+      };
+      const result = RepoStoreDefinitionSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts SSH protocol URLs', () => {
+      const valid = {
+        type: 'repo',
+        name: 'react',
+        url: 'ssh://git@github.com/facebook/react.git',
+      };
+      const result = RepoStoreDefinitionSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts git:// protocol URLs', () => {
+      const valid = {
+        type: 'repo',
+        name: 'react',
+        url: 'git://github.com/facebook/react.git',
+      };
+      const result = RepoStoreDefinitionSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
   });
 
   describe('WebStoreDefinitionSchema', () => {
