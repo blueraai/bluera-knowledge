@@ -4745,8 +4745,8 @@ var StoreService = class {
           ...base,
           type: "repo",
           url: store.url,
-          branch: store.branch
-          // depth is not stored on RepoStore, so we omit it (it's optional in definition)
+          branch: store.branch,
+          depth: store.depth
         };
         return repoDef;
       }
@@ -4835,6 +4835,7 @@ var StoreService = class {
           path: normalizedRepoPath,
           url: input.url,
           branch: input.branch,
+          depth: input.depth,
           description: input.description,
           tags: input.tags,
           status: "ready",
@@ -5761,4 +5762,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-SRZPEKKW.js.map
+//# sourceMappingURL=chunk-LHPYZXY6.js.map

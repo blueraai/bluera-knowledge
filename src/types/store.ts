@@ -23,6 +23,7 @@ export interface RepoStore extends BaseStore {
   readonly path: string;
   readonly url?: string | undefined;
   readonly branch?: string | undefined;
+  readonly depth?: number | undefined;
 }
 
 export interface WebStore extends BaseStore {

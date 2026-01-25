@@ -165,7 +165,7 @@ export class StoreService {
           type: 'repo',
           url: store.url,
           branch: store.branch,
-          // depth is not stored on RepoStore, so we omit it (it's optional in definition)
+          depth: store.depth,
         };
         return repoDef;
       }
@@ -275,6 +275,7 @@ export class StoreService {
           path: normalizedRepoPath,
           url: input.url,
           branch: input.branch,
+          depth: input.depth,
           description: input.description,
           tags: input.tags,
           status: 'ready',
