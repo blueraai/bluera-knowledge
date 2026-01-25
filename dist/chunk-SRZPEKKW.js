@@ -3419,6 +3419,8 @@ var INTENT_FILE_BOOSTS = {
     // Stronger penalty - internal code less useful
     test: 0.8,
     config: 0.7,
+    changelog: 0.6,
+    // Changelogs rarely answer "how to" questions
     other: 0.9
   },
   implementation: {
@@ -3431,6 +3433,8 @@ var INTENT_FILE_BOOSTS = {
     // Internal code can be relevant
     test: 1,
     config: 0.95,
+    changelog: 0.8,
+    // Might reference implementation changes
     other: 1
   },
   conceptual: {
@@ -3441,6 +3445,8 @@ var INTENT_FILE_BOOSTS = {
     "source-internal": 0.9,
     test: 0.9,
     config: 0.85,
+    changelog: 0.7,
+    // Sometimes explains concepts behind changes
     other: 0.95
   },
   comparison: {
@@ -3451,6 +3457,8 @@ var INTENT_FILE_BOOSTS = {
     "source-internal": 0.85,
     test: 0.9,
     config: 0.85,
+    changelog: 0.9,
+    // Version comparisons can be useful
     other: 0.95
   },
   debugging: {
@@ -3463,6 +3471,8 @@ var INTENT_FILE_BOOSTS = {
     test: 1.05,
     // Tests can show expected behavior
     config: 0.9,
+    changelog: 1.1,
+    // Often contains bug fixes and known issues
     other: 1
   }
 };
@@ -3965,6 +3975,9 @@ var SearchService = class {
         break;
       case "config":
         baseBoost = 0.5;
+        break;
+      case "changelog":
+        baseBoost = 0.7;
         break;
       default:
         baseBoost = 1;
@@ -5748,4 +5761,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-66MWEFPW.js.map
+//# sourceMappingURL=chunk-SRZPEKKW.js.map

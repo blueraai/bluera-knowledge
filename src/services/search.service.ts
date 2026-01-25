@@ -47,6 +47,7 @@ const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
     'source-internal': 0.7, // Stronger penalty - internal code less useful
     test: 0.8,
     config: 0.7,
+    changelog: 0.6, // Changelogs rarely answer "how to" questions
     other: 0.9,
   },
   implementation: {
@@ -57,6 +58,7 @@ const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
     'source-internal': 1.05, // Internal code can be relevant
     test: 1.0,
     config: 0.95,
+    changelog: 0.8, // Might reference implementation changes
     other: 1.0,
   },
   conceptual: {
@@ -67,6 +69,7 @@ const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
     'source-internal': 0.9,
     test: 0.9,
     config: 0.85,
+    changelog: 0.7, // Sometimes explains concepts behind changes
     other: 0.95,
   },
   comparison: {
@@ -77,6 +80,7 @@ const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
     'source-internal': 0.85,
     test: 0.9,
     config: 0.85,
+    changelog: 0.9, // Version comparisons can be useful
     other: 0.95,
   },
   debugging: {
@@ -87,6 +91,7 @@ const INTENT_FILE_BOOSTS: Record<QueryIntent, Record<string, number>> = {
     'source-internal': 0.95,
     test: 1.05, // Tests can show expected behavior
     config: 0.9,
+    changelog: 1.1, // Often contains bug fixes and known issues
     other: 1.0,
   },
 };
@@ -808,6 +813,9 @@ export class SearchService {
         break;
       case 'config':
         baseBoost = 0.5; // Config files rarely answer questions
+        break;
+      case 'changelog':
+        baseBoost = 0.7; // Changelogs secondary to docs and examples
         break;
       default:
         baseBoost = 1.0;
