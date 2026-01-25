@@ -160,7 +160,7 @@ export class ChunkingService {
   private chunkCode(text: string): Chunk[] {
     // Match top-level declarations with optional JSDoc/comments before them
     const declarationRegex =
-      /^(?:\/\*\*[\s\S]*?\*\/\s*)?(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+(\w+)/gm;
+      /^(?:\/\*\*[\s\S]*?\*\/\s*)?(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+(\w+)/gm;
     const declarations: Array<{ startOffset: number; endOffset: number; name?: string }> = [];
 
     let match: RegExpExecArray | null;

@@ -191,6 +191,41 @@ export class ExportedClass {}`;
       expect(chunks.some((c) => c.functionName === 'ExportedClass')).toBe(true);
     });
 
+    it('handles export default function', () => {
+      const code = `export default function main() {
+  return 'main';
+}
+
+function helper() {
+  return 'helper';
+}`;
+
+      const chunks = chunker.chunk(code, 'test.ts');
+      expect(chunks.some((c) => c.functionName === 'main')).toBe(true);
+      expect(chunks.some((c) => c.functionName === 'helper')).toBe(true);
+    });
+
+    it('handles export default class', () => {
+      const code = `export default class App {
+  render() {}
+}
+
+class Helper {}`;
+
+      const chunks = chunker.chunk(code, 'test.ts');
+      expect(chunks.some((c) => c.functionName === 'App')).toBe(true);
+      expect(chunks.some((c) => c.functionName === 'Helper')).toBe(true);
+    });
+
+    it('handles export default async function', () => {
+      const code = `export default async function fetchData() {
+  return await fetch('/api');
+}`;
+
+      const chunks = chunker.chunk(code, 'test.ts');
+      expect(chunks.some((c) => c.functionName === 'fetchData')).toBe(true);
+    });
+
     it('handles async functions', () => {
       const code = `async function asyncFn() {
   return await Promise.resolve(1);

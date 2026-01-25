@@ -2371,7 +2371,7 @@ var ChunkingService = class _ChunkingService {
    * Splits on top-level declarations to keep functions/classes together.
    */
   chunkCode(text) {
-    const declarationRegex = /^(?:\/\*\*[\s\S]*?\*\/\s*)?(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+(\w+)/gm;
+    const declarationRegex = /^(?:\/\*\*[\s\S]*?\*\/\s*)?(?:export\s+)?(?:default\s+)?(?:async\s+)?(?:function|class|interface|type|const|let|var|enum)\s+(\w+)/gm;
     const declarations = [];
     let match;
     while ((match = declarationRegex.exec(text)) !== null) {
@@ -5804,4 +5804,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-STA2CEUJ.js.map
+//# sourceMappingURL=chunk-O2Y4NGCK.js.map
