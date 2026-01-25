@@ -82,15 +82,41 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
               await services.lance.initialize(storeId);
             }
 
+            // Validate numeric options
+            const limit = parseInt(options.limit, 10);
+            if (Number.isNaN(limit)) {
+              throw new Error(
+                `Invalid value for --limit: "${options.limit}" is not a valid integer`
+              );
+            }
+
+            let threshold: number | undefined;
+            if (options.threshold !== undefined) {
+              threshold = parseFloat(options.threshold);
+              if (Number.isNaN(threshold)) {
+                throw new Error(
+                  `Invalid value for --threshold: "${options.threshold}" is not a valid number`
+                );
+              }
+            }
+
+            let minRelevance: number | undefined;
+            if (options.minRelevance !== undefined) {
+              minRelevance = parseFloat(options.minRelevance);
+              if (Number.isNaN(minRelevance)) {
+                throw new Error(
+                  `Invalid value for --min-relevance: "${options.minRelevance}" is not a valid number`
+                );
+              }
+            }
+
             const results = await services.search.search({
               query,
               stores: storeIds,
               mode: options.mode,
-              limit: parseInt(options.limit, 10),
-              threshold:
-                options.threshold !== undefined ? parseFloat(options.threshold) : undefined,
-              minRelevance:
-                options.minRelevance !== undefined ? parseFloat(options.minRelevance) : undefined,
+              limit,
+              threshold,
+              minRelevance,
               detail: options.detail,
             });
 

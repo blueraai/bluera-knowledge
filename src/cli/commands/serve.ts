@@ -23,6 +23,9 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
       const app = createApp(services, globalOpts.dataDir);
 
       const port = parseInt(options.port, 10);
+      if (Number.isNaN(port)) {
+        throw new Error(`Invalid value for --port: "${options.port}" is not a valid integer`);
+      }
       const host = options.host;
 
       console.log(`Starting server on http://${host}:${String(port)}`);

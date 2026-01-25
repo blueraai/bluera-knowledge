@@ -123,12 +123,19 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
         ignorePatterns: appConfig.indexing.ignorePatterns,
       });
 
+      const debounceMs = parseInt(options.debounce, 10);
+      if (Number.isNaN(debounceMs)) {
+        throw new Error(
+          `Invalid value for --debounce: "${options.debounce}" is not a valid integer`
+        );
+      }
+
       if (globalOpts.quiet !== true) {
         console.log(`Watching ${store.name} for changes...`);
       }
       await watchService.watch(
         store,
-        parseInt(options.debounce, 10),
+        debounceMs,
         () => {
           if (globalOpts.quiet !== true) {
             console.log(`Re-indexed ${store.name}`);

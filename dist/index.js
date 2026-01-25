@@ -95,6 +95,11 @@ function createCrawlCommand(getOptions) {
         store = existingStore;
       }
       const maxPages = parseInt(cmdOptions.maxPages, 10);
+      if (Number.isNaN(maxPages)) {
+        throw new Error(
+          `Invalid value for --max-pages: "${cmdOptions.maxPages}" is not a valid integer`
+        );
+      }
       const isInteractive = process.stdout.isTTY && globalOpts.quiet !== true && globalOpts.format !== "json";
       let spinner;
       if (isInteractive) {
@@ -300,12 +305,18 @@ function createIndexCommand(getOptions) {
     const watchService = new WatchService(services.index, services.lance, {
       ignorePatterns: appConfig.indexing.ignorePatterns
     });
+    const debounceMs = parseInt(options.debounce, 10);
+    if (Number.isNaN(debounceMs)) {
+      throw new Error(
+        `Invalid value for --debounce: "${options.debounce}" is not a valid integer`
+      );
+    }
     if (globalOpts.quiet !== true) {
       console.log(`Watching ${store.name} for changes...`);
     }
     await watchService.watch(
       store,
-      parseInt(options.debounce, 10),
+      debounceMs,
       () => {
         if (globalOpts.quiet !== true) {
           console.log(`Re-indexed ${store.name}`);
@@ -1092,13 +1103,37 @@ function createSearchCommand(getOptions) {
           for (const storeId of storeIds) {
             await services.lance.initialize(storeId);
           }
+          const limit = parseInt(options.limit, 10);
+          if (Number.isNaN(limit)) {
+            throw new Error(
+              `Invalid value for --limit: "${options.limit}" is not a valid integer`
+            );
+          }
+          let threshold;
+          if (options.threshold !== void 0) {
+            threshold = parseFloat(options.threshold);
+            if (Number.isNaN(threshold)) {
+              throw new Error(
+                `Invalid value for --threshold: "${options.threshold}" is not a valid number`
+              );
+            }
+          }
+          let minRelevance;
+          if (options.minRelevance !== void 0) {
+            minRelevance = parseFloat(options.minRelevance);
+            if (Number.isNaN(minRelevance)) {
+              throw new Error(
+                `Invalid value for --min-relevance: "${options.minRelevance}" is not a valid number`
+              );
+            }
+          }
           const results = await services.search.search({
             query,
             stores: storeIds,
             mode: options.mode,
-            limit: parseInt(options.limit, 10),
-            threshold: options.threshold !== void 0 ? parseFloat(options.threshold) : void 0,
-            minRelevance: options.minRelevance !== void 0 ? parseFloat(options.minRelevance) : void 0,
+            limit,
+            threshold,
+            minRelevance,
             detail: options.detail
           });
           if (globalOpts.format === "json") {
@@ -1324,6 +1359,9 @@ function createServeCommand(getOptions) {
     );
     const app = createApp(services, globalOpts.dataDir);
     const port = parseInt(options.port, 10);
+    if (Number.isNaN(port)) {
+      throw new Error(`Invalid value for --port: "${options.port}" is not a valid integer`);
+    }
     const host = options.host;
     console.log(`Starting server on http://${host}:${String(port)}`);
     const server = serve({

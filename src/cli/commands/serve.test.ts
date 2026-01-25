@@ -249,17 +249,14 @@ describe('Serve Command - Execution Tests', () => {
       expect(serveCall?.port).toBe(8080);
     });
 
-    it('handles invalid port gracefully', async () => {
-      const { serve } = await import('@hono/node-server');
-
+    it('throws error for invalid port', async () => {
       const command = createServeCommand(getOptions);
       const actionHandler = (command as any)._actionHandler;
       command.parseOptions(['--port', 'invalid']);
-      await actionHandler([]);
 
-      const serveCall = vi.mocked(serve).mock.calls[0]?.[0];
-      // Should parse to NaN, which is still a number
-      expect(typeof serveCall?.port).toBe('number');
+      await expect(actionHandler([])).rejects.toThrow(
+        'Invalid value for --port: "invalid" is not a valid integer'
+      );
     });
 
     it('handles port as floating point by converting to integer', async () => {

@@ -41,11 +41,17 @@ export async function handleSearch(args: {
       await services.lance.initialize(store.id);
     }
 
+    const limitValue = args.limit ?? '10';
+    const limit = parseInt(limitValue, 10);
+    if (Number.isNaN(limit)) {
+      throw new Error(`Invalid value for limit: "${limitValue}" is not a valid integer`);
+    }
+
     const results = await services.search.search({
       query: args.query,
       stores: targetStores.map((s) => s.id),
       mode: 'hybrid',
-      limit: parseInt(args.limit ?? '10', 10),
+      limit,
       detail: 'contextual',
     });
 

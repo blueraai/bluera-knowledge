@@ -110,6 +110,11 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
         }
 
         const maxPages = parseInt(cmdOptions.maxPages, 10);
+        if (Number.isNaN(maxPages)) {
+          throw new Error(
+            `Invalid value for --max-pages: "${cmdOptions.maxPages}" is not a valid integer`
+          );
+        }
 
         // Use spinner in interactive mode
         const isInteractive =
