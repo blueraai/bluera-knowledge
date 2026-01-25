@@ -238,24 +238,34 @@ export class IndexService {
 
         const batchResults = await Promise.all(
           batch.map(async (filePath) => {
-            const result = await this.processFile(filePath, store);
-            const documentIds = result.documents.map((d) => d.id);
+            try {
+              const result = await this.processFile(filePath, store);
+              const documentIds = result.documents.map((d) => d.id);
 
-            // Create file state for manifest
-            const { state } = await this.driftService.createFileState(filePath, documentIds);
+              // Create file state for manifest
+              const { state } = await this.driftService.createFileState(filePath, documentIds);
 
-            return {
-              filePath,
-              documents: result.documents,
-              fileState: state,
-            };
+              return {
+                filePath,
+                documents: result.documents,
+                fileState: state,
+              };
+            } catch (error) {
+              logger.warn(
+                { filePath, error: error instanceof Error ? error.message : String(error) },
+                'Failed to process file during incremental indexing, skipping'
+              );
+              return null;
+            }
           })
         );
 
-        // Collect results
+        // Collect results (skip null entries from failed files)
         for (const result of batchResults) {
-          documents.push(...result.documents);
-          newManifestFiles[result.filePath] = result.fileState;
+          if (result !== null) {
+            documents.push(...result.documents);
+            newManifestFiles[result.filePath] = result.fileState;
+          }
         }
 
         filesProcessed += batch.length;
@@ -414,7 +424,17 @@ export class IndexService {
       const batch = files.slice(i, i + this.concurrency);
 
       const batchResults = await Promise.all(
-        batch.map((filePath) => this.processFile(filePath, store))
+        batch.map(async (filePath) => {
+          try {
+            return await this.processFile(filePath, store);
+          } catch (error) {
+            logger.warn(
+              { filePath, error: error instanceof Error ? error.message : String(error) },
+              'Failed to process file, skipping'
+            );
+            return { documents: [], sourceFile: undefined };
+          }
+        })
       );
 
       // Collect results from batch
