@@ -529,6 +529,44 @@ describe('StoreService', () => {
       await rm(dir2, { recursive: true, force: true });
     });
 
+    it('returns error when updating name to empty string', async () => {
+      const createResult = await storeService.create({
+        name: 'Valid Name',
+        type: 'file',
+        path: tempDir,
+      });
+
+      if (!createResult.success) throw new Error('Create failed');
+
+      const updateResult = await storeService.update(createResult.data.id, {
+        name: '',
+      });
+
+      expect(updateResult.success).toBe(false);
+      if (!updateResult.success) {
+        expect(updateResult.error.message).toContain('Store name cannot be empty');
+      }
+    });
+
+    it('returns error when updating name to whitespace only', async () => {
+      const createResult = await storeService.create({
+        name: 'Valid Name',
+        type: 'file',
+        path: tempDir,
+      });
+
+      if (!createResult.success) throw new Error('Create failed');
+
+      const updateResult = await storeService.update(createResult.data.id, {
+        name: '   ',
+      });
+
+      expect(updateResult.success).toBe(false);
+      if (!updateResult.success) {
+        expect(updateResult.error.message).toContain('Store name cannot be empty');
+      }
+    });
+
     it('allows renaming to a unique name', async () => {
       const dir = await mkdtemp(join(tmpdir(), 'rename-ok-'));
 

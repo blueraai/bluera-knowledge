@@ -366,6 +366,11 @@ export class StoreService {
       return err(new Error(`Store not found: ${id}`));
     }
 
+    // Validate name is not empty when provided
+    if (updates.name?.trim() === '') {
+      return err(new Error('Store name cannot be empty'));
+    }
+
     // Check for duplicate name when renaming
     const isRenaming = updates.name !== undefined && updates.name !== store.name;
     if (isRenaming) {

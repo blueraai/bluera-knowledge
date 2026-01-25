@@ -4939,6 +4939,9 @@ var StoreService = class {
     if (store === void 0) {
       return err(new Error(`Store not found: ${id}`));
     }
+    if (updates.name?.trim() === "") {
+      return err(new Error("Store name cannot be empty"));
+    }
     const isRenaming = updates.name !== void 0 && updates.name !== store.name;
     if (isRenaming) {
       const existing = this.registry.stores.find((s) => s.name === updates.name && s.id !== id);
@@ -5796,4 +5799,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-GUCQL4B4.js.map
+//# sourceMappingURL=chunk-3KOADOTJ.js.map
