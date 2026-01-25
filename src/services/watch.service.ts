@@ -62,7 +62,11 @@ export class WatchService {
             }
 
             if (useFullReindex) {
-              await this.indexService.indexStore(store);
+              const fullResult = await this.indexService.indexStore(store);
+              if (!fullResult.success) {
+                onError(fullResult.error);
+                return;
+              }
             }
 
             onReindex?.();

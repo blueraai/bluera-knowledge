@@ -88,7 +88,11 @@ var WatchService = class {
               }
             }
             if (useFullReindex) {
-              await this.indexService.indexStore(store);
+              const fullResult = await this.indexService.indexStore(store);
+              if (!fullResult.success) {
+                onError(fullResult.error);
+                return;
+              }
             }
             onReindex?.();
           } catch (e) {
@@ -130,4 +134,4 @@ export {
   parseIgnorePatternsForScanning,
   WatchService
 };
-//# sourceMappingURL=chunk-UIU36LNA.js.map
+//# sourceMappingURL=chunk-R3C2QK4P.js.map

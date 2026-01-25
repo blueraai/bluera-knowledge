@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-7WSXPUUR.js";
+} from "./chunk-6MZ6ZZQK.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-2SKQCPQO.js";
+} from "./chunk-N6LZUA5Y.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -24,11 +24,11 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-Q3YMQYCJ.js";
+} from "./chunk-TR42SXYE.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
-import "./chunk-UIU36LNA.js";
+import "./chunk-R3C2QK4P.js";
 
 // src/cli/commands/crawl.ts
 import { createHash } from "crypto";
@@ -296,7 +296,7 @@ function createIndexCommand(getOptions) {
       return;
     }
     const appConfig = await services.config.load();
-    const { WatchService } = await import("./watch.service-QM3YSGRM.js");
+    const { WatchService } = await import("./watch.service-IIH5XDHA.js");
     const watchService = new WatchService(services.index, services.lance, {
       ignorePatterns: appConfig.indexing.ignorePatterns
     });

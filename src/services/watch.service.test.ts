@@ -41,7 +41,7 @@ describe('WatchService', () => {
 
     // Create mock services
     mockIndexService = {
-      indexStore: vi.fn().mockResolvedValue({ ok: true }),
+      indexStore: vi.fn().mockResolvedValue({ success: true }),
     } as unknown as IndexService;
 
     mockLanceStore = {
@@ -340,7 +340,7 @@ describe('WatchService', () => {
     it('uses incremental indexing when available and successful', async () => {
       const indexStoreIncremental = vi.fn().mockResolvedValue({ success: true });
       const indexServiceWithIncremental = {
-        indexStore: vi.fn().mockResolvedValue({ ok: true }),
+        indexStore: vi.fn().mockResolvedValue({ success: true }),
         indexStoreIncremental,
       } as unknown as IndexService;
 
@@ -369,7 +369,7 @@ describe('WatchService', () => {
     it('falls back to full indexing when incremental fails', async () => {
       const indexStoreIncremental = vi.fn().mockResolvedValue({ success: false });
       const indexServiceWithIncremental = {
-        indexStore: vi.fn().mockResolvedValue({ ok: true }),
+        indexStore: vi.fn().mockResolvedValue({ success: true }),
         indexStoreIncremental,
       } as unknown as IndexService;
 
@@ -397,7 +397,31 @@ describe('WatchService', () => {
   });
 
   describe('watch - Error Handling', () => {
-    it('calls onError when reindexing fails', async () => {
+    it('calls onError when full indexing returns error result and does not call onReindex', async () => {
+      const onError = vi.fn();
+      const onReindex = vi.fn();
+      const indexError = new Error('Full index failed');
+
+      mockIndexService.indexStore = vi
+        .fn()
+        .mockResolvedValue({ success: false, error: indexError });
+
+      await watchService.watch(mockFileStore, 1000, onReindex, onError);
+
+      const watcher = mockWatchers[0];
+      const allHandler = (watcher?.on as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => call[0] === 'all'
+      )?.[1] as (() => void) | undefined;
+
+      allHandler?.();
+      vi.advanceTimersByTime(1100);
+      await vi.runAllTimersAsync();
+
+      expect(onError).toHaveBeenCalledWith(indexError);
+      expect(onReindex).not.toHaveBeenCalled();
+    });
+
+    it('calls onError when reindexing throws exception', async () => {
       const onError = vi.fn();
       const indexError = new Error('Index failed');
 
@@ -515,7 +539,7 @@ describe('WatchService', () => {
       mockIndexService.indexStore = vi
         .fn()
         .mockRejectedValueOnce(new Error('First fail'))
-        .mockResolvedValueOnce({ ok: true });
+        .mockResolvedValueOnce({ success: true });
 
       await watchService.watch(mockFileStore, 1000, undefined, onError);
 
