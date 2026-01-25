@@ -1996,7 +1996,7 @@ var registry = AdapterRegistry.getInstance();
 registry.register(new ZilAdapter());
 var DEFAULT_DATA_DIR = ".bluera/bluera-knowledge/data";
 var DEFAULT_CONFIG = ".bluera/bluera-knowledge/config.json";
-var DEFAULT_REPOS_DIR2 = ".bluera/bluera-knowledge/repos";
+var DEFAULT_REPOS_DIR2 = ".bluera/bluera-knowledge/data/repos/<store-id>/";
 function formatCommandHelp(cmd, indent = "") {
   const lines = [];
   const name = cmd.name();

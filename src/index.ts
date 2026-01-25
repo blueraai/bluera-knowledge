@@ -26,7 +26,7 @@ registry.register(new ZilAdapter());
 // Default paths (for help text display only - actual paths resolved by ConfigService)
 const DEFAULT_DATA_DIR = '.bluera/bluera-knowledge/data';
 const DEFAULT_CONFIG = '.bluera/bluera-knowledge/config.json';
-const DEFAULT_REPOS_DIR = '.bluera/bluera-knowledge/repos';
+const DEFAULT_REPOS_DIR = '.bluera/bluera-knowledge/data/repos/<store-id>/';
 
 /**
  * Format a command and its subcommands recursively for comprehensive help output.
