@@ -1182,10 +1182,12 @@ describe('IndexService - Code Graph Integration', () => {
   it('does not build code graph when no source files are present', async () => {
     const buildGraphMock = vi.fn();
     const saveGraphMock = vi.fn();
+    const deleteGraphMock = vi.fn();
 
     const mockCodeGraphService = {
       buildGraph: buildGraphMock,
       saveGraph: saveGraphMock,
+      deleteGraph: deleteGraphMock,
     } as unknown as CodeGraphService;
 
     const indexService = new IndexService(lanceStore, embeddingEngine, {
@@ -1212,6 +1214,8 @@ describe('IndexService - Code Graph Integration', () => {
     expect(result.success).toBe(true);
     expect(buildGraphMock).not.toHaveBeenCalled();
     expect(saveGraphMock).not.toHaveBeenCalled();
+    // When no source files exist, any stale graph should be deleted
+    expect(deleteGraphMock).toHaveBeenCalledWith(storeId);
   });
 
   it('collects .js and .jsx files for code graph', async () => {

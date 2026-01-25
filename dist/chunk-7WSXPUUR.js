@@ -9,7 +9,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   summarizePayload
-} from "./chunk-LHPYZXY6.js";
+} from "./chunk-Q3YMQYCJ.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -2158,4 +2158,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-45SYU6ZT.js.map
+//# sourceMappingURL=chunk-7WSXPUUR.js.map

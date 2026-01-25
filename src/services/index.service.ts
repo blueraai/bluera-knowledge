@@ -275,6 +275,48 @@ export class IndexService {
         await this.lanceStore.createFtsIndex(store.id);
       }
 
+      // Rebuild code graph if service available and source files changed
+      if (this.codeGraphService) {
+        const sourceExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.rs', '.go'];
+        const hasSourceChanges =
+          filesToProcess.some((p) => sourceExtensions.includes(extname(p).toLowerCase())) ||
+          drift.deleted.some((p) => sourceExtensions.includes(extname(p).toLowerCase()));
+
+        if (hasSourceChanges) {
+          // Rebuild full graph from all current source files (simpler than incremental updates)
+          const allSourceFiles: Array<{ path: string; content: string }> = [];
+          const allPaths = [...drift.unchanged, ...filesToProcess];
+
+          for (const filePath of allPaths) {
+            const ext = extname(filePath).toLowerCase();
+            if (sourceExtensions.includes(ext)) {
+              try {
+                const content = await readFile(filePath, 'utf-8');
+                allSourceFiles.push({ path: filePath, content });
+              } catch {
+                // File may have been deleted between scan and read
+              }
+            }
+          }
+
+          if (allSourceFiles.length > 0) {
+            const graph = await this.codeGraphService.buildGraph(allSourceFiles);
+            await this.codeGraphService.saveGraph(store.id, graph);
+            logger.debug(
+              { storeId: store.id, sourceFiles: allSourceFiles.length },
+              'Rebuilt code graph during incremental indexing'
+            );
+          } else {
+            // No source files remain - delete stale graph
+            await this.codeGraphService.deleteGraph(store.id);
+            logger.debug(
+              { storeId: store.id },
+              'Deleted stale code graph (no source files remain)'
+            );
+          }
+        }
+      }
+
       // Save updated manifest
       const updatedManifest: TypedStoreManifest = {
         version: 1,
@@ -404,6 +446,9 @@ export class IndexService {
     if (this.codeGraphService && sourceFiles.length > 0) {
       const graph = await this.codeGraphService.buildGraph(sourceFiles);
       await this.codeGraphService.saveGraph(store.id, graph);
+    } else if (this.codeGraphService) {
+      // No source files - delete any stale graph
+      await this.codeGraphService.deleteGraph(store.id);
     }
 
     // Emit complete event

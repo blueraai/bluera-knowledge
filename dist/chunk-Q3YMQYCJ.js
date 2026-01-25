@@ -2823,6 +2823,38 @@ var IndexService = class {
         await this.lanceStore.addDocuments(store.id, documents);
         await this.lanceStore.createFtsIndex(store.id);
       }
+      if (this.codeGraphService) {
+        const sourceExtensions = [".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go"];
+        const hasSourceChanges = filesToProcess.some((p) => sourceExtensions.includes(extname(p).toLowerCase())) || drift.deleted.some((p) => sourceExtensions.includes(extname(p).toLowerCase()));
+        if (hasSourceChanges) {
+          const allSourceFiles = [];
+          const allPaths = [...drift.unchanged, ...filesToProcess];
+          for (const filePath of allPaths) {
+            const ext = extname(filePath).toLowerCase();
+            if (sourceExtensions.includes(ext)) {
+              try {
+                const content = await readFile5(filePath, "utf-8");
+                allSourceFiles.push({ path: filePath, content });
+              } catch {
+              }
+            }
+          }
+          if (allSourceFiles.length > 0) {
+            const graph = await this.codeGraphService.buildGraph(allSourceFiles);
+            await this.codeGraphService.saveGraph(store.id, graph);
+            logger.debug(
+              { storeId: store.id, sourceFiles: allSourceFiles.length },
+              "Rebuilt code graph during incremental indexing"
+            );
+          } else {
+            await this.codeGraphService.deleteGraph(store.id);
+            logger.debug(
+              { storeId: store.id },
+              "Deleted stale code graph (no source files remain)"
+            );
+          }
+        }
+      }
       const updatedManifest = {
         version: 1,
         storeId: store.id,
@@ -2921,6 +2953,8 @@ var IndexService = class {
     if (this.codeGraphService && sourceFiles.length > 0) {
       const graph = await this.codeGraphService.buildGraph(sourceFiles);
       await this.codeGraphService.saveGraph(store.id, graph);
+    } else if (this.codeGraphService) {
+      await this.codeGraphService.deleteGraph(store.id);
     }
     onProgress?.({
       type: "complete",
@@ -5762,4 +5796,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-LHPYZXY6.js.map
+//# sourceMappingURL=chunk-Q3YMQYCJ.js.map
