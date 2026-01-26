@@ -9,7 +9,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   summarizePayload
-} from "./chunk-4RHHI2YT.js";
+} from "./chunk-2JHK6Y4R.js";
 
 // src/mcp/server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -1758,6 +1758,7 @@ var handleSearch = async (args, context) => {
     })
   ) : (await services.store.list()).map((s) => s.id);
   try {
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     for (const storeId of storeIds) {
       await services.lance.initialize(storeId);
     }
@@ -1876,6 +1877,7 @@ var handleGetFullContext = async (args, context) => {
   if (!store) {
     throw new Error(`Store not found: ${cachedResult.metadata.storeId}`);
   }
+  services.lance.setDimensions(await services.embeddings.ensureDimensions());
   await services.lance.initialize(store.id);
   const searchQuery = {
     query: cachedResult.content.substring(0, 100),
@@ -2158,4 +2160,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-4C4OEO7O.js.map
+//# sourceMappingURL=chunk-3EQBPFHC.js.map

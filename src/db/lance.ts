@@ -1,5 +1,4 @@
 import * as lancedb from '@lancedb/lancedb';
-import { EMBEDDING_DIMENSIONS } from './embeddings.js';
 import { createDocumentId } from '../types/brands.js';
 import { DocumentMetadataSchema } from '../types/document.js';
 import type { StoreId, DocumentId } from '../types/brands.js';
@@ -25,12 +24,27 @@ export class LanceStore {
   private connection: Connection | null = null;
   private readonly tables: Map<string, Table> = new Map();
   private readonly dataDir: string;
+  // eslint-disable-next-line @typescript-eslint/prefer-readonly -- set via setDimensions()
+  private _dimensions: number | null = null;
 
   constructor(dataDir: string) {
     this.dataDir = dataDir;
   }
 
+  /**
+   * Set the embedding dimensions. Must be called before initialize().
+   * This allows dimensions to be derived from the embedding model at runtime.
+   * Idempotent: subsequent calls are ignored if dimensions are already set.
+   */
+  setDimensions(dimensions: number): void {
+    this._dimensions ??= dimensions;
+  }
+
   async initialize(storeId: StoreId): Promise<void> {
+    if (this._dimensions === null) {
+      throw new Error('Dimensions not set. Call setDimensions() before initialize().');
+    }
+
     this.connection ??= await lancedb.connect(this.dataDir);
 
     const tableName = this.getTableName(storeId);
@@ -42,7 +56,7 @@ export class LanceStore {
         {
           id: '__init__',
           content: '',
-          vector: new Array(EMBEDDING_DIMENSIONS).fill(0),
+          vector: new Array(this._dimensions).fill(0),
           metadata: '{}',
         },
       ]);

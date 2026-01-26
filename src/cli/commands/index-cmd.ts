@@ -38,6 +38,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
             console.log(`Indexing store: ${store.name}`);
           }
 
+          services.lance.setDimensions(await services.embeddings.ensureDimensions());
           await services.lance.initialize(store.id);
 
           // Use full re-index with --force, otherwise incremental (default)

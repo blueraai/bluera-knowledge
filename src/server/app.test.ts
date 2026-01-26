@@ -17,6 +17,10 @@ describe('Server App - Health Check', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn(),
@@ -490,6 +494,10 @@ describe('Server App - POST /api/search', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn(),
@@ -653,6 +661,10 @@ describe('Server App - POST /api/stores/:id/index', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       index: {
         indexStore: vi.fn(),

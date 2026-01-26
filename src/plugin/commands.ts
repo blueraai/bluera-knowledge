@@ -37,6 +37,7 @@ export async function handleSearch(args: {
     }
 
     // Initialize stores
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     for (const store of targetStores) {
       await services.lance.initialize(store.id);
     }

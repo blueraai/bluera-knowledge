@@ -21,6 +21,7 @@ describe('SearchService', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     // Add test documents
@@ -2211,6 +2212,7 @@ describe('SearchService Environment Variables', () => {
     await embeddingEngine.initialize();
 
     const storeId = createStoreId('env-test-store');
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     const text = 'test document';
@@ -2245,6 +2247,7 @@ describe('SearchService Environment Variables', () => {
     await embeddingEngine.initialize();
 
     const storeId = createStoreId('env-test-store');
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     // Add a test file document with fileType: 'test'

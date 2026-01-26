@@ -38,6 +38,10 @@ describe('Search Handlers', () => {
       },
       lance: {
         initialize: vi.fn().mockResolvedValue(undefined),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn().mockResolvedValue({

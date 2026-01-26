@@ -57,6 +57,7 @@ export const handleSearch: ToolHandler<SearchArgs> = async (
 
   // Initialize stores with error handling
   try {
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     for (const storeId of storeIds) {
       await services.lance.initialize(storeId);
     }
@@ -215,6 +216,7 @@ export const handleGetFullContext: ToolHandler<GetFullContextArgs> = async (
     throw new Error(`Store not found: ${cachedResult.metadata.storeId}`);
   }
 
+  services.lance.setDimensions(await services.embeddings.ensureDimensions());
   await services.lance.initialize(store.id);
 
   const searchQuery: SearchQuery = {

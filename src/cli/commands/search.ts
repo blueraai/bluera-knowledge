@@ -78,6 +78,7 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
             }
 
             // Initialize LanceDB for each store
+            services.lance.setDimensions(await services.embeddings.ensureDimensions());
             for (const storeId of storeIds) {
               await services.lance.initialize(storeId);
             }

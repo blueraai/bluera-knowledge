@@ -48,11 +48,13 @@ describe('crawl command execution', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
         addDocuments: vi.fn(),
         createFtsIndex: vi.fn(),
       },
       embeddings: {
         embed: vi.fn(),
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
     };
 

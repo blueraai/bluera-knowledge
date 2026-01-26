@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-4C4OEO7O.js";
+} from "./chunk-3EQBPFHC.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-5EOAPCET.js";
+} from "./chunk-LGX7O246.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -24,7 +24,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-4RHHI2YT.js";
+} from "./chunk-2JHK6Y4R.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
@@ -130,6 +130,7 @@ function createCrawlCommand(getOptions) {
         }
       });
       try {
+        services.lance.setDimensions(await services.embeddings.ensureDimensions());
         await services.lance.initialize(store.id);
         const docs = [];
         for await (const result of crawler.crawl(url, {
@@ -244,6 +245,7 @@ function createIndexCommand(getOptions) {
         } else if (globalOpts.quiet !== true && globalOpts.format !== "json") {
           console.log(`Indexing store: ${store.name}`);
         }
+        services.lance.setDimensions(await services.embeddings.ensureDimensions());
         await services.lance.initialize(store.id);
         const progressCallback = (event) => {
           if (event.type === "progress") {
@@ -1100,6 +1102,7 @@ function createSearchCommand(getOptions) {
             exitCode = 1;
             break searchLogic;
           }
+          services.lance.setDimensions(await services.embeddings.ensureDimensions());
           for (const storeId of storeIds) {
             await services.lance.initialize(storeId);
           }
@@ -1308,6 +1311,7 @@ function createApp(services, dataDir) {
       return c.json({ error: parseResult.error.issues[0]?.message ?? "Invalid request body" }, 400);
     }
     const storeIds = (await services.store.list()).map((s) => s.id);
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     for (const id of storeIds) {
       await services.lance.initialize(id);
     }
@@ -1335,6 +1339,7 @@ function createApp(services, dataDir) {
   app.post("/api/stores/:id/index", async (c) => {
     const store = await services.store.getByIdOrName(c.req.param("id"));
     if (!store) return c.json({ error: "Not found" }, 404);
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     await services.lance.initialize(store.id);
     const result = await services.index.indexStore(store);
     if (result.success) return c.json(result.data);
@@ -1541,6 +1546,7 @@ Setting up ${String(repos.length)} repositories...
               spinner.text = `${repo.name}: Indexing...`;
               const store = await services.store.getByIdOrName(storeId);
               if (store) {
+                services.lance.setDimensions(await services.embeddings.ensureDimensions());
                 await services.lance.initialize(store.id);
                 const indexResult = await services.index.indexStore(store, (event) => {
                   if (event.type === "progress") {

@@ -30,6 +30,7 @@ describe('IndexService', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -97,6 +98,7 @@ describe('IndexService - File Type Classification', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -322,6 +324,7 @@ describe('IndexService - Path Pattern Matching', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -484,6 +487,7 @@ describe('IndexService - Internal Implementation Detection', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -601,6 +605,7 @@ describe('IndexService - Progress Callbacks', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -741,6 +746,7 @@ describe('IndexService - Error Handling', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -826,6 +832,7 @@ describe('IndexService - Hash and Metadata', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -945,6 +952,7 @@ describe('IndexService - Custom Chunk Configuration', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
   }, 120000);
 
@@ -1017,6 +1025,7 @@ describe('IndexService - Unsupported Store Types', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -1083,6 +1092,7 @@ describe('IndexService - Error Handling Edge Cases', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
   }, 120000);
 
@@ -1139,6 +1149,7 @@ describe('IndexService - Code Graph Integration', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
   }, 120000);
 
@@ -1422,6 +1433,7 @@ describe('IndexService - Additional File Type Classification', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -1731,6 +1743,7 @@ describe('IndexService - Additional Internal Implementation Detection', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -1920,6 +1933,7 @@ describe('IndexService - Symlink Handling', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -1975,6 +1989,7 @@ describe('IndexService - Batch Embedding', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
 
     indexService = new IndexService(lanceStore, embeddingEngine);
@@ -2154,6 +2169,7 @@ describe('IndexService - Parallel File Processing', () => {
     embeddingEngine = new EmbeddingEngine();
 
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
     await lanceStore.initialize(storeId);
   }, 120000);
 

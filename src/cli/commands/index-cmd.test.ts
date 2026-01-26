@@ -54,6 +54,7 @@ describe('createIndexCommand - Execution Tests', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
         search: vi.fn(),
         addDocuments: vi.fn(),
         createFtsIndex: vi.fn(),
@@ -67,6 +68,7 @@ describe('createIndexCommand - Execution Tests', () => {
       },
       embeddings: {
         embed: vi.fn(),
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
     } as unknown as ServiceContainer;
 

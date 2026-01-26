@@ -154,6 +154,7 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
         });
 
         try {
+          services.lance.setDimensions(await services.embeddings.ensureDimensions());
           await services.lance.initialize(store.id);
           const docs: Document[] = [];
 

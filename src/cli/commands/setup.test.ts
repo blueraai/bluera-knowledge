@@ -58,6 +58,10 @@ describe('Setup Command - Execution Tests', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       index: {
         indexStore: vi.fn(),

@@ -6,11 +6,10 @@ import { pipeline, env, type FeatureExtractionPipeline } from '@huggingface/tran
 // This allows CI caching and prevents model re-downloads on each npm install
 env.cacheDir = join(homedir(), '.cache', 'huggingface-transformers');
 
-// Embedding dimensions for all-MiniLM-L6-v2 model (fixed, not configurable)
-export const EMBEDDING_DIMENSIONS = 384;
-
 export class EmbeddingEngine {
   private extractor: FeatureExtractionPipeline | null = null;
+  // eslint-disable-next-line @typescript-eslint/prefer-readonly -- mutated in embed()
+  private _dimensions: number | null = null;
   private readonly modelName: string;
   private readonly batchSize: number;
 
@@ -40,6 +39,8 @@ export class EmbeddingEngine {
       normalize: true,
     });
     const result = Array.from(output.data);
+    // Cache dimensions from first embedding result
+    this._dimensions ??= result.length;
     return result.map((v) => Number(v));
   }
 
@@ -63,8 +64,30 @@ export class EmbeddingEngine {
     return results;
   }
 
+  /**
+   * Get cached embedding dimensions. Throws if embed() hasn't been called yet.
+   * Use ensureDimensions() if you need to guarantee dimensions are available.
+   */
   getDimensions(): number {
-    return EMBEDDING_DIMENSIONS;
+    if (this._dimensions === null) {
+      throw new Error('Cannot get dimensions before first embed() call');
+    }
+    return this._dimensions;
+  }
+
+  /**
+   * Ensure dimensions are available, initializing the model if needed.
+   * Returns the embedding dimensions for the current model.
+   */
+  async ensureDimensions(): Promise<number> {
+    if (this._dimensions === null) {
+      // Embed empty string to determine dimensions
+      await this.embed('');
+    }
+    if (this._dimensions === null) {
+      throw new Error('Failed to determine embedding dimensions');
+    }
+    return this._dimensions;
   }
 
   /**

@@ -369,13 +369,23 @@ declare class ManifestService {
 
 declare class EmbeddingEngine {
     private extractor;
+    private _dimensions;
     private readonly modelName;
     private readonly batchSize;
     constructor(modelName?: string, batchSize?: number);
     initialize(): Promise<void>;
     embed(text: string): Promise<number[]>;
     embedBatch(texts: string[]): Promise<number[][]>;
+    /**
+     * Get cached embedding dimensions. Throws if embed() hasn't been called yet.
+     * Use ensureDimensions() if you need to guarantee dimensions are available.
+     */
     getDimensions(): number;
+    /**
+     * Ensure dimensions are available, initializing the model if needed.
+     * Returns the embedding dimensions for the current model.
+     */
+    ensureDimensions(): Promise<number>;
     /**
      * Dispose the embedding pipeline to free resources.
      * Should be called before process exit to prevent ONNX runtime cleanup issues on macOS.
@@ -411,7 +421,14 @@ declare class LanceStore {
     private connection;
     private readonly tables;
     private readonly dataDir;
+    private _dimensions;
     constructor(dataDir: string);
+    /**
+     * Set the embedding dimensions. Must be called before initialize().
+     * This allows dimensions to be derived from the embedding model at runtime.
+     * Idempotent: subsequent calls are ignored if dimensions are already set.
+     */
+    setDimensions(dimensions: number): void;
     initialize(storeId: StoreId): Promise<void>;
     addDocuments(storeId: StoreId, documents: Document[]): Promise<void>;
     deleteDocuments(storeId: StoreId, documentIds: DocumentId[]): Promise<void>;

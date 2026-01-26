@@ -5392,9 +5392,10 @@ import { homedir as homedir2 } from "os";
 import { join as join11 } from "path";
 import { pipeline, env } from "@huggingface/transformers";
 env.cacheDir = join11(homedir2(), ".cache", "huggingface-transformers");
-var EMBEDDING_DIMENSIONS = 384;
 var EmbeddingEngine = class {
   extractor = null;
+  // eslint-disable-next-line @typescript-eslint/prefer-readonly -- mutated in embed()
+  _dimensions = null;
   modelName;
   batchSize;
   constructor(modelName = "Xenova/all-MiniLM-L6-v2", batchSize = 32) {
@@ -5419,6 +5420,7 @@ var EmbeddingEngine = class {
       normalize: true
     });
     const result = Array.from(output.data);
+    this._dimensions ??= result.length;
     return result.map((v) => Number(v));
   }
   async embedBatch(texts) {
@@ -5433,8 +5435,28 @@ var EmbeddingEngine = class {
     }
     return results;
   }
+  /**
+   * Get cached embedding dimensions. Throws if embed() hasn't been called yet.
+   * Use ensureDimensions() if you need to guarantee dimensions are available.
+   */
   getDimensions() {
-    return EMBEDDING_DIMENSIONS;
+    if (this._dimensions === null) {
+      throw new Error("Cannot get dimensions before first embed() call");
+    }
+    return this._dimensions;
+  }
+  /**
+   * Ensure dimensions are available, initializing the model if needed.
+   * Returns the embedding dimensions for the current model.
+   */
+  async ensureDimensions() {
+    if (this._dimensions === null) {
+      await this.embed("");
+    }
+    if (this._dimensions === null) {
+      throw new Error("Failed to determine embedding dimensions");
+    }
+    return this._dimensions;
   }
   /**
    * Dispose the embedding pipeline to free resources.
@@ -5471,10 +5493,23 @@ var LanceStore = class {
   connection = null;
   tables = /* @__PURE__ */ new Map();
   dataDir;
+  // eslint-disable-next-line @typescript-eslint/prefer-readonly -- set via setDimensions()
+  _dimensions = null;
   constructor(dataDir) {
     this.dataDir = dataDir;
   }
+  /**
+   * Set the embedding dimensions. Must be called before initialize().
+   * This allows dimensions to be derived from the embedding model at runtime.
+   * Idempotent: subsequent calls are ignored if dimensions are already set.
+   */
+  setDimensions(dimensions) {
+    this._dimensions ??= dimensions;
+  }
   async initialize(storeId) {
+    if (this._dimensions === null) {
+      throw new Error("Dimensions not set. Call setDimensions() before initialize().");
+    }
     this.connection ??= await lancedb.connect(this.dataDir);
     const tableName = this.getTableName(storeId);
     const tableNames = await this.connection.tableNames();
@@ -5483,7 +5518,7 @@ var LanceStore = class {
         {
           id: "__init__",
           content: "",
-          vector: new Array(EMBEDDING_DIMENSIONS).fill(0),
+          vector: new Array(this._dimensions).fill(0),
           metadata: "{}"
         }
       ]);
@@ -5824,4 +5859,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-4RHHI2YT.js.map
+//# sourceMappingURL=chunk-2JHK6Y4R.js.map

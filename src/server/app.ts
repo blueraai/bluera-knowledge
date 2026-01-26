@@ -116,6 +116,7 @@ export function createApp(services: ServiceContainer, dataDir?: string): Hono {
 
     const storeIds = (await services.store.list()).map((s) => s.id);
 
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     for (const id of storeIds) {
       await services.lance.initialize(id);
     }
@@ -149,6 +150,7 @@ export function createApp(services: ServiceContainer, dataDir?: string): Hono {
     const store = await services.store.getByIdOrName(c.req.param('id'));
     if (!store) return c.json({ error: 'Not found' }, 404);
 
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
     await services.lance.initialize(store.id);
     const result = await services.index.indexStore(store);
 

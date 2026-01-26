@@ -13,6 +13,7 @@ describe('LanceStore', () => {
   beforeAll(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'lance-test-'));
     store = new LanceStore(tempDir);
+    store.setDimensions(384);
     await store.initialize(storeId);
   });
 
@@ -295,6 +296,7 @@ describe('LanceStore', () => {
     it('clears tables and connection', async () => {
       const closeStoreId = createStoreId('close-test-store');
       const closeStore = new LanceStore(tempDir);
+      closeStore.setDimensions(384);
       await closeStore.initialize(closeStoreId);
 
       const doc = {
@@ -326,6 +328,7 @@ describe('LanceStore', () => {
     it('returns a promise that resolves after cleanup', async () => {
       const asyncCloseStoreId = createStoreId('async-close-test');
       const asyncStore = new LanceStore(tempDir);
+      asyncStore.setDimensions(384);
       await asyncStore.initialize(asyncCloseStoreId);
 
       const doc = {
@@ -357,6 +360,7 @@ describe('LanceStore', () => {
     it('delegates to sync close without artificial delays', async () => {
       const timedStoreId = createStoreId('timed-close-test');
       const timedStore = new LanceStore(tempDir);
+      timedStore.setDimensions(384);
       await timedStore.initialize(timedStoreId);
 
       const doc = {

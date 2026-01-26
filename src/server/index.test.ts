@@ -17,6 +17,10 @@ describe('Server Integration - Full App Creation', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn(),
@@ -66,7 +70,11 @@ describe('Server Integration - Store CRUD Flow', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
         deleteStore: vi.fn().mockResolvedValue(undefined),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       codeGraph: {
         deleteGraph: vi.fn().mockResolvedValue(undefined),
@@ -151,6 +159,10 @@ describe('Server Integration - Search Flow', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn(),
@@ -208,6 +220,10 @@ describe('Server Integration - Index Flow', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       index: {
         indexStore: vi.fn(),
@@ -310,6 +326,10 @@ describe('Server Integration - Content Negotiation', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn(),
@@ -415,7 +435,11 @@ describe('Server Integration - HTTP Methods', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
         deleteStore: vi.fn().mockResolvedValue(undefined),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       codeGraph: {
         deleteGraph: vi.fn().mockResolvedValue(undefined),

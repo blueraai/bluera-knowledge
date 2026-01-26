@@ -64,6 +64,10 @@ describe('Commands - handleSearch', () => {
       },
       lance: {
         initialize: vi.fn(),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       search: {
         search: vi.fn(),

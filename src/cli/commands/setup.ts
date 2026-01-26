@@ -141,6 +141,7 @@ export function createSetupCommand(getOptions: () => GlobalOptions): Command {
                 spinner.text = `${repo.name}: Indexing...`;
                 const store = await services.store.getByIdOrName(storeId);
                 if (store) {
+                  services.lance.setDimensions(await services.embeddings.ensureDimensions());
                   await services.lance.initialize(store.id);
                   const indexResult = await services.index.indexStore(store, (event) => {
                     if (event.type === 'progress') {
