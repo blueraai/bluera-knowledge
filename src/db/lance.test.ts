@@ -62,6 +62,31 @@ describe('LanceStore', () => {
     expect(found).toBeUndefined();
   });
 
+  it('handles empty array in deleteDocuments without error', async () => {
+    // Add a document to verify it's not affected
+    const docId = createDocumentId('keep-doc');
+    const doc = {
+      id: docId,
+      content: 'Keep me',
+      vector: new Array(384).fill(0.25),
+      metadata: {
+        type: 'file' as const,
+        storeId,
+        indexedAt: new Date().toISOString(),
+      },
+    };
+
+    await store.addDocuments(storeId, [doc]);
+
+    // Deleting with empty array should not throw
+    await expect(store.deleteDocuments(storeId, [])).resolves.not.toThrow();
+
+    // Document should still exist
+    const results = await store.search(storeId, new Array(384).fill(0.25), 10);
+    const found = results.find((r) => r.id === 'keep-doc');
+    expect(found).toBeDefined();
+  });
+
   it('performs full-text search', async () => {
     const doc = {
       id: createDocumentId('fts-doc'),

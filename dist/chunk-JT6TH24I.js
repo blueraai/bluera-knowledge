@@ -5540,6 +5540,9 @@ var LanceStore = class {
     await table.add(lanceDocuments);
   }
   async deleteDocuments(storeId, documentIds) {
+    if (documentIds.length === 0) {
+      return;
+    }
     const table = await this.getTable(storeId);
     const idList = documentIds.map((id) => `"${id}"`).join(", ");
     await table.delete(`id IN (${idList})`);
@@ -5870,4 +5873,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-OJINTY7V.js.map
+//# sourceMappingURL=chunk-JT6TH24I.js.map

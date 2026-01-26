@@ -81,6 +81,9 @@ export class LanceStore {
   }
 
   async deleteDocuments(storeId: StoreId, documentIds: DocumentId[]): Promise<void> {
+    if (documentIds.length === 0) {
+      return;
+    }
     const table = await this.getTable(storeId);
     const idList = documentIds.map((id) => `"${id}"`).join(', ');
     await table.delete(`id IN (${idList})`);
