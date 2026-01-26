@@ -5723,6 +5723,12 @@ var LazyServiceContainer = class {
   get hasEmbeddings() {
     return this._embeddings !== null;
   }
+  /**
+   * Check if search service has been initialized (for cleanup purposes).
+   */
+  get hasSearch() {
+    return this._search !== null;
+  }
 };
 async function createLazyServices(configPath, dataDir, projectRoot) {
   logger4.info({ configPath, dataDir, projectRoot }, "Initializing lazy services");
@@ -5800,7 +5806,13 @@ async function createServices(configPath, dataDir, projectRoot) {
 async function destroyServices(services) {
   logger4.info("Shutting down services");
   const errors = [];
-  services.search.cleanup();
+  const isLazyContainer = services instanceof LazyServiceContainer;
+  const shouldCleanupSearch = !isLazyContainer || services.hasSearch;
+  if (shouldCleanupSearch) {
+    services.search.cleanup();
+  } else {
+    logger4.debug("Skipping search cleanup (not initialized)");
+  }
   try {
     await services.pythonBridge.stop();
   } catch (e) {
@@ -5808,7 +5820,6 @@ async function destroyServices(services) {
     logger4.error({ error }, "Error stopping Python bridge");
     errors.push(error);
   }
-  const isLazyContainer = services instanceof LazyServiceContainer;
   const shouldDisposeEmbeddings = !isLazyContainer || services.hasEmbeddings;
   if (shouldDisposeEmbeddings) {
     try {
@@ -5859,4 +5870,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-2JHK6Y4R.js.map
+//# sourceMappingURL=chunk-OJINTY7V.js.map

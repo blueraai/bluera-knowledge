@@ -159,6 +159,13 @@ export class LazyServiceContainer implements ServiceContainer {
   get hasEmbeddings(): boolean {
     return this._embeddings !== null;
   }
+
+  /**
+   * Check if search service has been initialized (for cleanup purposes).
+   */
+  get hasSearch(): boolean {
+    return this._search !== null;
+  }
 }
 
 /**
@@ -301,7 +308,15 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
   // if subprocess signals are sent while lancedb is shutting down.
 
   // 0. Clean up SearchService event subscriptions (no async, just unsubscribe)
-  services.search.cleanup();
+  // Skip for lazy containers where search was never accessed (avoids triggering initialization)
+  const isLazyContainer = services instanceof LazyServiceContainer;
+  const shouldCleanupSearch = !isLazyContainer || services.hasSearch;
+
+  if (shouldCleanupSearch) {
+    services.search.cleanup();
+  } else {
+    logger.debug('Skipping search cleanup (not initialized)');
+  }
 
   // 1. Stop Python bridge first (reverse of init: started first, stopped first)
   try {
@@ -313,7 +328,6 @@ export async function destroyServices(services: ServiceContainer): Promise<void>
   }
 
   // 2. Dispose embedding engine (only if initialized for lazy containers)
-  const isLazyContainer = services instanceof LazyServiceContainer;
   const shouldDisposeEmbeddings = !isLazyContainer || services.hasEmbeddings;
 
   if (shouldDisposeEmbeddings) {
