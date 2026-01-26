@@ -91,8 +91,8 @@ export class IndexService {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
     this.chunker = new ChunkingService({
-      chunkSize: options.chunkSize ?? 768,
-      chunkOverlap: options.chunkOverlap ?? 100,
+      chunkSize: options.chunkSize ?? 1000,
+      chunkOverlap: options.chunkOverlap ?? 150,
     });
     this.codeGraphService = options.codeGraphService;
     this.manifestService = options.manifestService;

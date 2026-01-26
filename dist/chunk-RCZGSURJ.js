@@ -2686,8 +2686,8 @@ var IndexService = class {
     this.lanceStore = lanceStore;
     this.embeddingEngine = embeddingEngine;
     this.chunker = new ChunkingService({
-      chunkSize: options.chunkSize ?? 768,
-      chunkOverlap: options.chunkOverlap ?? 100
+      chunkSize: options.chunkSize ?? 1e3,
+      chunkOverlap: options.chunkOverlap ?? 150
     });
     this.codeGraphService = options.codeGraphService;
     this.manifestService = options.manifestService;
@@ -5893,4 +5893,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-ZIILFQIS.js.map
+//# sourceMappingURL=chunk-RCZGSURJ.js.map
