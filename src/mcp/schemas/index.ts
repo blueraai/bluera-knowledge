@@ -83,6 +83,11 @@ export const CreateStoreArgsSchema = z.object({
   source: z.string().min(1, 'Source path or URL must be a non-empty string'),
   branch: z.string().optional(),
   description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  depth: z.number().int().positive().optional(),
+  maxPages: z.number().int().positive().optional(),
+  crawlInstructions: z.string().optional(),
+  extractInstructions: z.string().optional(),
 });
 
 export type CreateStoreArgs = z.infer<typeof CreateStoreArgsSchema>;

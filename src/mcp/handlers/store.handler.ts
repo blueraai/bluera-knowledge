@@ -54,6 +54,10 @@ export const handleListStores: ToolHandler<ListStoresArgs> = async (
               type: s.type,
               path: 'path' in s ? s.path : undefined,
               url: 'url' in s && s.url !== undefined ? s.url : undefined,
+              branch: 'branch' in s ? s.branch : undefined,
+              depth: 'depth' in s ? s.depth : undefined,
+              maxPages: 'maxPages' in s ? s.maxPages : undefined,
+              tags: 'tags' in s ? s.tags : undefined,
               description: s.description,
               createdAt: s.createdAt.toISOString(),
             })),
@@ -102,6 +106,12 @@ export const handleGetStoreInfo: ToolHandler<GetStoreInfoArgs> = async (
             path: 'path' in store ? store.path : undefined,
             url: 'url' in store && store.url !== undefined ? store.url : undefined,
             branch: 'branch' in store ? store.branch : undefined,
+            depth: 'depth' in store ? store.depth : undefined,
+            maxPages: 'maxPages' in store ? store.maxPages : undefined,
+            crawlInstructions: 'crawlInstructions' in store ? store.crawlInstructions : undefined,
+            extractInstructions:
+              'extractInstructions' in store ? store.extractInstructions : undefined,
+            tags: 'tags' in store ? store.tags : undefined,
             description: store.description,
             status: store.status,
             createdAt: store.createdAt.toISOString(),
@@ -146,6 +156,15 @@ export const handleCreateStore: ToolHandler<CreateStoreArgs> = async (
     ...(isUrl ? { url: validated.source } : { path: validated.source }),
     ...(validated.branch !== undefined ? { branch: validated.branch } : {}),
     ...(validated.description !== undefined ? { description: validated.description } : {}),
+    ...(validated.tags !== undefined ? { tags: validated.tags } : {}),
+    ...(validated.depth !== undefined ? { depth: validated.depth } : {}),
+    ...(validated.maxPages !== undefined ? { maxPages: validated.maxPages } : {}),
+    ...(validated.crawlInstructions !== undefined
+      ? { crawlInstructions: validated.crawlInstructions }
+      : {}),
+    ...(validated.extractInstructions !== undefined
+      ? { extractInstructions: validated.extractInstructions }
+      : {}),
   });
 
   if (!result.success) {

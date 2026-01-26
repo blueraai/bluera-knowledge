@@ -672,7 +672,12 @@ var CreateStoreArgsSchema = z.object({
   type: z.enum(["file", "repo", "web"]),
   source: z.string().min(1, "Source path or URL must be a non-empty string"),
   branch: z.string().optional(),
-  description: z.string().optional()
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  depth: z.number().int().positive().optional(),
+  maxPages: z.number().int().positive().optional(),
+  crawlInstructions: z.string().optional(),
+  extractInstructions: z.string().optional()
 });
 var IndexStoreArgsSchema = z.object({
   store: z.string().min(1, "Store name or ID must be a non-empty string")
@@ -1022,6 +1027,10 @@ var handleListStores = async (args, context) => {
               type: s.type,
               path: "path" in s ? s.path : void 0,
               url: "url" in s && s.url !== void 0 ? s.url : void 0,
+              branch: "branch" in s ? s.branch : void 0,
+              depth: "depth" in s ? s.depth : void 0,
+              maxPages: "maxPages" in s ? s.maxPages : void 0,
+              tags: "tags" in s ? s.tags : void 0,
               description: s.description,
               createdAt: s.createdAt.toISOString()
             }))
@@ -1055,6 +1064,11 @@ var handleGetStoreInfo = async (args, context) => {
             path: "path" in store ? store.path : void 0,
             url: "url" in store && store.url !== void 0 ? store.url : void 0,
             branch: "branch" in store ? store.branch : void 0,
+            depth: "depth" in store ? store.depth : void 0,
+            maxPages: "maxPages" in store ? store.maxPages : void 0,
+            crawlInstructions: "crawlInstructions" in store ? store.crawlInstructions : void 0,
+            extractInstructions: "extractInstructions" in store ? store.extractInstructions : void 0,
+            tags: "tags" in store ? store.tags : void 0,
             description: store.description,
             status: store.status,
             createdAt: store.createdAt.toISOString(),
@@ -1080,7 +1094,12 @@ var handleCreateStore = async (args, context) => {
     type: validated.type,
     ...isUrl ? { url: validated.source } : { path: validated.source },
     ...validated.branch !== void 0 ? { branch: validated.branch } : {},
-    ...validated.description !== void 0 ? { description: validated.description } : {}
+    ...validated.description !== void 0 ? { description: validated.description } : {},
+    ...validated.tags !== void 0 ? { tags: validated.tags } : {},
+    ...validated.depth !== void 0 ? { depth: validated.depth } : {},
+    ...validated.maxPages !== void 0 ? { maxPages: validated.maxPages } : {},
+    ...validated.crawlInstructions !== void 0 ? { crawlInstructions: validated.crawlInstructions } : {},
+    ...validated.extractInstructions !== void 0 ? { extractInstructions: validated.extractInstructions } : {}
   });
   if (!result.success) {
     logger4.error({ name: validated.name, error: result.error.message }, "Create store failed");
@@ -2160,4 +2179,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-ZYINFLA2.js.map
+//# sourceMappingURL=chunk-I7ILEBWP.js.map
