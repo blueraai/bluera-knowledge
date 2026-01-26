@@ -310,6 +310,8 @@ export class BackgroundWorker {
           progress: 85,
         });
 
+        // Clear existing documents to prevent duplicates on re-crawl
+        await this.lanceStore.clearAllDocuments(store.id);
         await this.lanceStore.addDocuments(store.id, docs);
         // Create FTS index for full-text search
         await this.lanceStore.createFtsIndex(store.id);

@@ -211,6 +211,8 @@ export function createCrawlCommand(getOptions: () => GlobalOptions): Command {
             if (spinner) {
               spinner.text = 'Indexing documents...';
             }
+            // Clear existing documents to prevent duplicates on re-crawl
+            await services.lance.clearAllDocuments(store.id);
             await services.lance.addDocuments(store.id, docs);
             // Create FTS index for full-text search
             await services.lance.createFtsIndex(store.id);

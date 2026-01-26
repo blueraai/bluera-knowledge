@@ -26,6 +26,7 @@ describe('BackgroundWorker', () => {
     // Mock LanceStore and EmbeddingEngine for testing
     lanceStore = {
       initialize: vi.fn().mockResolvedValue(undefined),
+      clearAllDocuments: vi.fn().mockResolvedValue(undefined),
       addDocuments: vi.fn().mockResolvedValue(undefined),
       createFtsIndex: vi.fn().mockResolvedValue(undefined),
     } as unknown as LanceStore;

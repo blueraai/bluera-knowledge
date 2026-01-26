@@ -237,6 +237,7 @@ var BackgroundWorker = class {
           message: "Indexing crawled documents...",
           progress: 85
         });
+        await this.lanceStore.clearAllDocuments(store.id);
         await this.lanceStore.addDocuments(store.id, docs);
         await this.lanceStore.createFtsIndex(store.id);
       }

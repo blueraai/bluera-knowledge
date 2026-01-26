@@ -174,6 +174,7 @@ function createCrawlCommand(getOptions) {
           if (spinner) {
             spinner.text = "Indexing documents...";
           }
+          await services.lance.clearAllDocuments(store.id);
           await services.lance.addDocuments(store.id, docs);
           await services.lance.createFtsIndex(store.id);
         }
