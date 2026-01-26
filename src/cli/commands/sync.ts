@@ -1,3 +1,5 @@
+import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Command } from 'commander';
 import { createServices, destroyServices } from '../../services/index.js';
 import { JobService } from '../../services/job.service.js';
@@ -171,6 +173,18 @@ export function createSyncCommand(getOptions: () => GlobalOptions): Command {
             for (const orphanName of result.orphans) {
               const store = await services.store.getByName(orphanName);
               if (store !== undefined) {
+                // Full cleanup like store delete command
+                await services.lance.deleteStore(store.id);
+                await services.codeGraph.deleteGraph(store.id);
+                await services.manifest.delete(store.id);
+
+                // For repo stores cloned from URL, remove the cloned directory
+                if (store.type === 'repo' && 'url' in store && store.url !== undefined) {
+                  const dataDir = services.config.resolveDataDir();
+                  const repoPath = join(dataDir, 'repos', store.id);
+                  await rm(repoPath, { recursive: true, force: true });
+                }
+
                 const deleteResult = await services.store.delete(store.id, {
                   skipDefinitionSync: true,
                 });

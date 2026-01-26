@@ -1765,6 +1765,8 @@ Store: ${s.name}`);
 }
 
 // src/cli/commands/sync.ts
+import { rm as rm3 } from "fs/promises";
+import { join as join5 } from "path";
 import { Command as Command9 } from "commander";
 async function createStoreFromDefinition(def, defService, storeService) {
   try {
@@ -1885,6 +1887,14 @@ function createSyncCommand(getOptions) {
           for (const orphanName of result.orphans) {
             const store = await services.store.getByName(orphanName);
             if (store !== void 0) {
+              await services.lance.deleteStore(store.id);
+              await services.codeGraph.deleteGraph(store.id);
+              await services.manifest.delete(store.id);
+              if (store.type === "repo" && "url" in store && store.url !== void 0) {
+                const dataDir = services.config.resolveDataDir();
+                const repoPath = join5(dataDir, "repos", store.id);
+                await rm3(repoPath, { recursive: true, force: true });
+              }
               const deleteResult = await services.store.delete(store.id, {
                 skipDefinitionSync: true
               });
@@ -2012,13 +2022,13 @@ function printHumanReadable(result, quiet) {
 
 // src/cli/program.ts
 import { readFileSync } from "fs";
-import { dirname, join as join5 } from "path";
+import { dirname, join as join6 } from "path";
 import { fileURLToPath } from "url";
 import { Command as Command10 } from "commander";
 function getVersion() {
   const __filename2 = fileURLToPath(import.meta.url);
   const __dirname2 = dirname(__filename2);
-  const content = readFileSync(join5(__dirname2, "../package.json"), "utf-8");
+  const content = readFileSync(join6(__dirname2, "../package.json"), "utf-8");
   const pkg = JSON.parse(content);
   return pkg.version;
 }
