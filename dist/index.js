@@ -331,8 +331,11 @@ function createIndexCommand(getOptions) {
     process.on("SIGINT", () => {
       void (async () => {
         await watchService.unwatchAll();
+        await destroyServices(services);
         process.exit(0);
-      })().catch(() => {
+      })().catch((err2) => {
+        console.error("Shutdown error:", err2);
+        process.exit(1);
       });
     });
   });

@@ -658,6 +658,14 @@ describe('createIndexCommand - Execution Tests', () => {
         return mockWatchService as any;
       } as any);
 
+      // Use a non-throwing mock for this test to avoid cascade
+      // (process.exit(0) throw -> catch -> process.exit(1) throw)
+      const exitCalls: number[] = [];
+      processExitSpy.mockImplementation((code) => {
+        exitCalls.push(code as number);
+        return undefined as never;
+      });
+
       const command = createIndexCommand(getOptions);
       const watchCmd = command.commands.find((c) => c.name() === 'watch');
       const action = watchCmd!._actionHandler;
@@ -671,11 +679,17 @@ describe('createIndexCommand - Execution Tests', () => {
       )?.[1] as () => void;
       expect(sigintHandler).toBeDefined();
 
-      // Call the handler
-      await sigintHandler();
+      // Call the handler (fires async IIFE)
+      sigintHandler();
+
+      // Wait for the async IIFE to complete
+      await vi.waitFor(() => {
+        expect(exitCalls.length).toBeGreaterThan(0);
+      });
 
       expect(mockWatchService.unwatchAll).toHaveBeenCalled();
-      expect(processExitSpy).toHaveBeenCalledWith(0);
+      expect(destroyServicesMock).toHaveBeenCalledWith(mockServices);
+      expect(exitCalls[0]).toBe(0);
     });
   });
 

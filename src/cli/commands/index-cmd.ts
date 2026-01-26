@@ -151,9 +151,11 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
       process.on('SIGINT', () => {
         void (async (): Promise<void> => {
           await watchService.unwatchAll();
+          await destroyServices(services);
           process.exit(0);
-        })().catch(() => {
-          // Error during shutdown - process.exit already called
+        })().catch((err: unknown) => {
+          console.error('Shutdown error:', err);
+          process.exit(1);
         });
       });
     });
