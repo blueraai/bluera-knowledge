@@ -5138,6 +5138,15 @@ function validateParsePythonResult(data) {
 
 // src/crawl/bridge.ts
 var logger3 = createLogger("python-bridge");
+function getPythonExecutable() {
+  return process.platform === "win32" ? "python" : "python3";
+}
+function getVenvPythonPath(pluginRoot) {
+  if (process.platform === "win32") {
+    return path3.join(pluginRoot, ".venv", "Scripts", "python.exe");
+  }
+  return path3.join(pluginRoot, ".venv", "bin", "python3");
+}
 var PythonBridge = class {
   process = null;
   pending = /* @__PURE__ */ new Map();
@@ -5155,13 +5164,13 @@ var PythonBridge = class {
       const distIndex = currentFilePath.indexOf(distPattern);
       const pluginRoot = currentFilePath.substring(0, distIndex);
       pythonWorkerPath = path3.join(pluginRoot, "python", "crawl_worker.py");
-      const venvPython = path3.join(pluginRoot, ".venv", "bin", "python3");
-      pythonPath = existsSync4(venvPython) ? venvPython : "python3";
+      const venvPython = getVenvPythonPath(pluginRoot);
+      pythonPath = existsSync4(venvPython) ? venvPython : getPythonExecutable();
     } else {
       const srcDir = path3.dirname(path3.dirname(currentFilePath));
       const projectRoot = path3.dirname(srcDir);
       pythonWorkerPath = path3.join(projectRoot, "python", "crawl_worker.py");
-      pythonPath = "python3";
+      pythonPath = getPythonExecutable();
     }
     logger3.debug(
       { pythonWorkerPath, pythonPath, currentFilePath, isProduction },
@@ -5882,4 +5891,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-MIHBKN32.js.map
+//# sourceMappingURL=chunk-QLEMPMH3.js.map

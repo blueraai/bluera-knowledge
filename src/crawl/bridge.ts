@@ -30,6 +30,26 @@ interface PendingRequest {
   method: 'crawl' | 'fetch_headless' | 'parse_python';
 }
 
+/**
+ * Get the system Python executable name based on platform.
+ * Windows uses 'python', Unix-like systems use 'python3'.
+ */
+function getPythonExecutable(): string {
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
+
+/**
+ * Get the venv Python path based on platform.
+ * Windows: .venv/Scripts/python.exe
+ * Unix-like: .venv/bin/python3
+ */
+function getVenvPythonPath(pluginRoot: string): string {
+  if (process.platform === 'win32') {
+    return path.join(pluginRoot, '.venv', 'Scripts', 'python.exe');
+  }
+  return path.join(pluginRoot, '.venv', 'bin', 'python3');
+}
+
 export class PythonBridge {
   private process: ChildProcess | null = null;
   private readonly pending: Map<string, PendingRequest> = new Map();
@@ -57,8 +77,8 @@ export class PythonBridge {
       pythonWorkerPath = path.join(pluginRoot, 'python', 'crawl_worker.py');
 
       // Use venv python if available (installed by check-dependencies.sh hook)
-      const venvPython = path.join(pluginRoot, '.venv', 'bin', 'python3');
-      pythonPath = existsSync(venvPython) ? venvPython : 'python3';
+      const venvPython = getVenvPythonPath(pluginRoot);
+      pythonPath = existsSync(venvPython) ? venvPython : getPythonExecutable();
     } else {
       // Development: Go up from src/crawl to find python/
       const srcDir = path.dirname(path.dirname(currentFilePath));
@@ -66,7 +86,7 @@ export class PythonBridge {
       pythonWorkerPath = path.join(projectRoot, 'python', 'crawl_worker.py');
 
       // Development: Use system python (user manages their own environment)
-      pythonPath = 'python3';
+      pythonPath = getPythonExecutable();
     }
 
     logger.debug(
