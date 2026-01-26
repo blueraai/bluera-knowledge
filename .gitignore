@@ -38,3 +38,9 @@ package-lock.json
 !.bluera/bluera-base/
 !.bluera/bluera-base/config.json
 !.bluera/bluera-base/TODO.txt
+
+# Bluera Knowledge
+# Config files (stores.config.json, config.json, skill-activation.json) can be committed
+# Data directory (vector DB, cloned repos) is not committed
+!.bluera/bluera-knowledge/config.json
+!.bluera/bluera-knowledge/skill-activation.json
