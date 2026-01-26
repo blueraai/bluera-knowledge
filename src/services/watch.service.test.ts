@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { WatchService } from './watch.service.js';
 import type { IndexService } from './index.service.js';
 import type { LanceStore } from '../db/lance.js';
+import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { FileStore, RepoStore } from '../types/store.js';
 
 // Create fresh mock watcher for each call
@@ -28,6 +29,7 @@ describe('WatchService', () => {
   let watchService: WatchService;
   let mockIndexService: IndexService;
   let mockLanceStore: LanceStore;
+  let mockEmbeddings: EmbeddingEngine;
   let mockFileStore: FileStore;
   let mockRepoStore: RepoStore;
 
@@ -46,7 +48,12 @@ describe('WatchService', () => {
 
     mockLanceStore = {
       initialize: vi.fn().mockResolvedValue(undefined),
+      setDimensions: vi.fn(),
     } as unknown as LanceStore;
+
+    mockEmbeddings = {
+      ensureDimensions: vi.fn().mockResolvedValue(384),
+    } as unknown as EmbeddingEngine;
 
     mockFileStore = {
       id: 'file-store-1',
@@ -70,7 +77,7 @@ describe('WatchService', () => {
       updatedAt: new Date(),
     };
 
-    watchService = new WatchService(mockIndexService, mockLanceStore);
+    watchService = new WatchService(mockIndexService, mockLanceStore, mockEmbeddings);
   });
 
   afterEach(() => {
@@ -346,7 +353,8 @@ describe('WatchService', () => {
 
       const watchServiceWithIncremental = new WatchService(
         indexServiceWithIncremental,
-        mockLanceStore
+        mockLanceStore,
+        mockEmbeddings
       );
 
       await watchServiceWithIncremental.watch(mockFileStore, 1000, undefined, noopErrorHandler);
@@ -375,7 +383,8 @@ describe('WatchService', () => {
 
       const watchServiceWithIncremental = new WatchService(
         indexServiceWithIncremental,
-        mockLanceStore
+        mockLanceStore,
+        mockEmbeddings
       );
 
       await watchServiceWithIncremental.watch(mockFileStore, 1000, undefined, noopErrorHandler);

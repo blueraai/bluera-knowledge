@@ -57,10 +57,12 @@ var WatchService = class {
   pendingTimeouts = /* @__PURE__ */ new Map();
   indexService;
   lanceStore;
+  embeddings;
   ignorePatterns;
-  constructor(indexService, lanceStore, options = {}) {
+  constructor(indexService, lanceStore, embeddings, options = {}) {
     this.indexService = indexService;
     this.lanceStore = lanceStore;
+    this.embeddings = embeddings;
     this.ignorePatterns = normalizeGlobPatterns(options.ignorePatterns ?? []);
   }
   async watch(store, debounceMs, onReindex, onError) {
@@ -79,6 +81,7 @@ var WatchService = class {
         this.pendingTimeouts.delete(store.id);
         void (async () => {
           try {
+            this.lanceStore.setDimensions(await this.embeddings.ensureDimensions());
             await this.lanceStore.initialize(store.id);
             let useFullReindex = true;
             if (typeof this.indexService.indexStoreIncremental === "function") {
@@ -134,4 +137,4 @@ export {
   parseIgnorePatternsForScanning,
   WatchService
 };
-//# sourceMappingURL=chunk-R3C2QK4P.js.map
+//# sourceMappingURL=chunk-HXBIIMYL.js.map

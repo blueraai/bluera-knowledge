@@ -1,6 +1,7 @@
 import { watch, type FSWatcher } from 'chokidar';
 import { normalizeGlobPatterns } from '../utils/ignore-patterns.js';
 import type { IndexService } from './index.service.js';
+import type { EmbeddingEngine } from '../db/embeddings.js';
 import type { LanceStore } from '../db/lance.js';
 import type { FileStore, RepoStore } from '../types/store.js';
 
@@ -13,15 +14,18 @@ export class WatchService {
   private readonly pendingTimeouts: Map<string, NodeJS.Timeout> = new Map();
   private readonly indexService: IndexService;
   private readonly lanceStore: LanceStore;
+  private readonly embeddings: EmbeddingEngine;
   private readonly ignorePatterns: readonly string[];
 
   constructor(
     indexService: IndexService,
     lanceStore: LanceStore,
+    embeddings: EmbeddingEngine,
     options: WatchServiceOptions = {}
   ) {
     this.indexService = indexService;
     this.lanceStore = lanceStore;
+    this.embeddings = embeddings;
     // Use shared utility to normalize patterns to glob format with defaults
     this.ignorePatterns = normalizeGlobPatterns(options.ignorePatterns ?? []);
   }
@@ -50,6 +54,7 @@ export class WatchService {
         this.pendingTimeouts.delete(store.id);
         void (async (): Promise<void> => {
           try {
+            this.lanceStore.setDimensions(await this.embeddings.ensureDimensions());
             await this.lanceStore.initialize(store.id);
 
             // Try incremental indexing first if available, fall back to full indexing

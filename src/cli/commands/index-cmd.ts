@@ -120,7 +120,7 @@ export function createIndexCommand(getOptions: () => GlobalOptions): Command {
 
       const appConfig = await services.config.load();
       const { WatchService } = await import('../../services/watch.service.js');
-      const watchService = new WatchService(services.index, services.lance, {
+      const watchService = new WatchService(services.index, services.lance, services.embeddings, {
         ignorePatterns: appConfig.indexing.ignorePatterns,
       });
 

@@ -461,6 +461,7 @@ describe('createIndexCommand - Execution Tests', () => {
       expect(WatchService).toHaveBeenCalledWith(
         mockServices.index,
         mockServices.lance,
+        mockServices.embeddings,
         expect.objectContaining({ ignorePatterns: [] })
       );
       expect(mockWatchService.watch).toHaveBeenCalledWith(
