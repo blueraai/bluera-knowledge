@@ -5608,7 +5608,9 @@ var LanceStore = class {
   }
   async deleteStore(storeId) {
     const tableName = this.getTableName(storeId);
-    if (this.connection !== null) {
+    this.connection ??= await lancedb.connect(this.dataDir);
+    const tableNames = await this.connection.tableNames();
+    if (tableNames.includes(tableName)) {
       await this.connection.dropTable(tableName);
       this.tables.delete(tableName);
     }
@@ -5891,4 +5893,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-QLEMPMH3.js.map
+//# sourceMappingURL=chunk-BHTSHUOU.js.map

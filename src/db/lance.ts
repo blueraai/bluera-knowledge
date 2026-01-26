@@ -164,7 +164,10 @@ export class LanceStore {
 
   async deleteStore(storeId: StoreId): Promise<void> {
     const tableName = this.getTableName(storeId);
-    if (this.connection !== null) {
+    // Connect on-demand - no dimensions needed for listing/dropping tables
+    this.connection ??= await lancedb.connect(this.dataDir);
+    const tableNames = await this.connection.tableNames();
+    if (tableNames.includes(tableName)) {
       await this.connection.dropTable(tableName);
       this.tables.delete(tableName);
     }

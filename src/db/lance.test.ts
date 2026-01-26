@@ -315,6 +315,43 @@ describe('LanceStore', () => {
       const results = await store.search(deleteStoreId, new Array(384).fill(0.1), 10);
       expect(results.length).toBe(0);
     });
+
+    it('works without prior initialize (connects on-demand)', async () => {
+      // Create a fresh store instance without any prior connection
+      const freshStore = new LanceStore(tempDir);
+      const freshStoreId = createStoreId('fresh-delete-store');
+
+      // First, create a table using the main store
+      await store.initialize(freshStoreId);
+      const doc = {
+        id: createDocumentId('fresh-delete-doc'),
+        content: 'should be deleted',
+        vector: new Array(384).fill(0.2),
+        metadata: {
+          type: 'file' as const,
+          storeId: freshStoreId,
+          indexedAt: new Date().toISOString(),
+        },
+      };
+      await store.addDocuments(freshStoreId, [doc]);
+
+      // Now delete using a fresh store that has never called initialize()
+      // This should connect on-demand and delete the table
+      await expect(freshStore.deleteStore(freshStoreId)).resolves.not.toThrow();
+
+      // Verify the table is actually gone by re-initializing
+      await store.initialize(freshStoreId);
+      const results = await store.search(freshStoreId, new Array(384).fill(0.2), 10);
+      expect(results.length).toBe(0);
+    });
+
+    it('handles non-existent table gracefully', async () => {
+      const freshStore = new LanceStore(tempDir);
+      const nonExistentId = createStoreId('non-existent-store');
+
+      // Should not throw when deleting a non-existent table
+      await expect(freshStore.deleteStore(nonExistentId)).resolves.not.toThrow();
+    });
   });
 
   describe('close', () => {
