@@ -38,6 +38,10 @@ export interface CreateStoreInput {
   tags?: string[] | undefined;
   branch?: string | undefined;
   depth?: number | undefined;
+  // Web store crawl options
+  maxPages?: number | undefined;
+  crawlInstructions?: string | undefined;
+  extractInstructions?: string | undefined;
 }
 
 export interface StoreServiceOptions {
@@ -126,6 +130,9 @@ export class StoreService {
           type: 'web',
           url: webStore.url,
           depth: webStore.depth,
+          maxPages: input.maxPages,
+          crawlInstructions: input.crawlInstructions,
+          extractInstructions: input.extractInstructions,
         };
         return webDef;
       }
@@ -175,6 +182,9 @@ export class StoreService {
           type: 'web',
           url: store.url,
           depth: store.depth,
+          maxPages: store.maxPages,
+          crawlInstructions: store.crawlInstructions,
+          extractInstructions: store.extractInstructions,
         };
         return webDef;
       }
@@ -295,6 +305,9 @@ export class StoreService {
           name: input.name,
           url: input.url,
           depth: input.depth ?? 1,
+          maxPages: input.maxPages,
+          crawlInstructions: input.crawlInstructions,
+          extractInstructions: input.extractInstructions,
           description: input.description,
           tags: input.tags,
           status: 'ready',

@@ -31,6 +31,8 @@ export interface WebStore extends BaseStore {
   readonly url: string;
   readonly depth: number;
   readonly maxPages?: number | undefined;
+  readonly crawlInstructions?: string | undefined;
+  readonly extractInstructions?: string | undefined;
 }
 
 export type Store = FileStore | RepoStore | WebStore;

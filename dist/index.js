@@ -3,11 +3,11 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-2V56TWUS.js";
+} from "./chunk-QUT33GB2.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-V3CIZGNA.js";
+} from "./chunk-MOQSDVKJ.js";
 import {
   ASTParser,
   AdapterRegistry,
@@ -24,7 +24,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-JT6TH24I.js";
+} from "./chunk-MIHBKN32.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
@@ -1807,6 +1807,9 @@ async function createStoreFromDefinition(def, defService, storeService) {
           type: "web",
           url: def.url,
           depth: def.depth,
+          maxPages: def.maxPages,
+          crawlInstructions: def.crawlInstructions,
+          extractInstructions: def.extractInstructions,
           description: def.description,
           tags: def.tags
         },

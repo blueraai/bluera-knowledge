@@ -502,6 +502,8 @@ interface WebStore extends BaseStore {
     readonly url: string;
     readonly depth: number;
     readonly maxPages?: number | undefined;
+    readonly crawlInstructions?: string | undefined;
+    readonly extractInstructions?: string | undefined;
 }
 type Store = FileStore | RepoStore | WebStore;
 
@@ -937,6 +939,9 @@ interface CreateStoreInput {
     tags?: string[] | undefined;
     branch?: string | undefined;
     depth?: number | undefined;
+    maxPages?: number | undefined;
+    crawlInstructions?: string | undefined;
+    extractInstructions?: string | undefined;
 }
 interface StoreServiceOptions {
     /** Optional definition service for auto-updating git-committable config */

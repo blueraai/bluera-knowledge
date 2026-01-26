@@ -4769,7 +4769,10 @@ var StoreService = class {
           ...base,
           type: "web",
           url: webStore.url,
-          depth: webStore.depth
+          depth: webStore.depth,
+          maxPages: input.maxPages,
+          crawlInstructions: input.crawlInstructions,
+          extractInstructions: input.extractInstructions
         };
         return webDef;
       }
@@ -4814,7 +4817,10 @@ var StoreService = class {
           ...base,
           type: "web",
           url: store.url,
-          depth: store.depth
+          depth: store.depth,
+          maxPages: store.maxPages,
+          crawlInstructions: store.crawlInstructions,
+          extractInstructions: store.extractInstructions
         };
         return webDef;
       }
@@ -4913,6 +4919,9 @@ var StoreService = class {
           name: input.name,
           url: input.url,
           depth: input.depth ?? 1,
+          maxPages: input.maxPages,
+          crawlInstructions: input.crawlInstructions,
+          extractInstructions: input.extractInstructions,
           description: input.description,
           tags: input.tags,
           status: "ready",
@@ -5873,4 +5882,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-JT6TH24I.js.map
+//# sourceMappingURL=chunk-MIHBKN32.js.map
