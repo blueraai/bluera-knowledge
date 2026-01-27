@@ -2836,6 +2836,8 @@ var IndexService = class {
       }
       if (documents.length > 0) {
         await this.lanceStore.addDocuments(store.id, documents);
+      }
+      if (documentIdsToDelete.length > 0 || documents.length > 0) {
         await this.lanceStore.createFtsIndex(store.id);
       }
       if (this.codeGraphService) {
@@ -5893,4 +5895,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RCZGSURJ.js.map
+//# sourceMappingURL=chunk-5QQLGZBQ.js.map

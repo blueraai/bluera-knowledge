@@ -281,7 +281,10 @@ export class IndexService {
       // Add new documents
       if (documents.length > 0) {
         await this.lanceStore.addDocuments(store.id, documents);
-        // Recreate FTS index
+      }
+
+      // Recreate FTS index if any changes occurred (deletions or additions)
+      if (documentIdsToDelete.length > 0 || documents.length > 0) {
         await this.lanceStore.createFtsIndex(store.id);
       }
 
