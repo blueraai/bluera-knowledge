@@ -1,6 +1,6 @@
 import { readFile, access } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { ProjectRootService } from './project-root.service.js';
 import { DEFAULT_CONFIG } from '../types/config.js';
 import { atomicWriteFile } from '../utils/atomic-write.js';
@@ -101,7 +101,8 @@ export class ConfigService {
       return path.replace('~', homedir());
     }
     // Resolve relative paths against base directory (not process.cwd())
-    if (!path.startsWith('/')) {
+    // Uses isAbsolute() for cross-platform compatibility (Windows paths like C:\data)
+    if (!isAbsolute(path)) {
       return resolve(baseDir, path);
     }
     // Return absolute paths as-is

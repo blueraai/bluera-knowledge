@@ -2025,7 +2025,7 @@ var CodeGraphService = class {
 // src/services/config.service.ts
 import { readFile as readFile2, access } from "fs/promises";
 import { homedir } from "os";
-import { join as join5, resolve } from "path";
+import { isAbsolute, join as join5, resolve } from "path";
 
 // src/types/config.ts
 var DEFAULT_CONFIG = {
@@ -2152,7 +2152,7 @@ var ConfigService = class {
     if (path4.startsWith("~")) {
       return path4.replace("~", homedir());
     }
-    if (!path4.startsWith("/")) {
+    if (!isAbsolute(path4)) {
       return resolve(baseDir, path4);
     }
     return path4;
@@ -4446,7 +4446,7 @@ var SearchService = class {
 
 // src/services/store-definition.service.ts
 import { readFile as readFile7, access as access4 } from "fs/promises";
-import { resolve as resolve2, isAbsolute, join as join9 } from "path";
+import { resolve as resolve2, isAbsolute as isAbsolute2, join as join9 } from "path";
 
 // src/types/store-definition.ts
 import { z as z3 } from "zod";
@@ -4633,7 +4633,7 @@ var StoreDefinitionService = class {
    * Resolve a file store path relative to project root.
    */
   resolvePath(path4) {
-    if (isAbsolute(path4)) {
+    if (isAbsolute2(path4)) {
       return path4;
     }
     return resolve2(this.projectRoot, path4);
@@ -5896,4 +5896,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-FAOVZQPI.js.map
+//# sourceMappingURL=chunk-H2O6F75B.js.map
