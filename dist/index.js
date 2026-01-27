@@ -1125,6 +1125,9 @@ function createSearchCommand(getOptions) {
                 `Invalid value for --threshold: "${options.threshold}" is not a valid number`
               );
             }
+            if (threshold < 0 || threshold > 1) {
+              throw new Error(`Invalid value for --threshold: must be between 0 and 1`);
+            }
           }
           let minRelevance;
           if (options.minRelevance !== void 0) {
@@ -1133,6 +1136,9 @@ function createSearchCommand(getOptions) {
               throw new Error(
                 `Invalid value for --min-relevance: "${options.minRelevance}" is not a valid number`
               );
+            }
+            if (minRelevance < 0 || minRelevance > 1) {
+              throw new Error(`Invalid value for --min-relevance: must be between 0 and 1`);
             }
           }
           const results = await services.search.search({

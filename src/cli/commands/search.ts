@@ -99,6 +99,9 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
                   `Invalid value for --threshold: "${options.threshold}" is not a valid number`
                 );
               }
+              if (threshold < 0 || threshold > 1) {
+                throw new Error(`Invalid value for --threshold: must be between 0 and 1`);
+              }
             }
 
             let minRelevance: number | undefined;
@@ -108,6 +111,9 @@ export function createSearchCommand(getOptions: () => GlobalOptions): Command {
                 throw new Error(
                   `Invalid value for --min-relevance: "${options.minRelevance}" is not a valid number`
                 );
+              }
+              if (minRelevance < 0 || minRelevance > 1) {
+                throw new Error(`Invalid value for --min-relevance: must be between 0 and 1`);
               }
             }
 
