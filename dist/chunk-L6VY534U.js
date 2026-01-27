@@ -1320,6 +1320,8 @@ var storeCommands = [
 ];
 
 // src/mcp/commands/sync.commands.ts
+import { rm as rm2 } from "fs/promises";
+import { join as join2 } from "path";
 import { z as z6 } from "zod";
 var logger5 = createLogger("mcp-sync");
 async function handleStoresSync(args, context) {
@@ -1377,6 +1379,14 @@ async function handleStoresSync(args, context) {
       for (const orphanName of result.orphans) {
         const store = await services.store.getByName(orphanName);
         if (store !== void 0) {
+          await services.lance.deleteStore(store.id);
+          await services.codeGraph.deleteGraph(store.id);
+          await services.manifest.delete(store.id);
+          if (store.type === "repo" && "url" in store && store.url !== void 0) {
+            const dataDir = services.config.resolveDataDir();
+            const repoPath = join2(dataDir, "repos", store.id);
+            await rm2(repoPath, { recursive: true, force: true });
+          }
           const deleteResult = await services.store.delete(store.id, { skipDefinitionSync: true });
           if (deleteResult.success) {
             result.pruned.push(orphanName);
@@ -1390,10 +1400,7 @@ async function handleStoresSync(args, context) {
       result.wouldReindex = [...result.skipped];
     } else {
       result.reindexJobs = [];
-      const dataDir = options.dataDir;
-      if (dataDir === void 0) {
-        throw new Error("dataDir is required for reindexing");
-      }
+      const dataDir = options.dataDir ?? services.config.resolveDataDir();
       const jobService = new JobService(dataDir);
       for (const storeName of result.skipped) {
         const store = await services.store.getByName(storeName);
@@ -1523,9 +1530,9 @@ import { z as z7 } from "zod";
 
 // src/mcp/handlers/uninstall.handler.ts
 import { existsSync } from "fs";
-import { readdir, rm as rm2 } from "fs/promises";
+import { readdir, rm as rm3 } from "fs/promises";
 import { homedir } from "os";
-import { join as join2 } from "path";
+import { join as join3 } from "path";
 var logger6 = createLogger("uninstall-handler");
 var handleUninstall = async (args, context) => {
   const { global: includeGlobal = false, keepDefinitions = true } = args;
@@ -1533,20 +1540,20 @@ var handleUninstall = async (args, context) => {
   const kept = [];
   const errors = [];
   const projectRoot = context.options.projectRoot ?? process.cwd();
-  const projectDataDir = join2(projectRoot, ".bluera", "bluera-knowledge");
+  const projectDataDir = join3(projectRoot, ".bluera", "bluera-knowledge");
   logger6.info({ projectDataDir, includeGlobal, keepDefinitions }, "Starting uninstall");
   if (existsSync(projectDataDir)) {
     if (keepDefinitions) {
       try {
         const entries = await readdir(projectDataDir, { withFileTypes: true });
         for (const entry of entries) {
-          const entryPath = join2(projectDataDir, entry.name);
+          const entryPath = join3(projectDataDir, entry.name);
           if (entry.name === "stores.config.json") {
             kept.push(entryPath);
             continue;
           }
           try {
-            await rm2(entryPath, { recursive: true, force: true });
+            await rm3(entryPath, { recursive: true, force: true });
             deleted.push(entryPath);
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
@@ -1561,7 +1568,7 @@ var handleUninstall = async (args, context) => {
       }
     } else {
       try {
-        await rm2(projectDataDir, { recursive: true, force: true });
+        await rm3(projectDataDir, { recursive: true, force: true });
         deleted.push(projectDataDir);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -1571,10 +1578,10 @@ var handleUninstall = async (args, context) => {
     }
   }
   if (includeGlobal) {
-    const globalDir = join2(homedir(), ".local", "share", "bluera-knowledge");
+    const globalDir = join3(homedir(), ".local", "share", "bluera-knowledge");
     if (existsSync(globalDir)) {
       try {
-        await rm2(globalDir, { recursive: true, force: true });
+        await rm3(globalDir, { recursive: true, force: true });
         deleted.push(globalDir);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -2195,4 +2202,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-W2NW7KBA.js.map
+//# sourceMappingURL=chunk-L6VY534U.js.map

@@ -16,16 +16,25 @@ vi.mock('../../workers/spawn-worker.js', () => ({
 /**
  * Create a minimal mock service container for testing
  */
-function createMockServices(storeService: StoreService): ServiceContainer {
+function createMockServices(storeService: StoreService, dataDir?: string): ServiceContainer {
   return {
     store: storeService,
-    // Other services not needed for sync tests
-    config: {} as ServiceContainer['config'],
+    // Mock services needed for sync prune cleanup
+    config: {
+      resolveDataDir: vi.fn().mockReturnValue(dataDir ?? '/tmp/mock-data-dir'),
+    } as unknown as ServiceContainer['config'],
     search: {} as ServiceContainer['search'],
     index: {} as ServiceContainer['index'],
-    lance: {} as ServiceContainer['lance'],
+    lance: {
+      deleteStore: vi.fn().mockResolvedValue(undefined),
+    } as unknown as ServiceContainer['lance'],
     embeddings: {} as ServiceContainer['embeddings'],
-    codeGraph: {} as ServiceContainer['codeGraph'],
+    codeGraph: {
+      deleteGraph: vi.fn().mockResolvedValue(undefined),
+    } as unknown as ServiceContainer['codeGraph'],
+    manifest: {
+      delete: vi.fn().mockResolvedValue(undefined),
+    } as unknown as ServiceContainer['manifest'],
     pythonBridge: {} as ServiceContainer['pythonBridge'],
   };
 }
@@ -78,7 +87,7 @@ describe('sync.commands', () => {
       await storeService.initialize();
 
       context = {
-        services: createMockServices(storeService),
+        services: createMockServices(storeService, dataDir),
         options: { projectRoot, dataDir },
       };
     });
@@ -346,25 +355,29 @@ describe('sync.commands', () => {
         expect(response.wouldReindex).toBeUndefined();
       });
 
-      it('throws error when dataDir is undefined during reindex', async () => {
+      it('resolves dataDir from config when options.dataDir is undefined', async () => {
         const docsDir = join(projectRoot, 'docs');
         await mkdir(docsDir, { recursive: true });
 
         await storeService.create({
-          name: 'error-store',
+          name: 'resolved-store',
           type: 'file',
           path: docsDir,
         });
 
-        // Create context without dataDir
+        // Create context without dataDir - will use services.config.resolveDataDir()
+        const mockDataDir = '/tmp/resolved-data-dir';
         const contextWithoutDataDir: HandlerContext = {
-          services: createMockServices(storeService),
+          services: createMockServices(storeService, mockDataDir),
           options: { projectRoot },
         };
 
-        await expect(handleStoresSync({ reindex: true }, contextWithoutDataDir)).rejects.toThrow(
-          'dataDir is required for reindexing'
-        );
+        // Should succeed using resolved dataDir from config
+        const result = await handleStoresSync({ reindex: true }, contextWithoutDataDir);
+        const response = JSON.parse(result.content[0].text);
+
+        expect(response.reindexJobs).toHaveLength(1);
+        expect(response.reindexJobs[0].store).toBe('resolved-store');
       });
     });
   });

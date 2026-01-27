@@ -1,3 +1,5 @@
+import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { z } from 'zod';
 import { createLogger } from '../../logging/index.js';
 import { JobService } from '../../services/job.service.js';
@@ -121,6 +123,18 @@ export async function handleStoresSync(
       for (const orphanName of result.orphans) {
         const store = await services.store.getByName(orphanName);
         if (store !== undefined) {
+          // Full cleanup like CLI sync --prune
+          await services.lance.deleteStore(store.id);
+          await services.codeGraph.deleteGraph(store.id);
+          await services.manifest.delete(store.id);
+
+          // For repo stores cloned from URL, remove the cloned directory
+          if (store.type === 'repo' && 'url' in store && store.url !== undefined) {
+            const dataDir = services.config.resolveDataDir();
+            const repoPath = join(dataDir, 'repos', store.id);
+            await rm(repoPath, { recursive: true, force: true });
+          }
+
           const deleteResult = await services.store.delete(store.id, { skipDefinitionSync: true });
           if (deleteResult.success) {
             result.pruned.push(orphanName);
@@ -136,10 +150,7 @@ export async function handleStoresSync(
       result.wouldReindex = [...result.skipped];
     } else {
       result.reindexJobs = [];
-      const dataDir = options.dataDir;
-      if (dataDir === undefined) {
-        throw new Error('dataDir is required for reindexing');
-      }
+      const dataDir = options.dataDir ?? services.config.resolveDataDir();
       const jobService = new JobService(dataDir);
 
       for (const storeName of result.skipped) {
