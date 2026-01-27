@@ -1354,10 +1354,9 @@ function createApp(services, dataDir) {
 
 // src/cli/commands/serve.ts
 function createServeCommand(getOptions) {
-  return new Command6("serve").description("Start HTTP API server for programmatic search access").option("-p, --port <port>", "Port to listen on (default: 3847)", "3847").option(
+  return new Command6("serve").description("Start HTTP API server for programmatic search access").option("-p, --port <port>", "Port to listen on (reads from config if not specified)").option(
     "--host <host>",
-    "Bind address (default: 127.0.0.1, use 0.0.0.0 for all interfaces)",
-    "127.0.0.1"
+    "Bind address (reads from config if not specified, use 0.0.0.0 for all interfaces)"
   ).action(async (options) => {
     const globalOpts = getOptions();
     const services = await createServices(
@@ -1365,12 +1364,18 @@ function createServeCommand(getOptions) {
       globalOpts.dataDir,
       globalOpts.projectRoot
     );
+    const appConfig = await services.config.load();
     const app = createApp(services, globalOpts.dataDir);
-    const port = parseInt(options.port, 10);
-    if (Number.isNaN(port)) {
-      throw new Error(`Invalid value for --port: "${options.port}" is not a valid integer`);
+    let port;
+    if (options.port !== void 0) {
+      port = parseInt(options.port, 10);
+      if (Number.isNaN(port)) {
+        throw new Error(`Invalid value for --port: "${options.port}" is not a valid integer`);
+      }
+    } else {
+      port = appConfig.server.port;
     }
-    const host = options.host;
+    const host = options.host ?? appConfig.server.host;
     console.log(`Starting server on http://${host}:${String(port)}`);
     const server = serve({
       fetch: app.fetch,

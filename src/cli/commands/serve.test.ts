@@ -53,6 +53,14 @@ describe('Serve Command - Execution Tests', () => {
       index: {
         indexStore: vi.fn(),
       },
+      config: {
+        load: vi.fn().mockResolvedValue({
+          server: {
+            port: 3847,
+            host: '127.0.0.1',
+          },
+        }),
+      },
     } as unknown as ServiceContainer;
 
     vi.mocked(createServices).mockResolvedValue(mockServices);
