@@ -52,6 +52,19 @@ export const storeCommands: CommandDefinition[] = [
       source: z.string().min(1).describe('Git URL, local path, or web URL'),
       branch: z.string().optional().describe('Git branch (for repo type)'),
       description: z.string().optional().describe('Store description'),
+      tags: z.array(z.string()).optional().describe('Tags for categorizing the store'),
+      depth: z.number().int().positive().optional().describe('Git clone depth (for repo type)'),
+      maxPages: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe('Maximum pages to crawl (for web type)'),
+      crawlInstructions: z.string().optional().describe('Instructions for crawler (for web type)'),
+      extractInstructions: z
+        .string()
+        .optional()
+        .describe('Instructions for content extraction (for web type)'),
     }),
     handler: (args, context) => handleCreateStore(args as unknown as CreateStoreArgs, context),
   },

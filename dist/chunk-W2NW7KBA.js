@@ -1292,7 +1292,12 @@ var storeCommands = [
       type: z5.enum(["file", "repo", "web"]).describe("Store type"),
       source: z5.string().min(1).describe("Git URL, local path, or web URL"),
       branch: z5.string().optional().describe("Git branch (for repo type)"),
-      description: z5.string().optional().describe("Store description")
+      description: z5.string().optional().describe("Store description"),
+      tags: z5.array(z5.string()).optional().describe("Tags for categorizing the store"),
+      depth: z5.number().int().positive().optional().describe("Git clone depth (for repo type)"),
+      maxPages: z5.number().int().positive().optional().describe("Maximum pages to crawl (for web type)"),
+      crawlInstructions: z5.string().optional().describe("Instructions for crawler (for web type)"),
+      extractInstructions: z5.string().optional().describe("Instructions for content extraction (for web type)")
     }),
     handler: (args, context) => handleCreateStore(args, context)
   },
@@ -2190,4 +2195,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-D5IWPFGG.js.map
+//# sourceMappingURL=chunk-W2NW7KBA.js.map
