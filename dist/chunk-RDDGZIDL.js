@@ -2644,33 +2644,113 @@ var DriftService = class {
 // src/services/index.service.ts
 var logger = createLogger("index-service");
 var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([
+  // Text/docs
   ".txt",
   ".md",
+  ".rst",
+  ".adoc",
+  // JavaScript/TypeScript
   ".js",
   ".ts",
   ".jsx",
   ".tsx",
+  ".mjs",
+  ".cjs",
+  ".mts",
+  ".cts",
+  // Config/data
   ".json",
   ".yaml",
   ".yml",
+  ".toml",
+  ".ini",
+  ".env",
+  // Web
   ".html",
+  ".htm",
   ".css",
   ".scss",
+  ".sass",
   ".less",
+  ".vue",
+  ".svelte",
+  // Python
   ".py",
+  ".pyi",
+  ".pyx",
+  // Ruby
   ".rb",
+  ".erb",
+  ".rake",
+  // Go
   ".go",
+  // Rust
   ".rs",
+  // Java/JVM
   ".java",
+  ".kt",
+  ".kts",
+  ".scala",
+  ".groovy",
+  ".gradle",
+  // C/C++
   ".c",
   ".cpp",
+  ".cc",
+  ".cxx",
   ".h",
   ".hpp",
+  ".hxx",
+  // C#/.NET
+  ".cs",
+  ".fs",
+  ".vb",
+  // Swift/Objective-C
+  ".swift",
+  ".m",
+  ".mm",
+  // PHP
+  ".php",
+  // Shell
   ".sh",
   ".bash",
   ".zsh",
+  ".fish",
+  ".ps1",
+  ".psm1",
+  // SQL
   ".sql",
-  ".xml"
+  // Other
+  ".xml",
+  ".graphql",
+  ".gql",
+  ".proto",
+  ".lua",
+  ".r",
+  ".R",
+  ".jl",
+  ".ex",
+  ".exs",
+  ".erl",
+  ".hrl",
+  ".clj",
+  ".cljs",
+  ".cljc",
+  ".hs",
+  ".elm",
+  ".dart",
+  ".pl",
+  ".pm",
+  ".tcl",
+  ".vim",
+  ".zig",
+  ".nim",
+  ".v",
+  ".tf",
+  ".hcl",
+  ".dockerfile",
+  ".makefile",
+  ".cmake"
 ]);
 var IndexService = class {
   lanceStore;
@@ -5896,4 +5976,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-H2O6F75B.js.map
+//# sourceMappingURL=chunk-RDDGZIDL.js.map
