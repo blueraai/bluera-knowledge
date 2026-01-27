@@ -135,6 +135,10 @@ export class BackgroundWorker {
       progress: 30,
     });
 
+    // Initialize LanceStore with dimensions before indexing
+    this.lanceStore.setDimensions(await this.embeddingEngine.ensureDimensions());
+    await this.lanceStore.initialize(store.id);
+
     // Index the repository with progress updates
     const result = await this.indexService.indexStore(
       store,
@@ -180,6 +184,10 @@ export class BackgroundWorker {
     if (!store) {
       throw new Error(`Store ${storeId} not found`);
     }
+
+    // Initialize LanceStore with dimensions before indexing
+    this.lanceStore.setDimensions(await this.embeddingEngine.ensureDimensions());
+    await this.lanceStore.initialize(store.id);
 
     // Index with progress updates
     const result = await this.indexService.indexStore(
@@ -253,6 +261,7 @@ export class BackgroundWorker {
     });
 
     try {
+      this.lanceStore.setDimensions(await this.embeddingEngine.ensureDimensions());
       await this.lanceStore.initialize(store.id);
       const docs: Document[] = [];
 

@@ -107,6 +107,8 @@ var BackgroundWorker = class {
       message: "Repository cloned, starting indexing...",
       progress: 30
     });
+    this.lanceStore.setDimensions(await this.embeddingEngine.ensureDimensions());
+    await this.lanceStore.initialize(store.id);
     const result = await this.indexService.indexStore(
       store,
       (event) => {
@@ -143,6 +145,8 @@ var BackgroundWorker = class {
     if (!store) {
       throw new Error(`Store ${storeId} not found`);
     }
+    this.lanceStore.setDimensions(await this.embeddingEngine.ensureDimensions());
+    await this.lanceStore.initialize(store.id);
     const result = await this.indexService.indexStore(
       store,
       (event) => {
@@ -196,6 +200,7 @@ var BackgroundWorker = class {
       });
     });
     try {
+      this.lanceStore.setDimensions(await this.embeddingEngine.ensureDimensions());
       await this.lanceStore.initialize(store.id);
       const docs = [];
       const crawlOptions = {
