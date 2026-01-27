@@ -2042,7 +2042,7 @@ var version = getVersion();
 function createProgram() {
   const program2 = new Command10();
   program2.name("bluera-knowledge").description("CLI tool for managing knowledge stores with semantic search").version(version);
-  program2.option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", "Data directory").option("-p, --project-root <path>", "Project root directory (for resolving relative paths)").option("-f, --format <format>", "Output format: json | table | plain", "table").option("-q, --quiet", "Suppress non-essential output").option("-v, --verbose", "Enable verbose logging");
+  program2.option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", "Data directory").option("-p, --project-root <path>", "Project root directory (for resolving relative paths)").option("-f, --format <format>", "Output format: json | table | plain", "table").option("-q, --quiet", "Suppress non-essential output");
   return program2;
 }
 function getGlobalOptions(program2) {
@@ -2052,8 +2052,7 @@ function getGlobalOptions(program2) {
     dataDir: opts.dataDir,
     projectRoot: opts.projectRoot,
     format: opts.format,
-    quiet: opts.quiet,
-    verbose: opts.verbose
+    quiet: opts.quiet
   };
 }
 

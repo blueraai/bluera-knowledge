@@ -31,8 +31,7 @@ export function createProgram(): Command {
     .option('-d, --data-dir <path>', 'Data directory')
     .option('-p, --project-root <path>', 'Project root directory (for resolving relative paths)')
     .option('-f, --format <format>', 'Output format: json | table | plain', 'table')
-    .option('-q, --quiet', 'Suppress non-essential output')
-    .option('-v, --verbose', 'Enable verbose logging');
+    .option('-q, --quiet', 'Suppress non-essential output');
 
   return program;
 }
@@ -43,7 +42,6 @@ export interface GlobalOptions {
   projectRoot?: string | undefined;
   format: 'json' | 'table' | 'plain';
   quiet?: boolean | undefined;
-  verbose?: boolean | undefined;
 }
 
 export function getGlobalOptions(program: Command): GlobalOptions {
@@ -54,6 +52,5 @@ export function getGlobalOptions(program: Command): GlobalOptions {
     projectRoot: opts.projectRoot,
     format: opts.format,
     quiet: opts.quiet,
-    verbose: opts.verbose,
   };
 }
