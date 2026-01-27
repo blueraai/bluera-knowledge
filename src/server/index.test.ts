@@ -82,6 +82,9 @@ describe('Server Integration - Store CRUD Flow', () => {
       manifest: {
         delete: vi.fn().mockResolvedValue(undefined),
       },
+      config: {
+        resolveDataDir: vi.fn().mockReturnValue('/tmp/data'),
+      },
       search: {
         search: vi.fn(),
       },
@@ -446,6 +449,9 @@ describe('Server Integration - HTTP Methods', () => {
       },
       manifest: {
         delete: vi.fn().mockResolvedValue(undefined),
+      },
+      config: {
+        resolveDataDir: vi.fn().mockReturnValue('/tmp/data'),
       },
       search: {
         search: vi.fn(),

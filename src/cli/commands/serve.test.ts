@@ -87,7 +87,7 @@ describe('Serve Command - Execution Tests', () => {
       await actionHandler([]);
 
       expect(createServices).toHaveBeenCalledWith(undefined, '/tmp/test-data', undefined);
-      expect(createApp).toHaveBeenCalledWith(mockServices, '/tmp/test-data');
+      expect(createApp).toHaveBeenCalledWith(mockServices);
       expect(serve).toHaveBeenCalledWith({
         fetch: expect.any(Function),
         port: 3847,
@@ -184,7 +184,7 @@ describe('Serve Command - Execution Tests', () => {
       const actionHandler = (command as any)._actionHandler;
       await actionHandler([]);
 
-      expect(createApp).toHaveBeenCalledWith(mockServices, '/tmp/test-data');
+      expect(createApp).toHaveBeenCalledWith(mockServices);
     });
 
     it('passes app fetch to serve', async () => {

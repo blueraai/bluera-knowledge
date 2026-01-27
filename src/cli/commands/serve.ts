@@ -22,7 +22,7 @@ export function createServeCommand(getOptions: () => GlobalOptions): Command {
 
       // Load config for defaults
       const appConfig = await services.config.load();
-      const app = createApp(services, globalOpts.dataDir);
+      const app = createApp(services);
 
       // Use config defaults, CLI flags override
       let port: number;

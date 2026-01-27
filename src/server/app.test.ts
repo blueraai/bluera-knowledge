@@ -412,6 +412,9 @@ describe('Server App - DELETE /api/stores/:id', () => {
       manifest: {
         delete: vi.fn().mockResolvedValue(undefined),
       },
+      config: {
+        resolveDataDir: vi.fn().mockReturnValue('/tmp/data'),
+      },
     } as unknown as ServiceContainer;
   });
 

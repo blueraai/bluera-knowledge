@@ -1271,7 +1271,7 @@ var SearchBodySchema = z.object({
   limit: z.number().int().positive().optional(),
   stores: z.array(z.string()).optional()
 });
-function createApp(services, dataDir) {
+function createApp(services) {
   const app = new Hono();
   app.use("*", cors());
   app.get("/health", (c) => c.json({ status: "ok" }));
@@ -1302,7 +1302,8 @@ function createApp(services, dataDir) {
     await services.lance.deleteStore(store.id);
     await services.codeGraph.deleteGraph(store.id);
     await services.manifest.delete(store.id);
-    if (store.type === "repo" && "url" in store && store.url !== void 0 && dataDir !== void 0 && store.path.startsWith(join2(dataDir, "repos"))) {
+    const resolvedDataDir = services.config.resolveDataDir();
+    if (store.type === "repo" && "url" in store && store.url !== void 0 && store.path.startsWith(join2(resolvedDataDir, "repos"))) {
       await rm(store.path, { recursive: true, force: true });
     }
     const result = await services.store.delete(store.id);
@@ -1366,7 +1367,7 @@ function createServeCommand(getOptions) {
       globalOpts.projectRoot
     );
     const appConfig = await services.config.load();
-    const app = createApp(services, globalOpts.dataDir);
+    const app = createApp(services);
     let port;
     if (options.port !== void 0) {
       port = parseInt(options.port, 10);

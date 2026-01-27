@@ -42,7 +42,7 @@ const SearchBodySchema = z.object({
   stores: z.array(z.string()).optional(),
 });
 
-export function createApp(services: ServiceContainer, dataDir?: string): Hono {
+export function createApp(services: ServiceContainer): Hono {
   const app = new Hono();
 
   app.use('*', cors());
@@ -90,12 +90,12 @@ export function createApp(services: ServiceContainer, dataDir?: string): Hono {
 
     // For repo stores cloned from URL, remove the cloned directory
     // Only delete if path is within our data directory (cloned repos)
+    const resolvedDataDir = services.config.resolveDataDir();
     if (
       store.type === 'repo' &&
       'url' in store &&
       store.url !== undefined &&
-      dataDir !== undefined &&
-      store.path.startsWith(join(dataDir, 'repos'))
+      store.path.startsWith(join(resolvedDataDir, 'repos'))
     ) {
       await rm(store.path, { recursive: true, force: true });
     }
