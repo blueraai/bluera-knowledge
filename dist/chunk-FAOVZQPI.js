@@ -5874,6 +5874,7 @@ async function destroyServices(services) {
 
 export {
   AdapterRegistry,
+  ProjectRootService,
   createLogger,
   shutdownLogger,
   summarizePayload,
@@ -5895,4 +5896,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-5QQLGZBQ.js.map
+//# sourceMappingURL=chunk-FAOVZQPI.js.map

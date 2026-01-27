@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { Command } from 'commander';
 import { createServices, destroyServices } from '../../services/index.js';
 import { JobService } from '../../services/job.service.js';
+import { ProjectRootService } from '../../services/project-root.service.js';
 import { StoreDefinitionService } from '../../services/store-definition.service.js';
 import {
   isFileStoreDefinition,
@@ -114,7 +115,7 @@ export function createSyncCommand(getOptions: () => GlobalOptions): Command {
     .option('--reindex', 'Re-index existing stores after sync')
     .action(async (options: { dryRun?: boolean; prune?: boolean; reindex?: boolean }) => {
       const globalOpts = getOptions();
-      const projectRoot = globalOpts.projectRoot ?? process.cwd();
+      const projectRoot = globalOpts.projectRoot ?? ProjectRootService.resolve();
 
       const defService = new StoreDefinitionService(projectRoot);
       const services = await createServices(globalOpts.config, globalOpts.dataDir, projectRoot);

@@ -3,16 +3,17 @@ import {
   ZilAdapter,
   runMCPServer,
   spawnBackgroundWorker
-} from "./chunk-L6VY534U.js";
+} from "./chunk-APFHTPVY.js";
 import {
   IntelligentCrawler,
   getCrawlStrategy
-} from "./chunk-5SVN4SJA.js";
+} from "./chunk-B5BBLIE5.js";
 import {
   ASTParser,
   AdapterRegistry,
   ChunkingService,
   JobService,
+  ProjectRootService,
   StoreDefinitionService,
   classifyWebContentType,
   createServices,
@@ -24,7 +25,7 @@ import {
   isRepoStoreDefinition,
   isWebStoreDefinition,
   ok
-} from "./chunk-5QQLGZBQ.js";
+} from "./chunk-FAOVZQPI.js";
 import {
   createDocumentId
 } from "./chunk-CLIMKLTW.js";
@@ -1845,7 +1846,7 @@ function createSyncCommand(getOptions) {
   );
   sync.option("--dry-run", "Show what would happen without making changes").option("--prune", "Remove stores not in definitions").option("--reindex", "Re-index existing stores after sync").action(async (options) => {
     const globalOpts = getOptions();
-    const projectRoot = globalOpts.projectRoot ?? process.cwd();
+    const projectRoot = globalOpts.projectRoot ?? ProjectRootService.resolve();
     const defService = new StoreDefinitionService(projectRoot);
     const services = await createServices(globalOpts.config, globalOpts.dataDir, projectRoot);
     try {
