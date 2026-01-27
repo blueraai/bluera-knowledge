@@ -184,10 +184,26 @@ export const handleCreateStore: ToolHandler<CreateStoreArgs> = async (
   if ('path' in result.data && result.data.path) {
     jobDetails['path'] = result.data.path;
   }
+  // Add crawl options for web stores
+  if (validated.type === 'web') {
+    if (validated.maxPages !== undefined) {
+      jobDetails['maxPages'] = validated.maxPages;
+    }
+    if (validated.crawlInstructions !== undefined) {
+      jobDetails['crawlInstruction'] = validated.crawlInstructions;
+    }
+    if (validated.extractInstructions !== undefined) {
+      jobDetails['extractInstruction'] = validated.extractInstructions;
+    }
+  }
   const job = jobService.createJob({
-    type: validated.type === 'repo' && isUrl ? 'clone' : 'index',
+    type:
+      validated.type === 'web' ? 'crawl' : validated.type === 'repo' && isUrl ? 'clone' : 'index',
     details: jobDetails,
-    message: `Indexing ${result.data.name}...`,
+    message:
+      validated.type === 'web'
+        ? `Crawling ${result.data.name}...`
+        : `Indexing ${result.data.name}...`,
   });
 
   // Spawn background worker

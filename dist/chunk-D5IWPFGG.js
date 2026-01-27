@@ -1116,10 +1116,21 @@ var handleCreateStore = async (args, context) => {
   if ("path" in result.data && result.data.path) {
     jobDetails["path"] = result.data.path;
   }
+  if (validated.type === "web") {
+    if (validated.maxPages !== void 0) {
+      jobDetails["maxPages"] = validated.maxPages;
+    }
+    if (validated.crawlInstructions !== void 0) {
+      jobDetails["crawlInstruction"] = validated.crawlInstructions;
+    }
+    if (validated.extractInstructions !== void 0) {
+      jobDetails["extractInstruction"] = validated.extractInstructions;
+    }
+  }
   const job = jobService.createJob({
-    type: validated.type === "repo" && isUrl ? "clone" : "index",
+    type: validated.type === "web" ? "crawl" : validated.type === "repo" && isUrl ? "clone" : "index",
     details: jobDetails,
-    message: `Indexing ${result.data.name}...`
+    message: validated.type === "web" ? `Crawling ${result.data.name}...` : `Indexing ${result.data.name}...`
   });
   spawnBackgroundWorker(job.id, options.dataDir);
   logger4.info(
@@ -2179,4 +2190,4 @@ export {
   createMCPServer,
   runMCPServer
 };
-//# sourceMappingURL=chunk-JBV7HNO2.js.map
+//# sourceMappingURL=chunk-D5IWPFGG.js.map
