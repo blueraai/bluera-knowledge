@@ -1,8 +1,25 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
+import { execSync } from 'node:child_process';
 import { PythonBridge } from '../../src/crawl/bridge.js';
 import { TestHTMLServer } from '../fixtures/test-server.js';
 
-describe('Python Bridge Integration Tests', () => {
+/**
+ * Check if crawl4ai is available by trying to import it.
+ * Returns true if crawl4ai is installed, false otherwise.
+ */
+function isCrawl4aiAvailable(): boolean {
+  try {
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    execSync(`${pythonCmd} -c "import crawl4ai"`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const crawl4aiAvailable = isCrawl4aiAvailable();
+
+describe.skipIf(!crawl4aiAvailable)('Python Bridge Integration Tests', () => {
   let bridge: PythonBridge;
   let server: TestHTMLServer;
   let baseUrl: string;

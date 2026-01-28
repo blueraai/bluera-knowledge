@@ -30,10 +30,13 @@ describe('CLI Integration', () => {
   });
 
   const cli = (args: string): string => {
-    return execSync(`node dist/index.js ${args} --data-dir "${tempDir}"`, {
-      encoding: 'utf-8',
-      timeout: 120000,
-    });
+    return execSync(
+      `node dist/index.js ${args} --data-dir "${tempDir}" --project-root "${tempDir}"`,
+      {
+        encoding: 'utf-8',
+        timeout: 120000,
+      }
+    );
   };
 
   it('shows help', () => {

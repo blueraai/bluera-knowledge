@@ -61,6 +61,7 @@ describe('E2E Workflow Tests', () => {
     lanceStore = new LanceStore(tempDir);
     embeddingEngine = new EmbeddingEngine();
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
 
     storeService = new StoreService(tempDir);
     await storeService.initialize();

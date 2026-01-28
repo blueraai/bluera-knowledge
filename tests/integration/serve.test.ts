@@ -60,7 +60,16 @@ describe('Serve Integration', () => {
     return new Promise((resolve, reject) => {
       const proc = spawn(
         'node',
-        ['dist/index.js', 'serve', '--port', String(port), '--data-dir', tempDir],
+        [
+          'dist/index.js',
+          'serve',
+          '--port',
+          String(port),
+          '--data-dir',
+          tempDir,
+          '--project-root',
+          tempDir,
+        ],
         {
           stdio: ['pipe', 'pipe', 'pipe'],
         }

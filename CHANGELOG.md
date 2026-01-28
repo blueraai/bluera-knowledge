@@ -2,6 +2,96 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.18.0](https://github.com/blueraai/bluera-knowledge/compare/v0.17.2...v0.18.0) (2026-01-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **index:** Existing stores need to be re-indexed as document IDs
+have changed format. Run `bluera-knowledge index <store>` to rebuild.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+
+### Features
+
+* add atomic file writes for crash-safe operations ([0392d94](https://github.com/blueraai/bluera-knowledge/commit/0392d94d84319deaa98fdcbd9f4a6f17b6fe4dfe))
+* add two-phase drift detection for incremental indexing ([a05e101](https://github.com/blueraai/bluera-knowledge/commit/a05e1010a4f211d571f0719c5d65d43f9c6d2149))
+* **index:** expand supported file extensions ([c585435](https://github.com/blueraai/bluera-knowledge/commit/c5854354e44b8335b91b452869b1669b1ffedd55))
+* **mcp:** add missing store schema fields ([ae5ecd3](https://github.com/blueraai/bluera-knowledge/commit/ae5ecd3ea4b119b65a9148257493b854f4d1b5bc))
+* **mcp:** add web store support to store:create ([d71aac4](https://github.com/blueraai/bluera-knowledge/commit/d71aac4aec9c5a47c3fa6f13437584494dfbd22c))
+* **store:** preserve web store crawl options in sync ([838a9b5](https://github.com/blueraai/bluera-knowledge/commit/838a9b5085ed87cb69252642b7f720630a6f8c6a))
+
+
+### Bug Fixes
+
+* address 9 code bugs from CODEX-15 analysis ([6f324ff](https://github.com/blueraai/bluera-knowledge/commit/6f324ffbb49eeb63c3d30057f8cabab7b02de457))
+* **analysis:** add .bluera to dependency analyzer ignore list ([10ad335](https://github.com/blueraai/bluera-knowledge/commit/10ad335cb8280a61b2b37f4b6d14ae941cc1b109))
+* **bridge:** use platform-agnostic path detection ([7f75c43](https://github.com/blueraai/bluera-knowledge/commit/7f75c43e26c948b6a5b523c7595061cfc3589c29))
+* **cache:** add event-based graph cache invalidation ([1288932](https://github.com/blueraai/bluera-knowledge/commit/128893216e41195317ab86bdf4b215d1b0bfb4f4))
+* **chunking:** match export default declarations ([8fb074f](https://github.com/blueraai/bluera-knowledge/commit/8fb074f337b4dbdaed98720f0d6cbdb81014b45e))
+* **chunking:** validate chunkOverlap < chunkSize ([10a7c9c](https://github.com/blueraai/bluera-knowledge/commit/10a7c9c6374bf256f2a7081f737911d03153f556))
+* **cli:** add missing manifest cleanup to store delete ([3c6dd43](https://github.com/blueraai/bluera-knowledge/commit/3c6dd43ef3b3cc12fed03466dfc73ba3dbe12ef4))
+* **cli:** add NaN validation for numeric options ([16b174d](https://github.com/blueraai/bluera-knowledge/commit/16b174d1126e342c8b5368c04f2a099d1de6d19e))
+* **cli:** correct default paths in help text ([e1385b2](https://github.com/blueraai/bluera-knowledge/commit/e1385b29f3678a4b1cfee652f7158d677c7b612c))
+* **cli:** correct repo path in help text ([3acf615](https://github.com/blueraai/bluera-knowledge/commit/3acf615e845acf3e0f26308e7abe2a71c9f8d3a5))
+* **cli:** pass projectRoot to createServices in CLI commands ([6e245c7](https://github.com/blueraai/bluera-knowledge/commit/6e245c7b5d6ba71cdd842ec65dfb9d064cb9c46a))
+* **cli:** standardize process termination to avoid cleanup bypass ([6b27ffc](https://github.com/blueraai/bluera-knowledge/commit/6b27ffc54ae29d0f717442ea375a1c9010f40b20))
+* **cli:** support SSH git URLs in store create ([911761c](https://github.com/blueraai/bluera-knowledge/commit/911761c1e07035b0581442fe9b80bfc5c1893cd1))
+* **config:** implement deep merge for partial configs ([451c8a6](https://github.com/blueraai/bluera-knowledge/commit/451c8a6ca5a82d8004a1ce55f12bca34933f30e6))
+* **config:** prefer git root over PWD for project root resolution ([aed612c](https://github.com/blueraai/bluera-knowledge/commit/aed612ce161d2da10749fa38af35a30ae09445c1))
+* **config:** remove unused search config fields ([515abad](https://github.com/blueraai/bluera-knowledge/commit/515abad947a11c8b5fa156a71bbf88e78c42b5a3))
+* **config:** resolve explicit paths against projectRoot ([3dcb12a](https://github.com/blueraai/bluera-knowledge/commit/3dcb12a38a16352ecd4b986f254d02d1cd9535da))
+* **config:** use path.isAbsolute() for Windows compatibility ([282c802](https://github.com/blueraai/bluera-knowledge/commit/282c802bf17ef6ad22f2e7410b4fcbc9999945c7))
+* **config:** wire up crawl config to intelligent crawler ([81468d2](https://github.com/blueraai/bluera-knowledge/commit/81468d2238e08766b32236d3863d682e0c3699ae))
+* **config:** wire up embedding batchSize from config ([ae4913f](https://github.com/blueraai/bluera-knowledge/commit/ae4913f4705d3c751ce2a000733650c622012c89))
+* **config:** wire up ignorePatterns from config ([ed950f2](https://github.com/blueraai/bluera-knowledge/commit/ed950f21be3d402d72d411d15039736715d32973))
+* **config:** wire up search defaults from config ([74bd956](https://github.com/blueraai/bluera-knowledge/commit/74bd956eba59d47e6107a29f8f7e7c028376b45b))
+* **coverage:** improve branch coverage toward 80.5% threshold ([bd5c95f](https://github.com/blueraai/bluera-knowledge/commit/bd5c95fa7a65b2545a05ac83d6c055b361f652aa))
+* **crawl:** clear existing documents before re-crawling web stores ([e4bc5b0](https://github.com/blueraai/bluera-knowledge/commit/e4bc5b0091e2e4931c156a50395e56366ba80317))
+* **crawl:** correct user agent typo in crawler ([f19a491](https://github.com/blueraai/bluera-knowledge/commit/f19a491aa47bd65774537cc26191d945cd59941f))
+* **crawl:** cross-platform Python executable detection ([782adc8](https://github.com/blueraai/bluera-knowledge/commit/782adc8804cafcc8dde1a9df95da35cd1d4b9622))
+* **embeddings:** derive dimensions dynamically from model output ([8ec0ac8](https://github.com/blueraai/bluera-knowledge/commit/8ec0ac811b9357ead91fbad7e63578fedd3bb7ce))
+* **http:** add full cleanup to DELETE /api/stores/:id ([91005de](https://github.com/blueraai/bluera-knowledge/commit/91005de7689315d7f638b9e2daede03654724d75))
+* **index:** handle unreadable files gracefully ([103ee63](https://github.com/blueraai/bluera-knowledge/commit/103ee636cf9109bc28c9d3dcd382136c1c326586))
+* **index:** implement --force flag with incremental indexing and duplicate prevention ([b3ad20b](https://github.com/blueraai/bluera-knowledge/commit/b3ad20b3cbaf79e354ec001110ac6af6da2780e2))
+* **index:** include file path in document ID to prevent collisions ([7abd023](https://github.com/blueraai/bluera-knowledge/commit/7abd023729e2ad7bc24e9c92f4b20b3c0b7b8d0c))
+* **index:** rebuild FTS index after document deletions ([0f8588b](https://github.com/blueraai/bluera-knowledge/commit/0f8588bdf7f83fadad13d33c82b0379b335e6e65))
+* **index:** rename documentsIndexed to filesIndexed ([c2870fa](https://github.com/blueraai/bluera-knowledge/commit/c2870fa93397350c5900987810460c2d7b0a1e37))
+* **index:** update code graphs on incremental indexing ([3446150](https://github.com/blueraai/bluera-knowledge/commit/344615074ba38c408f36f9c5a4e78a6fdafe97d9))
+* **lance:** connect on-demand in deleteStore ([cc5a25f](https://github.com/blueraai/bluera-knowledge/commit/cc5a25f3591e2c27e2689fef64ab03ce5dbe73ac))
+* **lance:** guard deleteDocuments against empty array ([617190c](https://github.com/blueraai/bluera-knowledge/commit/617190c16d500ec17a35435f257c7315bd64c098))
+* **mcp:** add full cleanup to sync prune and resolve dataDir ([afdf39c](https://github.com/blueraai/bluera-knowledge/commit/afdf39c42bf2eef763101c4da437c0a4b8911395))
+* **mcp:** add missing fields to store:create execute schema ([1e2a352](https://github.com/blueraai/bluera-knowledge/commit/1e2a35292efe994b485ee17df2434c5b55a13cb9))
+* **mcp:** add sync and uninstall to execute tool description ([cea50aa](https://github.com/blueraai/bluera-knowledge/commit/cea50aa611b117753cef00979b04a218bd8805a6))
+* **mcp:** correct stores:sync command name in execute tool description ([c4f09ca](https://github.com/blueraai/bluera-knowledge/commit/c4f09ca7bc9561b21eb5ee9c923d375958d4132f))
+* **mcp:** pass projectRoot to runMCPServer in CLI command ([9a2d6e7](https://github.com/blueraai/bluera-knowledge/commit/9a2d6e7461722d4f6a5af65af58428da43714179))
+* **mcp:** prevent bootstrap output from corrupting MCP stdio transport ([861f03f](https://github.com/blueraai/bluera-knowledge/commit/861f03fcd112fcfb145195852a3e1185c5707e39))
+* **mcp:** queue crawl job for web stores ([8314014](https://github.com/blueraai/bluera-knowledge/commit/8314014cc0303cf20b34f4772cc55aaa5df32699))
+* **mcp:** wire intent parameter through to search service ([305a608](https://github.com/blueraai/bluera-knowledge/commit/305a608668baa75b7cc93a65b88ef43d341b65e4))
+* **plugin:** replace process.exit with exitCode pattern ([a64c420](https://github.com/blueraai/bluera-knowledge/commit/a64c4201aabeee132b24e204c5770b7866df4862))
+* **search:** add changelog file type to ranking boosts ([035e414](https://github.com/blueraai/bluera-knowledge/commit/035e414481b416d0b59bf28f75d38bd07e08b870))
+* **search:** include storeId in deduplication key ([251ff40](https://github.com/blueraai/bluera-knowledge/commit/251ff40614b2005b56ca55c56313f2107dc78588))
+* **search:** skip minRelevance filter in FTS mode ([7429b79](https://github.com/blueraai/bluera-knowledge/commit/7429b79e18b746acc2caf7bf4b305e4803940bf1))
+* **search:** validate threshold/minRelevance range (0-1) ([320d977](https://github.com/blueraai/bluera-knowledge/commit/320d977316c0653c4ed3ab31dfec07c4755bd014))
+* **serve:** resolve dataDir for repo clone cleanup ([85abebe](https://github.com/blueraai/bluera-knowledge/commit/85abebe8e9f15255af356df98f2c7252019d61a3))
+* **server:** use store.path for repo deletion ([3b1c151](https://github.com/blueraai/bluera-knowledge/commit/3b1c151f7192e8f7ac9112ea79658b03b03d0fa3))
+* **serve:** use config values for host/port defaults ([b16812f](https://github.com/blueraai/bluera-knowledge/commit/b16812f4c77b98df5963bf6e280a0f140efc9611))
+* **services:** skip search cleanup for uninitialized lazy containers ([f6387d2](https://github.com/blueraai/bluera-knowledge/commit/f6387d2ce996664f03a0eba2999c1b76248d7415))
+* **services:** use ConfigService's resolved projectRoot ([a8b4a8e](https://github.com/blueraai/bluera-knowledge/commit/a8b4a8e3080b1346084a58a47feeafafcebf4fef))
+* **store:** preserve depth field on RepoStore rename ([987a18c](https://github.com/blueraai/bluera-knowledge/commit/987a18c08d7df5298cbf24f34be32a6a7ea26076))
+* **store:** prevent duplicate names on rename and sync definition correctly ([444b3df](https://github.com/blueraai/bluera-knowledge/commit/444b3dfb0ee01f676548f711c005b5dd383f6a54))
+* **store:** use default depth in repo store metadata ([4e95048](https://github.com/blueraai/bluera-knowledge/commit/4e95048bec15de55e4a4d528ff8a5fd553546c76))
+* **store:** validate empty names in update method ([2d30f57](https://github.com/blueraai/bluera-knowledge/commit/2d30f575e5b15fcbfd6a5dfb2490a148a7201e1d))
+* **store:** validate local repo path exists before creating store ([6057d5e](https://github.com/blueraai/bluera-knowledge/commit/6057d5e717b859a1589a1fd15c82f2642fb6cdde))
+* **sync:** complete cleanup in --prune ([a1c3dd2](https://github.com/blueraai/bluera-knowledge/commit/a1c3dd2b34edf4d70b7df8ecee8ff796986ec139))
+* **sync:** use ProjectRootService for project root detection ([f7f166a](https://github.com/blueraai/bluera-knowledge/commit/f7f166a8a256fc83421925634610d54e59988438))
+* **types:** allow SSH URLs in repo store definitions ([7855f5e](https://github.com/blueraai/bluera-knowledge/commit/7855f5ec0855fff2fda034cf17c280b544e63815))
+* **types:** remove unused SearchQuery fields and align chunk defaults ([86e789e](https://github.com/blueraai/bluera-knowledge/commit/86e789e3b46f342a295411f4e672517926d791ff))
+* **watch:** check full indexing result before calling onReindex ([c4622f5](https://github.com/blueraai/bluera-knowledge/commit/c4622f5ad563d030e8e4e331878a91a6f9225386))
+* **watch:** inject embeddings for dimensions setup ([aafd89b](https://github.com/blueraai/bluera-knowledge/commit/aafd89b84b5c457daa4355e4f8c477691421a089))
+* **watch:** proper SIGINT cleanup with destroyServices ([464f5d3](https://github.com/blueraai/bluera-knowledge/commit/464f5d362e40f8e1e1136aa2aad6b812871c621d))
+* **worker:** set LanceDB dimensions before initialize ([b9554bb](https://github.com/blueraai/bluera-knowledge/commit/b9554bb36a399d2d425e63f25075b3829c616566))
+
 ## [0.17.2](https://github.com/blueraai/bluera-knowledge/compare/v0.17.0...v0.17.2) (2026-01-18)
 
 

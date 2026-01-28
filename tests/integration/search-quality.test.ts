@@ -66,6 +66,7 @@ describe('Search Quality Tests', () => {
     lanceStore = new LanceStore(dataDir);
     embeddingEngine = new EmbeddingEngine();
     await embeddingEngine.initialize();
+    lanceStore.setDimensions(await embeddingEngine.ensureDimensions());
 
     storeService = new StoreService(dataDir);
     await storeService.initialize(); // Must initialize StoreService!

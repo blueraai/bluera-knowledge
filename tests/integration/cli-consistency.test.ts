@@ -84,11 +84,15 @@ describe('CLI Consistency', () => {
       argArray.push(current);
     }
 
-    const result = spawnSync('node', ['dist/index.js', ...argArray, '--data-dir', tempDir], {
-      encoding: 'utf-8',
-      timeout: 60000,
-      input: options.stdin,
-    });
+    const result = spawnSync(
+      'node',
+      ['dist/index.js', ...argArray, '--data-dir', tempDir, '--project-root', tempDir],
+      {
+        encoding: 'utf-8',
+        timeout: 60000,
+        input: options.stdin,
+      }
+    );
     return {
       stdout: result.stdout || '',
       stderr: result.stderr || '',
@@ -100,10 +104,13 @@ describe('CLI Consistency', () => {
    * Helper for commands expected to succeed
    */
   const cli = (args: string): string => {
-    return execSync(`node dist/index.js ${args} --data-dir "${tempDir}"`, {
-      encoding: 'utf-8',
-      timeout: 60000,
-    });
+    return execSync(
+      `node dist/index.js ${args} --data-dir "${tempDir}" --project-root "${tempDir}"`,
+      {
+        encoding: 'utf-8',
+        timeout: 60000,
+      }
+    );
   };
 
   describe('Exit Codes', () => {
