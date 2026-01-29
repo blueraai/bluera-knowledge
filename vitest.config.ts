@@ -6,6 +6,10 @@ const coverageThreshold = 79;
 
 export default defineConfig({
   test: {
+    // Inline deps that have ESM compatibility issues with vitest
+    deps: {
+      inline: ['zod'],
+    },
     // Required environment variables for tests
     env: {
       SEARCH_CONFIDENCE_HIGH: '0.5',
@@ -34,8 +38,9 @@ export default defineConfig({
           // Use forks pool for onnxruntime-node compatibility
           pool: 'forks',
           maxWorkers: '75%',
-          // Fast: no isolation needed for unit tests (all use mocks)
-          isolate: false,
+          // Isolation required to prevent Zod module loading race conditions
+          // and cross-test state pollution when running many tests together
+          isolate: true,
         },
       },
       {

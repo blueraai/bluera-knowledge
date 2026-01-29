@@ -241,6 +241,13 @@ describe('Commands - handleAddRepo', () => {
         create: vi.fn(),
         delete: vi.fn(),
       },
+      lance: {
+        initialize: vi.fn().mockResolvedValue(undefined),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
+      },
       index: {
         indexStore: vi.fn(),
       },
@@ -377,7 +384,14 @@ describe('Commands - handleAddRepo', () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it('reports indexing failure without exiting', async () => {
+  it('reports indexing failure without setting exit code', async () => {
+    // Re-mock createServices since restoreAllMocks clears it
+    const { createServices } = await import('../services/index.js');
+    vi.mocked(createServices).mockResolvedValue(mockServices);
+
+    // Capture exitCode before test to detect if it changes
+    const exitCodeBefore = process.exitCode;
+
     vi.mocked(mockServices.store.create).mockResolvedValue({
       success: true,
       data: {
@@ -396,8 +410,10 @@ describe('Commands - handleAddRepo', () => {
 
     await handleAddRepo({ url: 'https://github.com/user/repo.git' });
 
+    // Verify error was logged
     expect(consoleErrorSpy).toHaveBeenCalledWith('Indexing failed: Indexing failed');
-    expect(process.exitCode).toBeUndefined();
+    // Verify handleAddRepo did NOT change exitCode (it should be same as before)
+    expect(process.exitCode).toBe(exitCodeBefore);
   });
 });
 
@@ -413,6 +429,13 @@ describe('Commands - handleAddFolder', () => {
     mockServices = {
       store: {
         create: vi.fn(),
+      },
+      lance: {
+        initialize: vi.fn().mockResolvedValue(undefined),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       index: {
         indexStore: vi.fn(),
@@ -535,6 +558,13 @@ describe('Commands - handleIndex', () => {
     mockServices = {
       store: {
         getByIdOrName: vi.fn(),
+      },
+      lance: {
+        initialize: vi.fn().mockResolvedValue(undefined),
+        setDimensions: vi.fn(),
+      },
+      embeddings: {
+        ensureDimensions: vi.fn().mockResolvedValue(384),
       },
       index: {
         indexStore: vi.fn(),

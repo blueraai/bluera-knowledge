@@ -108,6 +108,8 @@ export async function handleAddRepo(
 
     // Auto-index
     console.log('\nIndexing...');
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
+    await services.lance.initialize(result.data.id);
     const indexResult = await services.index.indexStore(result.data);
 
     if (indexResult.success) {
@@ -155,6 +157,8 @@ export async function handleAddFolder(
 
     // Auto-index
     console.log('\nIndexing...');
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
+    await services.lance.initialize(result.data.id);
     const indexResult = await services.index.indexStore(result.data);
 
     if (indexResult.success) {
@@ -181,6 +185,8 @@ export async function handleIndex(args: { store: string }): Promise<void> {
     }
 
     console.log(`Indexing ${store.name}...`);
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
+    await services.lance.initialize(store.id);
     const result = await services.index.indexStore(store);
 
     if (result.success) {

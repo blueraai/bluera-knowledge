@@ -882,6 +882,9 @@ describe('store command execution', () => {
         createInterface: vi.fn(() => mockReadline),
       }));
 
+      // Capture exitCode before to detect if it changes (handles test pollution)
+      const exitCodeBefore = process.exitCode;
+
       const command = createStoreCommand(getOptions);
       const deleteCommand = command.commands.find((c) => c.name() === 'delete');
       const actionHandler = deleteCommand?._actionHandler;
@@ -889,8 +892,8 @@ describe('store command execution', () => {
       await actionHandler!(['my-store']);
 
       expect(consoleLogSpy).toHaveBeenCalledWith('Cancelled.');
-      // exitCode stays 0 (undefined) for user-initiated cancellation - not an error
-      expect(process.exitCode).toBeUndefined();
+      // exitCode stays unchanged for user-initiated cancellation - not an error
+      expect(process.exitCode).toBe(exitCodeBefore);
       expect(mockServices.store.delete).not.toHaveBeenCalled();
 
       // Restore original value
@@ -1336,6 +1339,9 @@ describe('store command execution', () => {
         createInterface: vi.fn(() => mockReadline),
       }));
 
+      // Capture exitCode before to detect if it changes (handles test pollution)
+      const exitCodeBefore = process.exitCode;
+
       const command = createStoreCommand(getOptions);
       const deleteCommand = command.commands.find((c) => c.name() === 'delete');
       const actionHandler = deleteCommand?._actionHandler;
@@ -1344,8 +1350,8 @@ describe('store command execution', () => {
 
       // destroyServices should be called even for user cancellation
       expect(destroyServices).toHaveBeenCalledWith(mockServices);
-      // exitCode stays undefined (0) for user-initiated cancellation
-      expect(process.exitCode).toBeUndefined();
+      // exitCode stays unchanged for user-initiated cancellation
+      expect(process.exitCode).toBe(exitCodeBefore);
 
       // Restore
       Object.defineProperty(process.stdin, 'isTTY', {

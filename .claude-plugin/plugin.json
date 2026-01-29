@@ -1,6 +1,6 @@
 {
   "name": "bluera-knowledge",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "Clone repos, crawl docs, search locally. Fast, authoritative answers for AI coding agents.",
   "author": {
     "name": "Bluera Inc",

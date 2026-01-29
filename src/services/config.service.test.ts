@@ -136,8 +136,8 @@ describe('ConfigService', () => {
       // Should return default config
       expect(config.version).toBe(1);
 
-      // File should now exist (created automatically)
-      await expect(access(configPath)).resolves.toBeUndefined();
+      // File should now exist (created automatically - access() resolves without throwing)
+      await expect(access(configPath)).resolves.not.toThrow();
     });
 
     it('throws on corrupted config file', async () => {

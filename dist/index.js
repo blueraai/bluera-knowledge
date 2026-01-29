@@ -860,6 +860,8 @@ async function handleAddRepo(args, options = {}) {
       console.log(`Location: ${result.data.path}`);
     }
     console.log("\nIndexing...");
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
+    await services.lance.initialize(result.data.id);
     const indexResult = await services.index.indexStore(result.data);
     if (indexResult.success) {
       console.log(`Indexed ${String(indexResult.data.filesIndexed)} files`);
@@ -895,6 +897,8 @@ async function handleAddFolder(args, options = {}) {
       console.log(`Location: ${result.data.path}`);
     }
     console.log("\nIndexing...");
+    services.lance.setDimensions(await services.embeddings.ensureDimensions());
+    await services.lance.initialize(result.data.id);
     const indexResult = await services.index.indexStore(result.data);
     if (indexResult.success) {
       console.log(`Indexed ${String(indexResult.data.filesIndexed)} files`);

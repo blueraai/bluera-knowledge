@@ -68,9 +68,9 @@ node_modules/
       expect(result.updated).toBe(true);
       expect(result.message).toContain('Created');
 
-      // Verify file exists
+      // Verify file exists (access() returns undefined/null on success, doesn't throw)
       const gitignorePath = join(projectRoot, '.gitignore');
-      await expect(access(gitignorePath)).resolves.toBeUndefined();
+      await expect(access(gitignorePath)).resolves.not.toThrow();
     });
 
     it('adds patterns to empty .gitignore', async () => {
