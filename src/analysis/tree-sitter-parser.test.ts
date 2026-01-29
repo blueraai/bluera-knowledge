@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isTreeSitterAvailable,
   createRustParser,
   createGoParser,
   parseRustCode,
@@ -20,7 +21,7 @@ import {
   type TreeSitterTree,
 } from './tree-sitter-parser.js';
 
-describe('tree-sitter-parser', () => {
+describe.skipIf(!isTreeSitterAvailable())('tree-sitter-parser', () => {
   describe('createRustParser', () => {
     it('creates a functional Rust parser', () => {
       const parser = createRustParser();

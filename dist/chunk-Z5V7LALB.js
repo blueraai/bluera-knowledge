@@ -5,6 +5,9 @@ import {
 import {
   parseIgnorePatternsForScanning
 } from "./chunk-HXBIIMYL.js";
+import {
+  __require
+} from "./chunk-DGUM43GV.js";
 
 // src/analysis/adapter-registry.ts
 var AdapterRegistry = class _AdapterRegistry {
@@ -949,30 +952,58 @@ var CodeGraph = class {
 };
 
 // src/analysis/tree-sitter-parser.ts
-import Parser from "tree-sitter";
-import Go from "tree-sitter-go";
-import Rust from "tree-sitter-rust";
+var TreeSitterParser = null;
+var GoLanguage = null;
+var RustLanguage = null;
+var _initialized = false;
+var _available = false;
+function isTreeSitterAvailable() {
+  if (!_initialized) {
+    try {
+      TreeSitterParser = __require("tree-sitter");
+      GoLanguage = __require("tree-sitter-go");
+      RustLanguage = __require("tree-sitter-rust");
+      _available = true;
+    } catch {
+      _available = false;
+    }
+    _initialized = true;
+  }
+  return _available;
+}
 function createRustParser() {
-  const parser = new Parser();
-  parser.setLanguage(Rust);
+  if (!isTreeSitterAvailable() || TreeSitterParser === null || RustLanguage === null) {
+    return null;
+  }
+  const parser = new TreeSitterParser();
+  parser.setLanguage(RustLanguage);
   return parser;
 }
 function parseRustCode(code) {
   try {
     const parser = createRustParser();
+    if (parser === null) {
+      return null;
+    }
     return parser.parse(code);
   } catch {
     return null;
   }
 }
 function createGoParser() {
-  const parser = new Parser();
-  parser.setLanguage(Go);
+  if (!isTreeSitterAvailable() || TreeSitterParser === null || GoLanguage === null) {
+    return null;
+  }
+  const parser = new TreeSitterParser();
+  parser.setLanguage(GoLanguage);
   return parser;
 }
 function parseGoCode(code) {
   try {
     const parser = createGoParser();
+    if (parser === null) {
+      return null;
+    }
     return parser.parse(code);
   } catch {
     return null;
@@ -2628,7 +2659,7 @@ var DriftService = class {
     const stats = await stat(path4);
     const content = await readFile4(path4);
     const hash = createHash2("md5").update(content).digest("hex");
-    const { createDocumentId: createDocumentId2 } = await import("./brands-3EYIYV6T.js");
+    const { createDocumentId: createDocumentId2 } = await import("./brands-XDTIHFNU.js");
     return {
       state: {
         mtime: stats.mtimeMs,
@@ -5976,4 +6007,4 @@ export {
   createServices,
   destroyServices
 };
-//# sourceMappingURL=chunk-RDDGZIDL.js.map
+//# sourceMappingURL=chunk-Z5V7LALB.js.map

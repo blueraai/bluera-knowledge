@@ -44,3 +44,4 @@ package-lock.json
 # Data directory (vector DB, cloned repos) is not committed
 !.bluera/bluera-knowledge/config.json
 !.bluera/bluera-knowledge/skill-activation.json
+*.txt

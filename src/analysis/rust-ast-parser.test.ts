@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { RustASTParser } from './rust-ast-parser.js';
+import { isTreeSitterAvailable } from './tree-sitter-parser.js';
 
-describe('RustASTParser', () => {
+describe.skipIf(!isTreeSitterAvailable())('RustASTParser', () => {
   const parser = new RustASTParser();
 
   describe('Function parsing', () => {

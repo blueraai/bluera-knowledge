@@ -5,11 +5,13 @@ import { defineConfig } from 'vitest/config';
 const coverageThreshold = 79;
 
 export default defineConfig({
-  test: {
-    // Inline deps that have ESM compatibility issues with vitest
+  // Server deps needed for forks pool
+  server: {
     deps: {
       inline: ['zod'],
     },
+  },
+  test: {
     // Required environment variables for tests
     env: {
       SEARCH_CONFIDENCE_HIGH: '0.5',
@@ -41,6 +43,9 @@ export default defineConfig({
           // Isolation required to prevent Zod module loading race conditions
           // and cross-test state pollution when running many tests together
           isolate: true,
+          deps: {
+            inline: ['zod'],
+          },
         },
       },
       {
@@ -62,11 +67,14 @@ export default defineConfig({
           maxWorkers: '75%',
           // Safe: isolation required (spawns processes, uses temp dirs)
           isolate: true,
+          deps: {
+            inline: ['zod'],
+          },
         },
       },
     ],
     coverage: {
-      provider: 'v8',
+      provider: 'istanbul',
       reporter: ['text', 'json', 'html'],
       include: ['src/**/*.ts'],
       exclude: [

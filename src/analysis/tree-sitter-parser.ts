@@ -1,11 +1,44 @@
-import Parser from 'tree-sitter';
-import Go from 'tree-sitter-go';
-import Rust from 'tree-sitter-rust';
-
 /**
  * Tree-sitter infrastructure for parsing Rust and Go code.
  * Provides utilities for AST traversal, querying, and position conversion.
+ *
+ * NOTE: tree-sitter requires native module compilation which may not be available
+ * on all platforms (e.g., macOS with newer Node versions). Use isTreeSitterAvailable()
+ * to check before calling parsing functions.
  */
+
+import type Parser from 'tree-sitter';
+
+// Lazy-loaded tree-sitter modules (native module may not be available on all platforms)
+let TreeSitterParser: typeof Parser | null = null;
+let GoLanguage: Parser.Language | null = null;
+let RustLanguage: Parser.Language | null = null;
+let _initialized = false;
+let _available = false;
+
+/**
+ * Check if tree-sitter native module is available on this platform.
+ * Call this before using any tree-sitter parsing functions.
+ */
+export function isTreeSitterAvailable(): boolean {
+  if (!_initialized) {
+    try {
+      // Dynamic require for native modules that may not be available
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment -- Lazy load native module
+      TreeSitterParser = require('tree-sitter');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment -- Lazy load native module
+      GoLanguage = require('tree-sitter-go');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment -- Lazy load native module
+      RustLanguage = require('tree-sitter-rust');
+      _available = true;
+    } catch {
+      // Native module not available (e.g., no prebuilds for darwin-arm64)
+      _available = false;
+    }
+    _initialized = true;
+  }
+  return _available;
+}
 
 export interface TreeSitterPosition {
   row: number;
@@ -43,21 +76,30 @@ export interface TreeSitterTree {
 }
 
 /**
- * Initialize a tree-sitter parser for Rust
+ * Initialize a tree-sitter parser for Rust.
+ * Returns null if tree-sitter is not available.
  */
-export function createRustParser(): Parser {
-  const parser = new Parser();
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- tree-sitter-rust lacks TypeScript definitions
-  parser.setLanguage(Rust as Parser.Language);
+export function createRustParser(): Parser | null {
+  if (!isTreeSitterAvailable() || TreeSitterParser === null || RustLanguage === null) {
+    return null;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- Dynamic native module
+  const parser: Parser = new TreeSitterParser();
+  parser.setLanguage(RustLanguage);
   return parser;
 }
 
 /**
- * Parse Rust source code into an AST
+ * Parse Rust source code into an AST.
+ * Returns null if tree-sitter is not available or code is malformed.
  */
 export function parseRustCode(code: string): TreeSitterTree | null {
   try {
     const parser = createRustParser();
+    if (parser === null) {
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- tree-sitter returns compatible type
     return parser.parse(code);
   } catch {
     // Return null for malformed code
@@ -66,21 +108,30 @@ export function parseRustCode(code: string): TreeSitterTree | null {
 }
 
 /**
- * Initialize a tree-sitter parser for Go
+ * Initialize a tree-sitter parser for Go.
+ * Returns null if tree-sitter is not available.
  */
-export function createGoParser(): Parser {
-  const parser = new Parser();
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- tree-sitter-go lacks TypeScript definitions
-  parser.setLanguage(Go as Parser.Language);
+export function createGoParser(): Parser | null {
+  if (!isTreeSitterAvailable() || TreeSitterParser === null || GoLanguage === null) {
+    return null;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- Dynamic native module
+  const parser: Parser = new TreeSitterParser();
+  parser.setLanguage(GoLanguage);
   return parser;
 }
 
 /**
- * Parse Go source code into an AST
+ * Parse Go source code into an AST.
+ * Returns null if tree-sitter is not available or code is malformed.
  */
 export function parseGoCode(code: string): TreeSitterTree | null {
   try {
     const parser = createGoParser();
+    if (parser === null) {
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- tree-sitter returns compatible type
     return parser.parse(code);
   } catch {
     // Return null for malformed code

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { GoASTParser } from './go-ast-parser.js';
+import { isTreeSitterAvailable } from './tree-sitter-parser.js';
 
-describe('GoASTParser', () => {
+describe.skipIf(!isTreeSitterAvailable())('GoASTParser', () => {
   const parser = new GoASTParser();
 
   describe('Function parsing', () => {

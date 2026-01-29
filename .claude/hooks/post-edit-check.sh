@@ -4,8 +4,8 @@
 
 cd "$CLAUDE_PROJECT_DIR" || exit 0
 
-# Get modified TS/JS files (uncommitted changes)
-MODIFIED_TS_FILES=$(git diff --name-only HEAD 2>/dev/null | grep -E '\.(ts|tsx|js|jsx)$' || true)
+# Get modified TS/JS files (uncommitted changes), excluding dist/
+MODIFIED_TS_FILES=$(git diff --name-only HEAD 2>/dev/null | grep -E '\.(ts|tsx|js|jsx)$' | grep -v '^dist/' || true)
 
 # If no TS/JS changes, skip
 if [ -z "$MODIFIED_TS_FILES" ]; then

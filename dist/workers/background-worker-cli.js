@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 import {
   IntelligentCrawler
-} from "../chunk-VUGQ7HAR.js";
+} from "../chunk-N2UGLUTG.js";
 import {
   JobService,
   createLogger,
   createServices,
   destroyServices,
   shutdownLogger
-} from "../chunk-RDDGZIDL.js";
+} from "../chunk-Z5V7LALB.js";
 import {
   createDocumentId,
   createStoreId
 } from "../chunk-CLIMKLTW.js";
 import "../chunk-HXBIIMYL.js";
+import "../chunk-DGUM43GV.js";
 
 // src/workers/background-worker-cli.ts
 import { platform } from "os";

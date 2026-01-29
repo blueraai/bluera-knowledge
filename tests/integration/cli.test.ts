@@ -31,7 +31,7 @@ describe('CLI Integration', () => {
 
   const cli = (args: string): string => {
     return execSync(
-      `node dist/index.js ${args} --data-dir "${tempDir}" --project-root "${tempDir}"`,
+      `bun dist/index.js ${args} --data-dir "${tempDir}" --project-root "${tempDir}"`,
       {
         encoding: 'utf-8',
         timeout: 120000,

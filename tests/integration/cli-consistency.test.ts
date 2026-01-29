@@ -85,7 +85,7 @@ describe('CLI Consistency', () => {
     }
 
     const result = spawnSync(
-      'node',
+      'bun',
       ['dist/index.js', ...argArray, '--data-dir', tempDir, '--project-root', tempDir],
       {
         encoding: 'utf-8',
@@ -105,7 +105,7 @@ describe('CLI Consistency', () => {
    */
   const cli = (args: string): string => {
     return execSync(
-      `node dist/index.js ${args} --data-dir "${tempDir}" --project-root "${tempDir}"`,
+      `bun dist/index.js ${args} --data-dir "${tempDir}" --project-root "${tempDir}"`,
       {
         encoding: 'utf-8',
         timeout: 60000,

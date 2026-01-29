@@ -47,7 +47,7 @@ describe('MCP Integration', () => {
    * Start the MCP server and return a client with message helpers
    */
   function startMCPServer(): MCPClient {
-    const proc = spawn('node', ['dist/mcp/server.js'], {
+    const proc = spawn('bun', ['dist/mcp/server.js'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,

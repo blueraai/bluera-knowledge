@@ -4,6 +4,7 @@ import type { PythonBridge, ParsePythonResult } from '../crawl/bridge.js';
 import { AdapterRegistry } from './adapter-registry.js';
 import type { LanguageAdapter } from './language-adapter.js';
 import type { CodeNode, ImportInfo } from './ast-parser.js';
+import { isTreeSitterAvailable } from './tree-sitter-parser.js';
 
 describe('ParserFactory', () => {
   describe('parseFile', () => {
@@ -91,7 +92,7 @@ describe('ParserFactory', () => {
       );
     });
 
-    it('parses .rs files with RustASTParser', async () => {
+    it.skipIf(!isTreeSitterAvailable())('parses .rs files with RustASTParser', async () => {
       const factory = new ParserFactory();
       const code = 'pub fn calculate(x: i32) -> i32 { x * 2 }';
       const nodes = await factory.parseFile('lib.rs', code);
@@ -104,7 +105,7 @@ describe('ParserFactory', () => {
       });
     });
 
-    it('parses .go files with GoASTParser', async () => {
+    it.skipIf(!isTreeSitterAvailable())('parses .go files with GoASTParser', async () => {
       const factory = new ParserFactory();
       const code = 'package main\n\nfunc Add(a, b int) int { return a + b }';
       const nodes = await factory.parseFile('main.go', code);
